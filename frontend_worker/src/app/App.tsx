@@ -239,7 +239,6 @@ export default function App() {
                     errorCode={errorCode}
                     isActive={aiActive}
                     onFollowUp={handleFollowUp}
-                    onBack={handleBackToMain}
                 />
             </div>
 

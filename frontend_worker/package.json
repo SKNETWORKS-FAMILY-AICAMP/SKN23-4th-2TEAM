@@ -1,5 +1,5 @@
 {
-  "name": "frontend_admin",
+  "name": "frontend_worker",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -30,6 +30,8 @@
     "tailwindcss": "^4.2.1"
   },
   "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.4",
     "vite": "^7.3.1"
   }
