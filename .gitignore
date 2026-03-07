@@ -42,3 +42,4 @@ Thumbs.db
 
 # Vector DB
 /data_pipeline/vector_db/chroma/
+node_modules/
