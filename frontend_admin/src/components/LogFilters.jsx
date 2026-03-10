@@ -7,15 +7,16 @@ export default function LogFilters({ filters, setFilters }) {
   const dd = String(today.getDate()).padStart(2, "0");
   const todayStr = `${yyyy}-${mm}-${dd}`;
 
-  // 초기값: 오늘 날짜로 설정
+  // 초기값
   const [line, setLine] = useState(filters.line);
   const [device, setDevice] = useState(filters.device);
   const [code, setCode] = useState(filters.code);
+  const [status, setStatus] = useState(filters.status || "");
   const [startDate, setStartDate] = useState(filters.startDate || todayStr);
   const [endDate, setEndDate] = useState(filters.endDate || todayStr);
 
   const applyFilters = () => {
-    setFilters({ line, device, code, startDate, endDate });
+    setFilters({ line, device, code, status, startDate, endDate });
   };
 
   const handleKeyPress = (e) => {
@@ -24,6 +25,7 @@ export default function LogFilters({ filters, setFilters }) {
 
   return (
     <div className="flex flex-wrap gap-2 items-end">
+
       {/* 라인 선택 */}
       <select
         value={line}
@@ -55,7 +57,18 @@ export default function LogFilters({ filters, setFilters }) {
         className="border px-2 py-1 rounded"
       />
 
-      {/* 날짜 검색: ~ 표시 */}
+      {/* 상태 선택 */}
+      <select
+        value={status}
+        onChange={(e) => setStatus(e.target.value)}
+        className="border px-2 py-1 rounded"
+      >
+        <option value="">모두</option>
+        <option value="error">오류</option>
+        <option value="normal">정상</option>
+      </select>
+
+      {/* 날짜 검색 */}
       <div className="flex items-center gap-1">
         <input
           type="date"
@@ -72,13 +85,14 @@ export default function LogFilters({ filters, setFilters }) {
         />
       </div>
 
-      {/* 필터 적용 버튼 */}
+      {/* 필터 적용 */}
       <button
         onClick={applyFilters}
         className="bg-blue-500 text-white px-3 py-1 rounded"
       >
         검색
       </button>
+
     </div>
   );
 }
