@@ -1,33 +1,34 @@
-// StatsErrorTop5Bar.jsx
-import React, { useMemo } from "react";
+import React from "react";
 import { Bar } from "react-chartjs-2";
 
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+} from "chart.js";
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+);
+
 export default function StatsErrorTop5Bar({ data }) {
-  // data는 Stats.jsx에서 필터링된 데이터를 받음
-
-  // 에러 코드별 합계 계산 + Top5
-  const topErrors = useMemo(() => {
-    const errorMap = {};
-
-    data.forEach((d) => {
-      if (!d.errorCode || typeof d.errors !== "number") return;
-      if (!errorMap[d.errorCode]) errorMap[d.errorCode] = 0;
-      errorMap[d.errorCode] += d.errors;
-    });
-
-    return Object.entries(errorMap)
-      .map(([code, total]) => ({ code, total: Math.round(total) }))
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 5);
-  }, [data]);
-
+  // data = [{ errorCode, count }, ...]
   const chartData = {
-    labels: topErrors.map((e) => e.code),
+    labels: data.map((d) => d.errorCode),
     datasets: [
       {
-        label: "Top 5 Error Codes",
-        data: topErrors.map((e) => e.total),
-        backgroundColor: "rgba(75,192,192,0.6)",
+        label: "Top 3 Error Codes",
+        data: data.map((d) => d.count),
+        backgroundColor: "rgba(255,99,132,0.6)",
       },
     ],
   };
@@ -43,7 +44,7 @@ export default function StatsErrorTop5Bar({ data }) {
           plugins: {
             title: {
               display: true,
-              text: "빈출 에러 TOP 5",
+              text: "1주일 간 빈출 에러 TOP 3",
               font: { size: 18 },
             },
           },

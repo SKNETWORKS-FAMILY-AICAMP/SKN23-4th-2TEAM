@@ -1,12 +1,13 @@
 import React, { useState } from "react";
-import { statsData } from "../mock/mockStats";
+import { mockdata } from "../mock/mockdata";
 import StatsFilters from "../components/StatsFilters";
 import StatsErrorTop5Bar from "../components/StatsErrorTop5Bar";
 import StatsErrorHeatmap from "../components/StatsErrorHeatmap";
 
+
 export default function Stats() {
   const [filters, setFilters] = useState({
-    period: "week", // week / month
+    period: "all", 
     line: "all",
     device: "",
   });
@@ -15,7 +16,7 @@ export default function Stats() {
   const now = new Date();
 
   // 필터 적용 (날짜 기준)
-  const filteredData = statsData.filter((d) => {
+  const filteredData = mockdata.filter((d) => {
     const dataDate = new Date(d.date);
 
     // line 필터
@@ -46,10 +47,10 @@ export default function Stats() {
       <StatsFilters filters={filters} setFilters={setFilters} />
       <div className="flex flex-col md:flex-row gap-6 flex-1">
         <div className="flex-1 bg-white p-4 rounded shadow border min-h-[16rem]">
-          <StatsErrorTop5Bar data={filteredData} />
-        </div>
-        <div className="flex-1 bg-white p-4 rounded shadow border min-h-[16rem]">
-          <StatsErrorHeatmap data={filteredData} />
+          <StatsErrorHeatmap 
+            data={filteredData}  // hour를 덮어쓰지 않음
+            key={filteredData.length} 
+          />
         </div>
       </div>
     </div>
