@@ -1,3 +1,5 @@
+// /mock/mockdata
+
 export const mockdata = [
 // 2월 데이터
   { device: "Device A", line: "A", lineNum : 1, date: "2026-02-20", hour: 9, errorCode: "C153" },
