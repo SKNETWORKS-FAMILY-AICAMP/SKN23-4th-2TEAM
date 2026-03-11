@@ -44,7 +44,7 @@ export default function StatsErrorTop5Bar({ data }) {
           plugins: {
             title: {
               display: true,
-              text: "1주일 간 빈출 에러 TOP 3",
+              text: "빈출 에러 TOP 3(최근 7일)",
               font: { size: 18 },
             },
           },
