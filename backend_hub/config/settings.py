@@ -14,10 +14,6 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# MySQL 연동을 위한 설정
-import pymysql
-pymysql.install_as_MySQLdb()
-
 load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -85,28 +81,17 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': os.getenv('POSTGRES_DB'),
-#         'USER': os.getenv('POSTGRES_USER'),
-#         'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
-#         'HOST': os.getenv('POSTGRES_HOST'),
-#         'PORT': os.getenv('POSTGRES_PORT'),
-#     }
-# }
-
-# MySQL 연동 확인용
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'mydatabase',   # 데이터베이스 이름
-        'USER': 'root',         # MySQL 사용자
-        'PASSWORD': '123456',   # MySQL 비밀번호
-        'HOST': '127.0.0.1',    # 로컬 호스트
-        'PORT': '3306',         # MySQL 포트
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('PGDATABASE'),
+        'USER': os.getenv('PGUSER'),
+        'PASSWORD': os.getenv('PGPASSWORD'),
+        'HOST': os.getenv('PGHOST'),
+        'PORT': os.getenv('PGPORT'),
     }
 }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
