@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Lang, T } from "./language-pack";
 import { motion } from "motion/react";
-import { Search, Book, Zap, AlertCircle, Settings, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, Book, Zap, AlertCircle, Settings, ChevronDown, ChevronUp, Wrench } from "lucide-react";
 
 interface TechDictionaryProps {
   lang: Lang;
@@ -66,9 +66,9 @@ const techEntries: TechEntry[] = [
     titleKO: "예방 정비 주기",
     titleEN: "Preventive Maintenance",
     titleUZ: "Profilaktik ta'mirlash",
-    contentKO: "로봇 및 용접기 예방 정비 권장 주기:\n• 일일: 토치 청소, 스패터 제거\n• 주간: 케이블 점검, 와이어 피더 청소\n• 월간: 그리스 보충, 필터 교체\n• 분기: 조인트 점검, 전기 접점 청소\n• 반기: 캘리브레이션, 백래시 측정",
-    contentEN: "Recommended preventive maintenance schedule:\n• Daily: Torch cleaning, spatter removal\n• Weekly: Cable inspection, wire feeder cleaning\n• Monthly: Grease replenishment, filter replacement\n• Quarterly: Joint inspection, electrical contact cleaning\n• Semi-annual: Calibration, backlash measurement",
-    contentUZ: "Tavsiya etilgan profilaktik ta'mirlash jadvali:\n• Kunlik: Mash'ala tozalash, chiqindilarni olib tashlash\n• Haftalik: Kabelni tekshirish, sim beruvchini tozalash\n• Oylik: Moyni to'ldirish, filtrni almashtirish\n• Choraklik: Bo'g'inni tekshirish, elektr kontaktlarini tozalash\n• Yarim yillik: Kalibrlash, orqaga siljishni o'lchash",
+    contentKO: "로봇 및 용접기 예방 정비 권장 주기:\n- 일일: 토치 청소, 스패터 제거\n- 주간: 케이블 점검, 와이어 피더 청소\n- 월간: 그리스 보충, 필터 교체\n- 분기: 조인트 점검, 전기 접점 청소\n- 반기: 캘리브레이션, 백래시 측정",
+    contentEN: "Recommended preventive maintenance schedule:\n- Daily: Torch cleaning, spatter removal\n- Weekly: Cable inspection, wire feeder cleaning\n- Monthly: Grease replenishment, filter replacement\n- Quarterly: Joint inspection, electrical contact cleaning\n- Semi-annual: Calibration, backlash measurement",
+    contentUZ: "Tavsiya etilgan profilaktik ta'mirlash jadvali:\n- Kunlik: Mash'ala tozalash, chiqindilarni olib tashlash\n- Haftalik: Kabelni tekshirish, sim beruvchini tozalash\n- Oylik: Moyni to'ldirish, filtrni almashtirish\n- Choraklik: Bo'g'inni tekshirish, elektr kontaktlarini tozalash\n- Yarim yillik: Kalibrlash, orqaga siljishni o'lchash",
   },
   {
     id: "spatter",
@@ -96,7 +96,7 @@ export function TechDictionary({ lang, onBack }: TechDictionaryProps) {
   };
 
   const filteredEntries = techEntries.filter((entry) => {
-    const matchesSearch = searchQuery === "" || 
+    const matchesSearch = searchQuery === "" ||
       getTitle(entry).toLowerCase().includes(searchQuery.toLowerCase()) ||
       getContent(entry).toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === "all" || entry.category === selectedCategory;
@@ -108,7 +108,7 @@ export function TechDictionary({ lang, onBack }: TechDictionaryProps) {
     { value: "welding", labelKO: "용접", labelEN: "Welding", labelUZ: "Payvandlash", icon: Zap },
     { value: "robot", labelKO: "로봇", labelEN: "Robot", labelUZ: "Robot", icon: Settings },
     { value: "safety", labelKO: "안전", labelEN: "Safety", labelUZ: "Xavfsizlik", icon: AlertCircle },
-    { value: "maintenance", labelKO: "정비", labelEN: "Maintenance", labelUZ: "Ta'mirlash", icon: Settings },
+    { value: "maintenance", labelKO: "정비", labelEN: "Maintenance", labelUZ: "Ta'mirlash", icon: Wrench },
   ];
 
   const getCategoryLabel = (cat: typeof categories[0]) => {
@@ -117,67 +117,70 @@ export function TechDictionary({ lang, onBack }: TechDictionaryProps) {
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
-      case "welding": return "⚡";
-      case "robot": return "🤖";
-      case "safety": return "🛡️";
-      case "maintenance": return "🔧";
-      default: return "📖";
+      case "welding": return <Zap size={24} />;
+      case "robot": return <Settings size={24} />;
+      case "safety": return <AlertCircle size={24} />;
+      case "maintenance": return <Wrench size={24} />;
+      default: return <Book size={24} />;
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white pb-8">
+    <div className="min-h-screen bg-zinc-950 text-white pb-20">
       {/* Header */}
-      <div className="bg-[#16213e] p-6 border-b-2 border-[#a78bfa]">
-        <div className="max-w-[900px] mx-auto">
+      <div className="bg-zinc-900 p-8 border-b border-zinc-800 shadow-xl">
+        <div className="max-w-5xl mx-auto">
           <motion.button
-            className="mb-4 px-6 py-3 bg-[#1e293b] border-2 border-[#64748b] text-white rounded-xl text-xl font-bold"
+            className="mb-8 px-8 py-4 bg-zinc-800 border border-zinc-700 text-white rounded-2xl text-xl font-bold flex items-center gap-3"
             onClick={onBack}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
             {T[lang].backToMain}
           </motion.button>
-          <h1 className="text-3xl font-bold text-[#a78bfa] mb-4">{T[lang].techDict}</h1>
-          
+          <h1 className="text-4xl font-black text-white mb-8 tracking-tight uppercase">{T[lang].techDict}</h1>
+
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={24} />
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-zinc-500" size={28} />
             <input
               type="text"
-              placeholder={lang === "KO" ? "검색..." : lang === "EN" ? "Search..." : "Qidirish..."}
+              placeholder={lang === "KO" ? "검색 키워드를 입력하세요..." : lang === "EN" ? "Enter keywords..." : "Kalit so'zlarni kiriting..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-14 pr-4 py-4 bg-[#0a0a0f] border-2 border-[#a78bfa] rounded-xl text-xl text-white placeholder-gray-500 focus:outline-none focus:border-[#c4b5fd]"
+              className="w-full pl-16 pr-6 py-6 bg-zinc-950 border border-zinc-800 rounded-2xl text-2xl text-white placeholder-zinc-600 focus:outline-none focus:border-[#E82127] transition-all"
             />
           </div>
         </div>
       </div>
 
       {/* Category Filter */}
-      <div className="max-w-[900px] mx-auto px-6 py-4">
-        <div className="flex gap-3 overflow-x-auto pb-2">
-          {categories.map((cat) => (
-            <motion.button
-              key={cat.value}
-              className={`px-6 py-3 rounded-xl text-lg font-bold whitespace-nowrap border-2 transition-all ${
-                selectedCategory === cat.value
-                  ? "bg-[#a78bfa] text-[#0a0a0f] border-[#a78bfa]"
-                  : "bg-[#16213e] text-[#a78bfa] border-[#a78bfa] hover:bg-[#2a2141]"
-              }`}
-              onClick={() => setSelectedCategory(cat.value)}
-              whileTap={{ scale: 0.95 }}
-            >
-              {getCategoryLabel(cat)}
-            </motion.button>
-          ))}
+      <div className="max-w-5xl mx-auto px-6 py-8">
+        <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar">
+          {categories.map((cat) => {
+            const Icon = cat.icon;
+            return (
+              <motion.button
+                key={cat.value}
+                className={`flex items-center gap-3 px-8 py-4 rounded-2xl text-xl font-bold whitespace-nowrap border transition-all ${selectedCategory === cat.value
+                  ? "bg-[#E82127] text-white border-[#E82127] shadow-[0_0_20px_rgba(232,33,39,0.3)]"
+                  : "bg-zinc-900 text-zinc-400 border-zinc-800 hover:bg-zinc-800 hover:text-zinc-200"
+                  }`}
+                onClick={() => setSelectedCategory(cat.value)}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Icon size={20} />
+                {getCategoryLabel(cat)}
+              </motion.button>
+            );
+          })}
         </div>
       </div>
 
       {/* Entries List */}
-      <div className="max-w-[900px] mx-auto px-6 space-y-4">
+      <div className="max-w-5xl mx-auto px-6 space-y-6">
         {filteredEntries.length === 0 ? (
-          <div className="text-center py-12 text-gray-400 text-xl">
+          <div className="bg-zinc-900/50 rounded-3xl border border-dashed border-zinc-800 py-20 text-center text-zinc-500 text-2xl">
             {lang === "KO" ? "검색 결과가 없습니다" : lang === "EN" ? "No results found" : "Natijalar topilmadi"}
           </div>
         ) : (
@@ -187,29 +190,31 @@ export function TechDictionary({ lang, onBack }: TechDictionaryProps) {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
-              className="bg-[#16213e] border-2 border-[#a78bfa] rounded-xl overflow-hidden"
+              className="bg-zinc-900/80 backdrop-blur-md border border-zinc-800/50 rounded-2xl overflow-hidden shadow-lg"
             >
               <button
-                className="w-full px-6 py-5 flex items-center justify-between text-left hover:bg-[#2a2141] transition-colors"
+                className="w-full px-8 py-6 flex items-center justify-between text-left hover:bg-zinc-800/80 transition-all"
                 onClick={() => setExpandedId(expandedId === entry.id ? null : entry.id)}
               >
-                <div className="flex items-center gap-4">
-                  <span className="text-3xl">{getCategoryIcon(entry.category)}</span>
-                  <span className="text-xl font-bold text-[#a78bfa]">{getTitle(entry)}</span>
+                <div className="flex items-center gap-6">
+                  <div className="w-12 h-12 rounded-xl bg-zinc-800 flex items-center justify-center text-[#E82127]">
+                    {getCategoryIcon(entry.category)}
+                  </div>
+                  <span className="text-2xl font-bold text-gray-100">{getTitle(entry)}</span>
                 </div>
                 {expandedId === entry.id ? (
-                  <ChevronUp className="text-[#a78bfa]" size={28} />
+                  <ChevronUp className="text-zinc-500" size={32} />
                 ) : (
-                  <ChevronDown className="text-[#a78bfa]" size={28} />
+                  <ChevronDown className="text-zinc-500" size={32} />
                 )}
               </button>
-              
+
               {expandedId === entry.id && (
                 <motion.div
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
-                  className="px-6 pb-5 text-gray-300 text-lg leading-relaxed whitespace-pre-line border-t-2 border-[#2a2141] pt-4"
+                  className="px-8 pb-8 text-zinc-400 text-xl leading-relaxed whitespace-pre-line border-t border-zinc-800/50 pt-6"
                 >
                   {getContent(entry)}
                 </motion.div>
