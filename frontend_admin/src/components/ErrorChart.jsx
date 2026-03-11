@@ -7,23 +7,35 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { mockdata } from "../mock/mockdata"; // 기존 mockdata 그대로
+import { mockdata } from "../mock/mockdata";
 
 function ErrorChart() {
   const [selectedLine, setSelectedLine] = useState("all");
 
-  // 날짜별 라인별 에러 개수 집계
-  const chartData = Object.values(
-    mockdata.reduce((acc, log) => {
-      const date = log.date;
-      if (!acc[date]) acc[date] = { time: date, a: 0, b: 0 };
-      if (log.errorCode) {
-        if (log.line === "A") acc[date].a += 1;
-        if (log.line === "B") acc[date].b += 1;
-      }
-      return acc;
-    }, {})
-  );
+  // 오늘 기준 최근 7일 생성
+  const today = new Date();
+  const last7Days = Array.from({ length: 7 }).map((_, i) => {
+    const d = new Date();
+    d.setDate(today.getDate() - (6 - i));
+    return d.toISOString().slice(0, 10); // yyyy-mm-dd
+  });
+
+  // 7일 기본 데이터 생성
+  const baseData = last7Days.reduce((acc, date) => {
+    acc[date] = { time: date, a: 0, b: 0 };
+    return acc;
+  }, {});
+
+  // mockdata 집계
+  mockdata.forEach((log) => {
+    if (!log.errorCode) return;
+    if (!baseData[log.date]) return;
+
+    if (log.line === "A") baseData[log.date].a += 1;
+    if (log.line === "B") baseData[log.date].b += 1;
+  });
+
+  const chartData = Object.values(baseData);
 
   const lines = [
     { id: "all", label: "All" },
@@ -33,7 +45,7 @@ function ErrorChart() {
 
   return (
     <div className="h-full flex flex-col bg-white p-4 rounded-lg shadow border">
-      <h2 className="font-bold mb-4">라인별 에러 발생 비교</h2>
+      <h2 className="font-bold mb-4">라인별 에러 발생 비교 (최근 7일)</h2>
 
       <div className="flex gap-2 mb-4">
         {lines.map((line) => (
@@ -57,9 +69,11 @@ function ErrorChart() {
             <XAxis dataKey="time" />
             <YAxis />
             <Tooltip />
+
             {(selectedLine === "all" || selectedLine === "a") && (
               <Line type="monotone" dataKey="a" stroke="#ef4444" strokeWidth={2} />
             )}
+
             {(selectedLine === "all" || selectedLine === "b") && (
               <Line type="monotone" dataKey="b" stroke="#3b82f6" strokeWidth={2} />
             )}
