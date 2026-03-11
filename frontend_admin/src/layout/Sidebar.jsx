@@ -5,6 +5,7 @@ const menus = [
   { name: "Lines", icon: "👥", path: "/lines" },
   { name: "Logs", icon: "📜", path: "/logs" },
   { name: "Stats", icon: "⚙️", path: "/stats" },
+  { name: "RAG_Ingestion", icon: "⚙️", path: "/rag-Ingestion" },
 ];
 
 function Sidebar() {
