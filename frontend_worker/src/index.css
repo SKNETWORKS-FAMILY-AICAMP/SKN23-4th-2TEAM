@@ -62,7 +62,7 @@ button:hover {
   border-color: #646cff;
 }
 
-.recharts-wrapper, 
+.recharts-wrapper,
 .recharts-surface,
 .recharts-responsive-container,
 .recharts-legend-wrapper,
@@ -73,6 +73,10 @@ button:hover {
 
 *:focus {
   outline: none !important;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent !important;
 }
 
 button:focus,

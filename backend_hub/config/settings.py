@@ -18,19 +18,19 @@ load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+FRONTEND_DIST_DIR = BASE_DIR.parent / 'frontend_admin' / 'dist'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
 # SECRET_KEY = 'django-insecure-!!73b3nm+lt8cjds759y)(^v6(rm0&#6lp7kbo=*$%5kwc$_+w'
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 
+SECRET_KEY = os.environ.get('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -63,7 +63,7 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [FRONTEND_DIST_DIR],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -129,4 +129,7 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+STATICFILES_DIRS = [
+    FRONTEND_DIST_DIR / 'assets',
+]
 CORS_ALLOW_ALL_ORIGINS = True   # 모든 도메인에서의 요청을 허용
