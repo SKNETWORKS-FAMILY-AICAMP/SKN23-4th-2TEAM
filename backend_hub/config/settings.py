@@ -12,7 +12,11 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 import os
 from pathlib import Path
-from deoenv import load_dotenv
+from dotenv import load_dotenv
+
+# MySQL 연동을 위한 설정
+import pymysql
+pymysql.install_as_MySQLdb()
 
 load_dotenv()
 
@@ -42,9 +46,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'corsheaders',      # CORS 처리를 위한 라이브러리 추가
+    'rest_framework',   # REST API 개발을 위한 라이브러리 추가(JSON 데이터 통신)
+    'api',              # api 앱
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',            # CORS 처리를 위한 미들웨어 추가
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -88,12 +96,13 @@ WSGI_APPLICATION = 'config.wsgi.application'
 #     }
 # }
 
+# MySQL 연동 확인용
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'mydatabase',   # 데이터베이스 이름
         'USER': 'root',         # MySQL 사용자
-        'PASSWORD': 'password', # MySQL 비밀번호
+        'PASSWORD': '123456',   # MySQL 비밀번호
         'HOST': '127.0.0.1',    # 로컬 호스트
         'PORT': '3306',         # MySQL 포트
     }
@@ -134,3 +143,5 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+CORS_ALLOW_ALL_ORIGINS = True   # 모든 도메인에서의 요청을 허용

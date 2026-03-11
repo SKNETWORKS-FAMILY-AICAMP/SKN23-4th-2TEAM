@@ -1,8 +1,15 @@
+#===========================
+# 실제 DB의 표 만들기
+#===========================
+
 from django.db import models
-# from django.contrib.auth.models import User
+from django.contrib.auth.models import User
 
 # ============================
-# 1. ChatHistory: 채팅 내역 저장
+# ChatHistory : 채팅 내역 저장
+# models.ForeignKey : 유저 정보를 User 테이블에서 가져옴
+# User : 사용자 테이블과 연결
+# on_delete=models.CASCADE : user가 탈퇴하면 user의 채팅내역도 삭제
 # ============================
 class ChatHistory(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE) 
@@ -11,10 +18,10 @@ class ChatHistory(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 # ============================
-# 2. Documents: 업로드된 문서 관리
+# Document : 업로드된 문서 관리
+# STATUS_CHOICES : 문서 상태값 관리
 # ============================
 class Document(models.Model):
-    # 문서 상태값 관리 (데이터 유틸리티 역할)
     STATUS_CHOICES = [
         ('pending', '대기 중'),
         ('processing', '처리 중'),
@@ -26,8 +33,15 @@ class Document(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
+    # ============================
+    # __str__ : 관리자 페이지 목록에서 데이터를 어떻게 보여줄지 결정
+    # '문서.pdf - 완료' 형태로 목록에 표시
+    # ============================
+    def __str__(self):
+        return f"{self.title} - {self.status}"
+
 # ============================
-# 3. ErrorLogs: 시스템 에러 기록 (운영 통제용)
+# ErrorLog : 시스템 에러 기록
 # ============================
 class ErrorLog(models.Model):
     error_code = models.CharField(max_length=50)
