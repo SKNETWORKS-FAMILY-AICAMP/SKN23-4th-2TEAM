@@ -31,6 +31,7 @@ export default function App() {
     const [diagType, setDiagType] = useState<"robot" | "welder">("robot");
     const [showDialog, setShowDialog] = useState(false);
     const [aiActive, setAiActive] = useState(false);
+    const [aiMode, setAiMode] = useState<"diagnosis" | "history" | "related" | "followup">("diagnosis");
     const [aiKey, setAiKey] = useState(0);
 
     // Engineer call notifications
@@ -61,6 +62,7 @@ export default function App() {
         setSelectedDevice({ line, robot });
         setErrorCode("");
         setAiActive(false);
+        setAiMode("diagnosis");
         setView("keypad");
     }, []);
 
@@ -79,6 +81,7 @@ export default function App() {
     const handleClear = useCallback(() => {
         setErrorCode("");
         setAiActive(false);
+        setAiMode("diagnosis");
     }, []);
 
     const handleSubmit = useCallback(() => {
@@ -90,6 +93,8 @@ export default function App() {
             };
             setErrorHistory((prev) => [newEntry, ...prev.slice(0, 49)]);
 
+            // TODO: Connect to LLM for initial diagnosis
+            setAiMode("diagnosis");
             setAiActive(true);
             setAiKey((prev) => prev + 1);
 
@@ -104,14 +109,29 @@ export default function App() {
         setView("main");
         setErrorCode("");
         setAiActive(false);
+        setAiMode("diagnosis");
     }, []);
 
     const handleFollowUp = useCallback((text: string) => {
-        if (text.includes("해결 완료") || text.includes("미해결")) {
-            toast.success("피드백이 전송되었습니다.", { duration: 2000 });
+        // 1. O 버튼: 해결 완료 -> 홈으로 이동
+        if (text.includes("해결 완료") || text.includes("(O)")) {
+            toast.success(lang === "KO" ? "조치가 완료되었습니다." : "Action completed.", { duration: 2000 });
+            setTimeout(() => {
+                handleBackToMain();
+            }, 1500);
             return;
         }
 
+        // 2. X 버튼: 미해결 -> LLM 추가 질문 모드로 진입
+        if (text.includes("미해결") || text.includes("(X)")) {
+            // TODO: Connect to LLM for follow-up questions based on current context
+            setAiMode("followup");
+            setAiKey((prev) => prev + 1);
+            setAiActive(true);
+            return;
+        }
+
+        // 3. 엔지니어 호출 -> Admin 알림 연동
         if (text.includes("엔지니어 호출") || text.includes("Call Engineer")) {
             setEngineerCalls(prev => [{
                 code: errorCode,
@@ -122,9 +142,28 @@ export default function App() {
             return;
         }
 
+        // 4. 정비 이력 확인 -> DB 연동
+        if (text.includes("이력") || text.includes("Log") || text.includes("tarixini")) {
+            // TODO: Fetch maintenance history from DB
+            setAiMode("history");
+            setAiKey((prev) => prev + 1);
+            setAiActive(true);
+            return;
+        }
+
+        // 5. 관련 에러 코드 더 보기 -> LLM 연동
+        if (text.includes("코드") || text.includes("Error") || text.includes("xatolarni")) {
+            // TODO: Connect to LLM to fetch related error codes
+            setAiMode("related");
+            setAiKey((prev) => prev + 1);
+            setAiActive(true);
+            return;
+        }
+
+        setAiMode("diagnosis");
         setAiKey((prev) => prev + 1);
         setAiActive(true);
-    }, [errorCode, selectedDevice, lang]);
+    }, [errorCode, selectedDevice, lang, handleBackToMain]);
 
     const handleUpdateNotice = useCallback(() => {
         toast.info("업데이트 중입니다.", {
@@ -227,6 +266,7 @@ export default function App() {
                     lang={lang}
                     errorCode={errorCode}
                     isActive={aiActive}
+                    mode={aiMode}
                     onFollowUp={handleFollowUp}
                 />
             </div>
