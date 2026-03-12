@@ -7,6 +7,7 @@ from fastapi.exceptions import RequestValidationError
 import logging
 
 from app.routers.consultations import router as consultation_router
+from app.routers.admin_ai import router as admin_ai_router
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -38,6 +39,7 @@ app.add_middleware(
 )
 
 app.include_router(consultation_router, prefix='/api/v1')
+app.include_router(admin_ai_router, prefix='/api/v1')
 
 
 @app.middleware("http")

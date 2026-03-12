@@ -20,33 +20,36 @@ function ErrorLog({ logs = [] }) {
     <table className="w-full table-fixed text-sm border-collapse">
       <thead className="border-b bg-gray-50 sticky top-0 z-10">
         <tr className="text-left">
-          <th className="py-1 w-44">시간</th>
-          <th className="w-32">장비</th>
-          <th className="w-24">코드</th>
-          <th>상태</th>
+          <th className="px-4 py-3 text-left w-1/4">발생 시각</th>
+          <th className="px-4 py-3 text-left w-1/2">장치 식별자 및 에러</th>
+          <th className="px-4 py-3 text-right w-1/4">조치 상태</th>
         </tr>
       </thead>
       <tbody>
         {logs.length === 0 ? (
           <tr>
-            <td colSpan={4} className="text-center py-2 text-gray-400">
+            <td colSpan={3} className="text-center py-6 text-gray-400">
               최근 로그가 없습니다.
             </td>
           </tr>
         ) : (
           logs.map((log, i) => (
-            <tr key={i} className="border-b hover:bg-gray-50">
-              <td className="py-1 truncate">{formatTime(log)}</td>
-              <td className="truncate">{log.device}</td>
-              <td className="font-mono truncate">{log.code || "-"}</td>
+            <tr key={i} className="border-b hover:bg-gray-50 h-14">
+              <td className="px-4 py-2 text-left w-1/4 truncate text-gray-500 font-mono">
+                {formatTime(log)}
+              </td>
+              <td className="px-4 py-2 text-left w-1/2 truncate font-bold">
+                {/* 백엔드 API에서 line_name, line_num, error_code를 조인해서 내려주도록 수정 필요 */}
+                [라인 A-1] {log.device} (에러: {log.code || "-"})
+              </td>
               <td
-                className={
+                className={`px-4 py-2 text-right w-1/4 font-semibold ${
                   log.status === "error"
                     ? "text-red-500"
                     : log.status === "processing"
                       ? "text-yellow-500"
                       : "text-green-500"
-                }
+                }`}
               >
                 {log.status === "error"
                   ? "발생"
