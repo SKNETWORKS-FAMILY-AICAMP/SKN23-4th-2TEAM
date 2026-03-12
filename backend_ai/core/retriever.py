@@ -1,4 +1,4 @@
-﻿import os
+import os
 import pickle
 import re
 from pathlib import Path
@@ -50,9 +50,16 @@ def _to_bool(value: str | None, default: bool = False) -> bool:
 
 
 def _get_pg_settings() -> dict:
+    if _to_bool(os.getenv("SSH_TUNNEL_ENABLED"), default=False):
+        host = _env_first('SSH_LOCAL_BIND_HOST', default='127.0.0.1')
+        port = int(_env_first('SSH_LOCAL_BIND_PORT', default='15432'))
+    else:
+        host = _env_first('PGHOST', default='localhost')
+        port = int(_env_first('PGPORT', default='5432'))
+
     return {
-        "host": _env_first("PGHOST", "PG_HOST"),
-        "port": int(_env_first("PGPORT", "PG_PORT", default="5432")),
+        "host": host,
+        "port": port,
         "database": _env_first("PGDATABASE", "PG_DB"),
         "user": _env_first("PGUSER", "PG_USER"),
         "password": _env_first("PGPASSWORD", "PG_PASSWORD"),
@@ -61,57 +68,13 @@ def _get_pg_settings() -> dict:
     }
 
 
-def _start_ssh_tunnel_if_needed(pg_settings: dict):
-    global _SSH_TUNNEL
-
-    if not _to_bool(os.getenv("SSH_TUNNEL_ENABLED"), default=False):
-        return pg_settings["host"], pg_settings["port"]
-
-    if _SSH_TUNNEL and getattr(_SSH_TUNNEL, "is_active", False):
-        return "127.0.0.1", _SSH_TUNNEL.local_bind_port
-
-    from sshtunnel import SSHTunnelForwarder
-
-    ssh_host = os.getenv("SSH_HOST")
-    ssh_port = int(os.getenv("SSH_PORT", "22"))
-    ssh_user = os.getenv("SSH_USER")
-    ssh_key_path = os.getenv("SSH_PRIVATE_KEY_PATH")
-    ssh_key_passphrase = os.getenv("SSH_PRIVATE_KEY_PASSPHRASE")
-    ssh_allow_agent = _to_bool(os.getenv("SSH_ALLOW_AGENT"), default=False)
-    local_bind_port = int(os.getenv("SSH_LOCAL_BIND_PORT", "15432"))
-    remote_bind_host = os.getenv("SSH_REMOTE_BIND_HOST", pg_settings["host"])
-    remote_bind_port = int(os.getenv("SSH_REMOTE_BIND_PORT", str(pg_settings["port"])))
-
-    if not all([ssh_host, ssh_user]):
-        raise ValueError("SSH_TUNNEL_ENABLED=true 인데 SSH_HOST 또는 SSH_USER가 없습니다.")
-    if not ssh_key_path and not ssh_allow_agent:
-        raise ValueError("SSH 터널 연결에는 SSH_PRIVATE_KEY_PATH 또는 SSH_ALLOW_AGENT=true가 필요합니다.")
-
-    tunnel_kwargs = {
-        "ssh_address_or_host": (ssh_host, ssh_port),
-        "ssh_username": ssh_user,
-        "remote_bind_address": (remote_bind_host, remote_bind_port),
-        "local_bind_address": ("127.0.0.1", local_bind_port),
-        "allow_agent": ssh_allow_agent,
-    }
-    if ssh_key_path:
-        tunnel_kwargs["ssh_pkey"] = ssh_key_path
-    if ssh_key_passphrase:
-        tunnel_kwargs["ssh_private_key_password"] = ssh_key_passphrase
-
-    _SSH_TUNNEL = SSHTunnelForwarder(**tunnel_kwargs)
-    _SSH_TUNNEL.start()
-    return "127.0.0.1", _SSH_TUNNEL.local_bind_port
-
-
 def _connect_postgres():
     import psycopg
 
     pg_settings = _get_pg_settings()
-    host, port = _start_ssh_tunnel_if_needed(pg_settings)
     return psycopg.connect(
-        host=host,
-        port=port,
+        host=pg_settings["host"],
+        port=pg_settings["port"],
         dbname=pg_settings["database"],
         user=pg_settings["user"],
         password=pg_settings["password"],
