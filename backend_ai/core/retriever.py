@@ -31,7 +31,6 @@ BASE_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = BASE_DIR.parents[1]
 load_dotenv(PROJECT_ROOT / ".env")
 
-BM25_CACHE_PATH = CACHE_DIR / "bm25_retriever.pkl"
 CACHED_BM25_RETRIEVER = None
 _SSH_TUNNEL = None
 
@@ -130,7 +129,7 @@ class ExactMatchRetriever(BaseRetriever):
 
 
 def _save_bm25_cache(retriever: BM25Retriever) -> None:
-    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    BM25_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
     with open(BM25_CACHE_PATH, "wb") as file_obj:
         pickle.dump(retriever, file_obj)
 
@@ -222,7 +221,7 @@ def _load_or_create_bm25_retriever(collection_name: str = COLLECTION_NAME, force
     if CACHED_BM25_RETRIEVER is not None and not force_refresh:
         return CACHED_BM25_RETRIEVER
 
-    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    BM25_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
 
     if BM25_CACHE_PATH.exists() and not force_refresh:
         with open(BM25_CACHE_PATH, "rb") as file_obj:
@@ -371,4 +370,6 @@ def remove_sources_from_bm25_cache(source_keys: List[str]) -> dict:
         "bm25_removed_docs": removed_count,
         "bm25_total_docs": len(kept_docs),
     }
+
+
 

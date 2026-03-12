@@ -210,5 +210,8 @@ DEFAULT_BM25_WEIGHT = 0.8
 TECHNICAL_BM25_WEIGHT = 0.8
 
 
-def get_reranker_model_path() -> Path:
-    return RERANKER_LOCAL_PATH if RERANKER_LOCAL_PATH.exists() else Path(RERANKER_MODEL_NAME)
+def get_reranker_model_path() -> str | Path:
+    config_path = RERANKER_LOCAL_PATH / "config.json"
+    return RERANKER_LOCAL_PATH if config_path.exists() else RERANKER_MODEL_NAME
+
+
