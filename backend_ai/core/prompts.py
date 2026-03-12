@@ -74,6 +74,75 @@ ASSESS_PROMPT = '''너는 생산 설비 작업자를 돕는 현장형 AI 비서�
 {action_method}
 '''
 
+# 체크리스트 프롬프트 : 에러진단에 대해서 5개를 생성합니다.
+CHECKLIST_PROMPT = '''너는 생산 설비 작업자를 돕는 현장형 AI 비서다.
+
+아래의 에러코드, 원인 분석, 조치 방법, 긴급도 정보를 바탕으로
+작업자가 현장에서 추가로 확인해야 할 진단 체크리스트 5개를 작성하라.
+반드시 한국어로만 작성하라.
+제공된 정보 범위를 벗어나는 추측은 하지 마라.
+
+중요 규칙:
+- 반드시 아래 JSON 객체만 출력하라.
+- 설명, 코드블록, 마크다운, 번호, 추가 문장은 절대 쓰지 마라.
+- checklist_items는 반드시 5개의 문자열 배열로 작성하라.
+- 각 항목은 작업자가 바로 확인 가능한 짧은 점검 문장으로 작성하라.
+- 기존 조치 방법을 단순 반복하지 말고, 점검 순서나 확인 포인트를 보강하라.
+- 근거가 약하면 보수적인 확인 항목으로 작성하라.
+
+{{
+  "checklist_items": [
+    "문자열",
+    "문자열",
+    "문자열",
+    "문자열",
+    "문자열"
+  ]
+}}
+
+[사용자 입력 에러코드]
+{error_code}
+
+[원인 분석]
+{cause_analysis}
+
+[조치 방법]
+{action_method}
+
+[긴급도]
+{urgency_text}
+'''
+# 번역 프롬프트: 한국어 작업자 응답 payload를 선택한 언어의 구조화된 JSON으로 변환합니다.
+TRANSLATE_WORKER_PAYLOAD_PROMPT = '''You are a professional manufacturing support translator.
+
+Translate the following worker-response payload into the target language.
+Keep the error code unchanged.
+Preserve the meaning exactly.
+Do not add new facts.
+Return JSON only.
+
+Rules:
+- target_language will be a short code like en, ko, ja.
+- Translate every user-facing field.
+- Keep urgency_level as one of: high, medium, low when target_language is en.
+- If target_language is ko, preserve the original Korean semantics.
+- action_method must remain a JSON array of strings.
+- Do not wrap the response in markdown.
+
+{{
+  "cause_analysis": "string",
+  "action_method": ["string", "string"],
+  "urgency_level": "string",
+  "urgency_text": "string",
+  "expected_action_time": "string",`r`n  "checklist_items": ["string", "string", "string", "string", "string"]`r`n}}
+
+[target_language]
+{target_language}
+
+[payload_json]
+{payload_json}
+'''
+
 # 관리자 브리핑 프롬프트: 라인 상태와 매뉴얼 검색 결과를 바탕으로 관리자용 요약 보고를 생성합니다.
 def build_manager_briefing_prompt(line_name: str, status_text: str, manual_context: str) -> str:
     return f'''너는 공장 최고 관리자에게 보고하는 AI 비서다.
@@ -98,3 +167,4 @@ def build_manager_briefing_prompt(line_name: str, status_text: str, manual_conte
 [매뉴얼 검색 결과]
 {manual_context}
 '''
+

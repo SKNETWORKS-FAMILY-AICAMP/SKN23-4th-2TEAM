@@ -18,6 +18,9 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
+*.pkl
+**/.cache/
+
 
 # Virtual environments
 .env
@@ -40,6 +43,7 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
 
 # Vector DB
 /data_pipeline/vector_db/chroma/
