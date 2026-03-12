@@ -24,8 +24,11 @@ def main():
     ssh_user = env_first("SSH_USER", "BASTION_USER")
     ssh_key_path = env_first("SSH_PRIVATE_KEY_PATH", "SSH_KEY_PATH")
     
-    target_host = env_first("PGHOST", "DB_HOST")
-    target_port = int(env_first("PGPORT", "DB_PORT") or "5432")
+    # 👇👇👇 수정한 부분: PGHOST(장고용)를 읽지 않고, DB_HOST(터널용)만 읽도록 변경! 👇👇👇
+    target_host = env_first("DB_HOST")
+    target_port = int(env_first("DB_PORT") or "5432")
+    # 👆👆👆 -------------------------------------------------------- 👆👆👆
+
     local_port = int(env_first("SSH_LOCAL_BIND_PORT") or "15432")
 
     server = SSHTunnelForwarder(
