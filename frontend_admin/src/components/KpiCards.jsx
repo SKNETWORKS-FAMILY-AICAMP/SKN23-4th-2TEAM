@@ -37,11 +37,11 @@ function KpiCards({ onErrorClick, onProcessingClick, onDoneClick }) {
         <div
           key={i}
           onClick={card.click}
-          className="bg-white p-5 rounded-lg shadow border flex flex-col cursor-pointer hover:bg-gray-50"
+          className="bg-white p-6 rounded-lg shadow border flex flex-col cursor-pointer hover:bg-gray-50 gap-2"
         >
-          <p className="text-gray-500 text-sm">{card.title}</p>
+          <p className="text-gray-500 text-sm font-medium">{card.title}</p>
 
-          <p className={`text-2xl font-bold mt-1 ${card.color}`}>
+          <p className={`text-3xl font-bold ${card.color}`}>
             {card.value}
           </p>
 

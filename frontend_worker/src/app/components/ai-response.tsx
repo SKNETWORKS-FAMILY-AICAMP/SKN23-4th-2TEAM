@@ -8,10 +8,13 @@ interface AiResponseProps {
     errorCode: string;
     isActive: boolean;
     mode: "diagnosis" | "history" | "related" | "followup" | "resolved";
-    onFollowUp: (text: string) => void;
+    aiMessage?: string;
+    aiChecklist?: string[] | null;
+    aiResponseType?: "overall" | "checklist" | "diagnosis" | null;
+    onFollowUp: (text: string, isChecklistSubmit?: boolean, selectedItems?: string[]) => void;
 }
 
-export function AiResponse({ lang, errorCode, isActive, mode, onFollowUp }: AiResponseProps) {
+export function AiResponse({ lang, errorCode, isActive, mode, aiMessage, aiChecklist, aiResponseType, onFollowUp }: AiResponseProps) {
     const [displayText, setDisplayText] = useState("");
     const [isStreaming, setIsStreaming] = useState(false);
     const [showChecklist, setShowChecklist] = useState(false);
@@ -25,12 +28,18 @@ export function AiResponse({ lang, errorCode, isActive, mode, onFollowUp }: AiRe
         if (!isActive) return;
         setDisplayText("");
         setIsStreaming(true);
+        setShowChecklist(false);
+        setSelectedOptions([]);
 
-        let fullText = responseData.diagnosis;
-        if (mode === "history") fullText = responseData.history;
-        else if (mode === "related") fullText = responseData.related;
-        else if (mode === "followup") fullText = responseData.followup;
-        else if (mode === "resolved") fullText = responseData.resolved;
+        // Use custom message if provided, otherwise fallback to static dictionary
+        let fullText = aiMessage || "";
+        if (!fullText) {
+            if (mode === "diagnosis") fullText = responseData.diagnosis;
+            else if (mode === "history") fullText = responseData.history;
+            else if (mode === "related") fullText = responseData.related;
+            else if (mode === "followup") fullText = responseData.followup;
+            else if (mode === "resolved") fullText = responseData.resolved;
+        }
 
         let index = 0;
         const interval = setInterval(() => {
@@ -43,10 +52,14 @@ export function AiResponse({ lang, errorCode, isActive, mode, onFollowUp }: AiRe
             } else {
                 clearInterval(interval);
                 setIsStreaming(false);
+                // Only automatically show checklist if backend provided it
+                if (aiResponseType === "checklist" && aiChecklist && aiChecklist.length > 0) {
+                    setShowChecklist(true);
+                }
             }
         }, 12);
         return () => clearInterval(interval);
-    }, [isActive, lang, errorCode, mode, responseData.diagnosis, responseData.history, responseData.related, responseData.followup, responseData.resolved]);
+    }, [isActive, lang, errorCode, mode, aiMessage, aiChecklist, aiResponseType, responseData]);
 
     const renderParsedText = (text: string) => {
         const lines = text.split("\n");

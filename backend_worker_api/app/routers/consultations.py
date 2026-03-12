@@ -29,6 +29,97 @@ import uuid
 router = APIRouter(prefix='/consultations', tags=['consultations'])
 
 
+@router.get('/recent-logs')
+def list_recent_logs():
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(
+                """
+                SELECT
+                    s.session_id,
+                    s.device_id,
+                    s.last_updated_at AS timestamp,
+                    s.final_status AS status,
+                    l.error_code AS code,
+                    d.line_name
+                FROM robot_error_sessions s
+                JOIN robot_devices d ON d.device_id = s.device_id
+                LEFT JOIN robot_error_logs l ON l.error_log_id = s.error_log_id
+                ORDER BY s.last_updated_at DESC
+                LIMIT 500
+                """
+            )
+            rows = cursor.fetchall()
+            logs = []
+            for row in rows:
+                diag_type = "robot" if "ROBOT" in row['device_id'].upper() else "welder"
+                logs.append({
+                    "code": row['code'],
+                    "timestamp": row['timestamp'].timestamp() * 1000, 
+                    "diagType": diag_type,
+                    "device": f"{row['line_name']} - {row['device_id']}",
+                    "status": row['status']
+                })
+            return logs
+
+
+@router.get('/stats')
+def get_dashboard_stats():
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            # 1. Today's stats
+            cursor.execute(
+                """
+                SELECT 
+                    COUNT(*) as total,
+                    COUNT(*) FILTER (WHERE final_status = 'resolved') as resolved
+                FROM robot_error_sessions
+                WHERE started_at >= CURRENT_DATE
+                """
+            )
+            today = cursor.fetchone()
+            total = today['total'] if today else 0
+            resolved = today['resolved'] if today else 0
+            rate = (resolved / total * 100) if total > 0 else 0
+
+            # 2. Daily trend (Last 10 days)
+            cursor.execute(
+                """
+                SELECT 
+                    TO_CHAR(day, 'MM/DD') as name,
+                    COALESCE(SUM(CASE WHEN line_name = 'A' THEN 1 ELSE 0 END), 0) as "lineA",
+                    COALESCE(SUM(CASE WHEN line_name = 'B' THEN 1 ELSE 0 END), 0) as "lineB",
+                    COALESCE(SUM(CASE WHEN line_name = 'C' THEN 1 ELSE 0 END), 0) as "lineC",
+                    COALESCE(SUM(CASE WHEN line_name = 'D' THEN 1 ELSE 0 END), 0) as "lineD"
+                FROM (
+                    SELECT CURRENT_DATE - i as day FROM generate_series(0, 9) i
+                ) days
+                LEFT JOIN (
+                    SELECT s.started_at, d.line_name
+                    FROM robot_error_sessions s
+                    JOIN robot_devices d ON d.device_id = s.device_id
+                ) sessions ON DATE_TRUNC('day', sessions.started_at) = days.day
+                GROUP BY day
+                ORDER BY day ASC
+                """
+            )
+            trend = cursor.fetchall()
+
+            return {
+                "today_total": total,
+                "today_resolution_rate": round(rate, 1),
+                "daily_trend": trend
+            }
+
+
+@router.get('/devices')
+def list_devices():
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute("SELECT device_id, line_name, line_num FROM robot_devices")
+            return cursor.fetchall()
+
+
 @router.post('/start', response_model=StartConsultationResponse)
 def start_consultation(req: StartConsultationRequest):
     request_id = str(req.request_id)
@@ -153,7 +244,7 @@ def post_event(session_id: int, req: ConsultationEventRequest):
                       (session_id, step_no, actor, response_type, selected_choice, message, is_resolved, request_id)
                     VALUES (%s, %s, 'user', NULL, %s, %s, NULL, %s)
                     """,
-                    (session_id, req.step_no, req.selected_choice.value, req.message, request_id),
+                    (session_id, req.step_no, req.selected_choice, req.message, request_id), # .value 제거
                 )
 
                 if req.selected_choice == 'O':
@@ -279,6 +370,8 @@ def post_event(session_id: int, req: ConsultationEventRequest):
                 session_status=SessionStatus.ONGOING,
                 request_id=request_id,
             )
+
+
 
 
 @router.get('/{session_id}', response_model=ConsultationStateResponse)
