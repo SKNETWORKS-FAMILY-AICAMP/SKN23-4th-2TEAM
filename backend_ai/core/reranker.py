@@ -36,6 +36,24 @@ def load_reranker_singleton(model_name: str | None = None):
     os.environ["HUGGINGFACE_HUB_CACHE"] = str(RERANKER_DOWNLOAD_DIR)
     os.environ["TRANSFORMERS_CACHE"] = str(RERANKER_DOWNLOAD_DIR)
 
+    selected_model = model_name or get_reranker_model_path()
+    selected_model_str = str(selected_model)
+    local_candidate = Path(selected_model_str)
+    local_config_path = local_candidate / "config.json"
+    local_only = local_config_path.exists()
+    resolved_model_name = str(local_candidate) if local_only else selected_model_str.replace("\\", "/")
+    device = get_device()
+
+    GLOBAL_RERANKER = HuggingFaceCrossEncoder(
+        model_name=resolved_model_name,
+        model_kwargs={"local_files_only": local_only, "device": device},
+    )
+    return GLOBAL_RERANKER
+
+    os.environ["HF_HOME"] = str(RERANKER_CACHE_DIR)
+    os.environ["HUGGINGFACE_HUB_CACHE"] = str(RERANKER_DOWNLOAD_DIR)
+    os.environ["TRANSFORMERS_CACHE"] = str(RERANKER_DOWNLOAD_DIR)
+
     model_path = model_name or get_reranker_model_path()
     device = get_device()
     local_only = Path(str(model_path)).exists()
@@ -86,3 +104,4 @@ def rerank_documents(
     top_docs = [doc for _, doc in passed[:top_n]]
     top_score = float(passed[0][0]) if passed else 0.0
     return top_docs, True, top_score
+
