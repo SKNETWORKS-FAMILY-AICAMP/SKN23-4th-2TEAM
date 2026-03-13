@@ -33,38 +33,44 @@ function Dashboard() {
   };
 
   return (
-    <div className="flex flex-col flex-1 w-full h-full">
+  <div className="flex flex-col h-screen w-full overflow-hidden">
 
-      <div className="p-4">
-        <KpiCards
-          onErrorClick={goErrorLogs}
-          onProcessingClick={goProcessingLogs}
-          onDoneClick={goDoneLogs}
-        />
+  {/* KPI */}
+  <div className="p-4 flex-shrink-0">
+    <KpiCards
+      onErrorClick={goErrorLogs}
+      onProcessingClick={goProcessingLogs}
+      onDoneClick={goDoneLogs}
+    />
+  </div>
+
+  {/* main area */}
+  <div className="flex flex-1 gap-4 p-4 overflow-hidden min-h-0">
+
+    {/* chart */}
+    <div className="flex-1 bg-white p-4 rounded shadow border overflow-hidden">
+      <ErrorChart />
+    </div>
+
+    {/* right side */}
+    <div className="flex flex-col flex-1 gap-4 overflow-hidden min-h-0">
+      
+      {/* 에러 로그 */}
+      <div className="flex-[35] overflow-auto bg-white p-4 rounded shadow border min-h-0">
+        <ErrorLog logs={mockLogs} />
       </div>
 
-      <div className="flex flex-1 gap-4 p-4 min-h-[400px]">
-
-        <div className="flex-1 min-w-0">
-          <ErrorChart />
-        </div>
-
-        <div className="flex-1 flex flex-col gap-6 min-w-0">
-
-          <div className="overflow-auto max-h-[60%] bg-white p-4 rounded shadow border">
-            <ErrorLog logs={mockLogs} />
-          </div>
-
-          <div className="flex-1 bg-white p-4 rounded shadow border">
-            <StatsErrorTop5Bar data={top3Errors} />
-          </div>
-
-        </div>
-
+      {/* Top5 차트 */}
+      <div className="flex-[65] bg-white p-4 rounded shadow border min-h-0">
+        <StatsErrorTop5Bar data={top3Errors} />
       </div>
 
     </div>
-  );
+
+  </div>
+
+</div>
+);
 }
 
 export default Dashboard;

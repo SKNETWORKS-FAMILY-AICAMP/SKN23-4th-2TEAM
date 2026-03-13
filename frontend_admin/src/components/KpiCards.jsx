@@ -12,8 +12,8 @@ function KpiCards({ onErrorClick, onProcessingClick, onDoneClick }) {
       click: onErrorClick,
     },
     {
-      title: "처리 완료",
-      value: done,
+      title: "정상",
+      value: done,       // 처리 완료였던 값 그대로
       color: "text-green-500",
       click: onDoneClick,
     },
@@ -63,40 +63,45 @@ function formatDate(date) {
 }
 
 function calculateKpi(data) {
-
   const today = new Date();
 
+  // 최근 7일 날짜
   const lastDays = [];
-
   for (let i = 0; i < 7; i++) {
     const d = new Date(today);
     d.setDate(today.getDate() - i);
-
     lastDays.push(formatDate(d));
   }
 
+  // 최근 7일 데이터만
   const recentData = data.filter(d => lastDays.includes(d.date));
 
+  // 총 에러 계산
   const totalError = recentData.filter(d => d.errorCode).length;
-
   const processing = Math.floor(totalError / 2);
   const done = totalError - processing;
 
-  const devices = Array.from(new Set(recentData.map(d => d.device)));
+  // 라인+라인번호 단위별 유니크한 설비 추출
+  const units = Array.from(
+    new Set(recentData.map(d => `${d.line}-${d.lineNum}`))
+  );
 
   let runningCount = 0;
 
-  devices.forEach(device => {
-    const deviceErrors = recentData.filter(
-      d => d.device === device && d.errorCode
+  units.forEach(unit => {
+    const [line, lineNum] = unit.split("-");
+    const unitData = recentData.filter(
+      d => d.line === line && d.lineNum === Number(lineNum)
     );
 
-    if (deviceErrors.length === 0) runningCount++;
+    const total = unitData.length;
+    const noError = unitData.filter(d => !d.errorCode).length;
+
+    // 해당 설비 단위 가동률 합산
+    runningCount += noError / total;
   });
 
-  const runningRate =
-    Math.round((runningCount / devices.length) * 100) + "%";
+  const runningRate = Math.round((runningCount / units.length) * 100) + "%";
 
   return { totalError, done, processing, runningRate };
 }
-

@@ -6,15 +6,20 @@ function MainLayout() {
   const [chatOpen, setChatOpen] = useState(false);
 
   return (
-    <div className="flex h-screen w-screen">
-      {/* Sidebar: 고정폭 */}
-      <Sidebar />
+    <div className="flex min-h-screen bg-gray-100">
 
-      {/* 메인 영역 */}
-      <main className="flex-1 flex flex-col bg-white min-h-screen w-full relative">
-        <Outlet />
+      {/* Sidebar */}
+      <div className="w-64 flex-shrink-0">
+        <Sidebar />
+      </div>
 
-        {/* 챗봇 버튼 */}
+      {/* Content */}
+      <main className="flex-1 flex flex-col relative overflow-x-hidden">
+
+        <div className="flex-1 px-8">
+  <Outlet />
+</div>
+
         <button
           onClick={() => setChatOpen(!chatOpen)}
           className="fixed bottom-6 right-6 bg-blue-600 text-white p-4 rounded-full shadow-lg z-50 hover:bg-blue-700 transition"
@@ -22,10 +27,9 @@ function MainLayout() {
           💬
         </button>
 
-        {/* 챗봇 모달 */}
         {chatOpen && (
           <div className="fixed bottom-20 right-6 w-96 h-96 bg-white border shadow-xl rounded-lg z-50 flex flex-col">
-            <div className="flex justify-between items-center p-2 border-b">
+            <div className="flex justify-between items-center p-3 border-b">
               <h3 className="font-bold">Chatbot</h3>
               <button
                 onClick={() => setChatOpen(false)}
@@ -35,12 +39,11 @@ function MainLayout() {
               </button>
             </div>
 
-            <div className="flex-1 p-2 overflow-auto">
-              {/* 챗봇 내용 */}
+            <div className="flex-1 p-3 overflow-auto">
               <p>안녕하세요! 여기에 챗봇 UI 들어갑니다.</p>
             </div>
 
-            <div className="p-2 border-t">
+            <div className="p-3 border-t">
               <input
                 type="text"
                 placeholder="메시지 입력..."
@@ -49,7 +52,9 @@ function MainLayout() {
             </div>
           </div>
         )}
+
       </main>
+
     </div>
   );
 }
