@@ -4,10 +4,10 @@ export default function DeviceCard({ device }) {
 
   return (
     <div
-      className={`flex flex-col justify-between p-4 rounded-lg shadow border w-[235px] ${
+      className={`flex flex-col justify-between p-4 rounded-lg shadow border w-full ${
         isError ? "bg-red-100 animate-pulse" : "bg-green-100"
       }`}
-      style={{ minHeight: "180px" }}
+      style={{ minHeight: "200px" }}
     >
       <span className="text-xl font-bold mb-2">{name}</span>
 

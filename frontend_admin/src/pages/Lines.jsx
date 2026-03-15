@@ -14,7 +14,7 @@ export default function Lines() {
       const curr = acc[key];
       if (!curr || toTimestamp(d) > toTimestamp(curr)) acc[key] = d;
       return acc;
-    }, {})
+    }, {}),
   );
 
   const linesGrouped = latestDevices.reduce((acc, d) => {
@@ -28,15 +28,15 @@ export default function Lines() {
   });
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 p-6 lg:p-10 overflow-auto ml-[0rem]">
+    <div className="flex flex-col gap-10 w-full">
       {/* 라인 영역 */}
-      <div className="flex-1 flex flex-col gap-10 min-h-0 overflow-auto px-2 sm:px-4 lg:px-6 max-w-[1200px] mx-auto">
+      <div className="flex flex-col gap-10 w-full">
         {Object.keys(lineOrder)
           .filter((line) => linesGrouped[line])
           .map((line) => (
             <div
               key={line}
-              className="bg-white rounded-2xl shadow-xl p-6 lg:p-10 w-full flex flex-col gap-6 min-h-[350px]"
+              className="bg-white rounded-2xl shadow-xl p-6 w-full flex flex-col gap-6"
             >
               {/* 라인 헤더 */}
               <h2 className="text-2xl lg:text-3xl font-bold mb-4 border-b pb-2">
