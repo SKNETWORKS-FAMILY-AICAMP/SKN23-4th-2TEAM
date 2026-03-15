@@ -93,9 +93,9 @@ SUPPORTED_CHAT_MODELS = [
     "gpt-4o-mini",
 ]
 
-DEFAULT_MODEL_FAST = os.getenv("MODEL_FAST", "gpt-5.2")
-DEFAULT_MODEL_ACCURATE = os.getenv("MODEL_ACCURATE", "gpt-5.2")
-DEFAULT_EVALUATION_MODEL = os.getenv("EVALUATION_MODEL", "gpt-4o")
+DEFAULT_MODEL_FAST = os.getenv("MODEL_FAST", "gpt-4.1-mini")
+DEFAULT_MODEL_ACCURATE = os.getenv("MODEL_ACCURATE", "gpt-4.1-mini")
+DEFAULT_EVALUATION_MODEL = os.getenv("EVALUATION_MODEL", "gpt-4o-mini")
 
 _MODEL_CONFIG_LOCK = threading.Lock()
 _MODEL_CONFIG_CACHE: dict | None = None

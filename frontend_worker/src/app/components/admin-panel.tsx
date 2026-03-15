@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Lang } from "./language-pack";
+import { Lang, LANG_OPTIONS } from "./language-pack";
 import {
   TrendingUp,
   AlertTriangle,
@@ -9,6 +9,10 @@ import {
   Settings,
   LogOut,
   Wrench,
+  Globe,
+  Link,
+  Cpu,
+  Save,
 } from "lucide-react";
 import {
   XAxis,
@@ -19,6 +23,7 @@ import {
   AreaChart,
   Area,
 } from "recharts";
+import { motion, AnimatePresence } from "motion/react";
 
 interface AdminPanelProps {
   lang: Lang;
@@ -38,20 +43,32 @@ interface AdminPanelProps {
     today_resolution_rate: number;
     daily_trend: any[];
   };
+  currentConfig: any;
+  onConfigChange: (config: any) => void;
 }
 
 export function AdminPanel({
-  lang: _lang,
+  lang,
   onBack,
   errorHistory,
   engineerCalls,
   onClearCalls,
   onResolveCall,
   stats,
+  currentConfig,
+  onConfigChange,
 }: AdminPanelProps) {
   const [activeTab, setActiveTab] = useState<
     "dashboard" | "history" | "stats" | "settings"
   >("dashboard");
+  const [tempConfig, setTempConfig] = useState(() => {
+    const config = { ...currentConfig };
+    if (!config.apiUrl) {
+      config.apiUrl = (typeof window !== "undefined" ? window.location.origin : "") + "/api/v1";
+    }
+    return config;
+  });
+  const [showIpKeypad, setShowIpKeypad] = useState(false);
   const [selectedLine, setSelectedLine] = useState<"ALL" | "A" | "B" | "C" | "D">("ALL");
   const [filterType, setFilterType] = useState<"ALL" | "robot" | "welder">("ALL");
   const [filterLine, setFilterLine] = useState<"ALL" | "A" | "B" | "C" | "D">("ALL");
@@ -91,7 +108,7 @@ export function AdminPanel({
 
   const filteredHistory = errorHistory.filter((log) => {
     const date = new Date(log.timestamp);
-    
+
     // Line filtering logic: parse "Line A" or "[Line A]" from the device string
     let lineMatch = true;
     if (filterLine !== "ALL") {
@@ -99,9 +116,9 @@ export function AdminPanel({
       // Match "Line A", "LINE A", "A라인", or even "A-1"
       const normalizedDevice = deviceStr.toUpperCase();
       const lineChar = filterLine.toUpperCase();
-      lineMatch = normalizedDevice.includes(`LINE ${lineChar}`) || 
-                  normalizedDevice.includes(`${lineChar}라인`) || 
-                  normalizedDevice.includes(`LINE${lineChar}`);
+      lineMatch = normalizedDevice.includes(`LINE ${lineChar}`) ||
+        normalizedDevice.includes(`${lineChar}라인`) ||
+        normalizedDevice.includes(`LINE${lineChar}`);
     }
 
     const logDateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
@@ -530,12 +547,12 @@ export function AdminPanel({
                       <select
                         value={filterType}
                         onChange={(e) => handleFilterChange(setFilterType, e.target.value as any)}
-                        style={{ 
-                          background: "#1a1a1a", 
-                          border: "1px solid #333", 
-                          color: "#fff", 
-                          fontSize: 13, 
-                          padding: "0 12px", 
+                        style={{
+                          background: "#1a1a1a",
+                          border: "1px solid #333",
+                          color: "#fff",
+                          fontSize: 13,
+                          padding: "0 12px",
                           height: 42,
                           minWidth: 120,
                           outline: "none",
@@ -555,12 +572,12 @@ export function AdminPanel({
                       <select
                         value={filterLine}
                         onChange={(e) => handleFilterChange(setFilterLine, e.target.value as any)}
-                        style={{ 
-                          background: "#1a1a1a", 
-                          border: "1px solid #333", 
-                          color: "#fff", 
-                          fontSize: 13, 
-                          padding: "0 12px", 
+                        style={{
+                          background: "#1a1a1a",
+                          border: "1px solid #333",
+                          color: "#fff",
+                          fontSize: 13,
+                          padding: "0 12px",
                           height: 42,
                           minWidth: 120,
                           outline: "none",
@@ -580,12 +597,12 @@ export function AdminPanel({
                         type="date"
                         value={filterDate}
                         onChange={(e) => handleFilterChange(setFilterDate, e.target.value)}
-                        style={{ 
-                          background: "#1a1a1a", 
-                          border: "1px solid #333", 
-                          color: "#fff", 
-                          fontSize: 13, 
-                          padding: "0 12px", 
+                        style={{
+                          background: "#1a1a1a",
+                          border: "1px solid #333",
+                          color: "#fff",
+                          fontSize: 13,
+                          padding: "0 12px",
                           height: 42,
                           outline: "none",
                           borderRadius: "4px",
@@ -765,8 +782,172 @@ export function AdminPanel({
             </div>
           )}
 
+          {/* ══ SETTINGS ══ */}
+          {activeTab === "settings" && (
+            <div className="flex-1 overflow-auto p-8 md:p-12 bg-[#0d0d0f]">
+              <div className="max-w-5xl mx-auto space-y-12 pb-20">
+
+                {/* 1. 설정 헤더 영역 */}
+                <div className="flex items-center justify-between mb-8 border-b border-neutral-800 pb-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-2 h-8 bg-[#E82127]" />
+                    <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase">
+                      {lang === "KO" ? "시스템 환경설정" : "System Configuration"}
+                    </h2>
+                  </div>
+                  <button
+                    onClick={() => onConfigChange(tempConfig)}
+                    className="px-8 py-4 bg-[#E82127] text-white font-black text-lg italic tracking-tighter hover:bg-[#c41b21] transition-all flex items-center gap-3 shadow-2xl active:scale-95 rounded-md"
+                  >
+                    <Save size={20} />
+                    {lang === "KO" ? "설정 저장 및 적용" : "SAVE & APPLY CONFIG"}
+                  </button>
+                </div>
+
+                {/* 2. 설정 본문 (flex-col 기반의 완벽한 1단 세로 정렬) */}
+                <div className="flex flex-col gap-10">
+
+                  {/* --- 기기 고정 할당 섹션 --- */}
+                  <div className="space-y-5">
+                    <label className="flex items-center gap-3 text-sm font-black text-zinc-500 uppercase tracking-[0.2em]">
+                      <Cpu size={18} />
+                      {lang === "KO" ? "기기 고정 할당 (Device Binding Mode)" : "Device Binding Mode"}
+                    </label>
+                    <div className="grid grid-cols-2 gap-6 w-full">
+                      <button
+                        onClick={() => setTempConfig({ ...tempConfig, mode: "fixed" })}
+                        className={`p-8 border transition-all flex flex-col items-start gap-3 text-left rounded-lg ${tempConfig.mode === "fixed" ? "bg-red-950/20 border-[#E82127] text-white" : "bg-black border-zinc-800 text-zinc-500 hover:border-zinc-700"
+                          }`}
+                      >
+                        <span className="text-2xl font-black italic">{lang === "KO" ? "고정 모드" : "FIXED"}</span>
+                        <p className="text-[13px] font-bold opacity-70 leading-relaxed uppercase">
+                          {lang === "KO" ? "특정 라인과 로봇에 기기를 영구히 고정합니다. 작업자는 에러코드만 입력하게 됩니다." : "Lock this device to a specific station. Workers only see the error keypad."}
+                        </p>
+                      </button>
+                      <button
+                        onClick={() => setTempConfig({ ...tempConfig, mode: "floating" })}
+                        className={`p-8 border transition-all flex flex-col items-start gap-3 text-left rounded-lg ${tempConfig.mode === "floating" ? "bg-red-950/20 border-[#E82127] text-white" : "bg-black border-zinc-800 text-zinc-500 hover:border-zinc-700"
+                          }`}
+                      >
+                        <span className="text-2xl font-black italic">{lang === "KO" ? "이동 모드" : "FLOATING"}</span>
+                        <p className="text-[13px] font-bold opacity-70 leading-relaxed uppercase">
+                          {lang === "KO" ? "들고 다니는 태블릿용입니다. 메인 화면에서 라인과 기기를 매번 변경할 수 있습니다." : "Mobile tablet mode. Allows on-screen switching of stations/robots."}
+                        </p>
+                      </button>
+                    </div>
+
+                    {/* 고정 모드일 때 나타나는 상세 입력창 (그리드로 딱 맞게 배치) */}
+                    {tempConfig.mode === "fixed" && (
+                      <div className="grid grid-cols-3 gap-6 p-8 bg-black/50 border border-zinc-800 rounded-lg mt-4">
+                        <div className="space-y-3">
+                          <label className="text-[11px] font-black text-zinc-500 uppercase tracking-widest">{lang === "KO" ? "라인 이름" : "Line Name"}</label>
+                          <input
+                            type="text"
+                            value={tempConfig.line}
+                            onChange={(e) => setTempConfig({ ...tempConfig, line: e.target.value })}
+                            className="w-full bg-black border border-zinc-700 py-4 px-6 text-white font-black italic outline-none focus:border-[#E82127] transition-all rounded-md"
+                            placeholder="LINE A"
+                          />
+                        </div>
+                        <div className="space-y-3">
+                          <label className="text-[11px] font-black text-zinc-500 uppercase tracking-widest">{lang === "KO" ? "로봇 명칭" : "Robot Name"}</label>
+                          <input
+                            type="text"
+                            value={tempConfig.robot}
+                            onChange={(e) => setTempConfig({ ...tempConfig, robot: e.target.value })}
+                            className="w-full bg-black border border-zinc-700 py-4 px-6 text-white font-black italic outline-none focus:border-[#E82127] transition-all rounded-md"
+                            placeholder="ROBOT 1"
+                          />
+                        </div>
+                        <div className="space-y-3">
+                          <label className="text-[11px] font-black text-zinc-500 uppercase tracking-widest">{lang === "KO" ? "장비 고유 ID" : "Device ID"}</label>
+                          <input
+                            type="text"
+                            value={tempConfig.deviceId}
+                            onChange={(e) => setTempConfig({ ...tempConfig, deviceId: e.target.value })}
+                            className="w-full bg-black border border-zinc-700 py-4 px-6 text-white font-black italic outline-none focus:border-[#E82127] transition-all rounded-md"
+                            placeholder="A_ROBOT1"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 구분선 추가 */}
+                  <div className="w-full h-px bg-neutral-800/80 my-2" />
+
+                  {/* --- 네트워크 & 언어 설정 섹션 (가로 2단 분할) --- */}
+                  <div className="grid grid-cols-2 gap-8 w-full">
+
+                    {/* 백엔드 IP 설정 */}
+                    <div className="space-y-5">
+                      <label className="flex items-center gap-3 text-sm font-black text-zinc-500 uppercase tracking-[0.2em]">
+                        <Link size={18} />
+                        {lang === "KO" ? "백엔드 서버 IP" : "Backend Server IP"}
+                      </label>
+                      <input
+                        type="text"
+                        value={tempConfig.apiUrl}
+                        readOnly
+                        onClick={() => setShowIpKeypad(true)}
+                        className="w-full bg-black border border-zinc-800 py-5 px-6 text-white font-black text-[16px] italic outline-none focus:border-[#E82127] transition-all cursor-pointer rounded-lg"
+                        placeholder="http://192.168.0.10:8001/api/v1"
+                      />
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          )}
+
         </main>
       </div>
+
+      {/* IP Keypad Overlay */}
+      <AnimatePresence>
+        {showIpKeypad && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] flex items-center justify-center p-6"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              className="bg-zinc-950 border border-zinc-800 p-8 w-full max-w-2xl shadow-2xl"
+            >
+              <div className="flex justify-between items-center mb-8">
+                <span className="text-xl font-black italic text-white uppercase tracking-tighter">Enter Backend URL</span>
+                <button onClick={() => setShowIpKeypad(false)} className="text-zinc-500 hover:text-white font-black">CLOSE</button>
+              </div>
+
+              <div className="bg-black border border-zinc-800 p-6 mb-8 text-3xl font-black italic text-[#E82127] break-all min-h-[80px]">
+                {tempConfig.apiUrl}
+              </div>
+
+              <div className="grid grid-cols-4 gap-4">
+                {["1", "2", "3", "HTTP://", "4", "5", "6", ".", "7", "8", "9", ":", "0", "/", "API/V1", "DEL"].map((k) => (
+                  <button
+                    key={k}
+                    onClick={() => {
+                      if (k === "DEL") {
+                        setTempConfig({ ...tempConfig, apiUrl: tempConfig.apiUrl.slice(0, -1) });
+                      } else {
+                        setTempConfig({ ...tempConfig, apiUrl: tempConfig.apiUrl + k.toLowerCase() });
+                      }
+                    }}
+                    className="h-20 bg-zinc-900 border border-zinc-800 text-white font-black text-xl hover:bg-zinc-800 active:scale-95 transition-all"
+                  >
+                    {k}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

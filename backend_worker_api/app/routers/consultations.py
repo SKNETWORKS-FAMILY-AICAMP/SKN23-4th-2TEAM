@@ -14,6 +14,7 @@ from app.schemas import (
     SessionStatus,
     StartConsultationRequest,
     StartConsultationResponse,
+    TranslateTextRequest,
 )
 from app.services.consultation_rules import (
     build_llm_reply,
@@ -24,17 +25,33 @@ from app.services.consultation_rules import (
     update_session_status,
 )
 
+# AI Core Imports
+try:
+    from core.worker_core import (
+        analyze_error_code,
+        generate_followup_checklist,
+        generate_final_solution,
+        is_valid_error_code
+    )
+except ImportError:
+    # Fallback if core is not properly in path or package structure differs
+    from backend_ai.core.worker_core import (
+        analyze_error_code,
+        generate_followup_checklist,
+        generate_final_solution,
+        is_valid_error_code
+    )
+
 import uuid
 
 router = APIRouter(prefix='/consultations', tags=['consultations'])
 
 
 @router.get('/recent-logs')
-def list_recent_logs():
+def list_recent_logs(device_id: str | None = None, line_name: str | None = None):
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-            cursor.execute(
-                """
+            query = """
                 SELECT
                     s.session_id,
                     s.device_id,
@@ -45,10 +62,26 @@ def list_recent_logs():
                 FROM robot_error_sessions s
                 JOIN robot_devices d ON d.device_id = s.device_id
                 LEFT JOIN robot_error_logs l ON l.error_log_id = s.error_log_id
+            """
+            where_clauses = []
+            params = []
+
+            if device_id:
+                where_clauses.append("s.device_id = %s")
+                params.append(device_id)
+            if line_name:
+                where_clauses.append("d.line_name = %s")
+                params.append(line_name)
+
+            if where_clauses:
+                query += " WHERE " + " AND ".join(where_clauses)
+
+            query += """
                 ORDER BY s.last_updated_at DESC
                 LIMIT 500
-                """
-            )
+            """
+            
+            cursor.execute(query, tuple(params))
             rows = cursor.fetchall()
             logs = []
             for row in rows:
@@ -120,6 +153,34 @@ def list_devices():
             return cursor.fetchall()
 
 
+import csv
+import os
+
+@router.get('/csv-errors')
+def list_csv_errors(type: str = "hyundai", q: str | None = None):
+    errors = []
+    try:
+        from app.db import get_db_connection
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            query = "SELECT error_code, error_content FROM robot_error_manuals WHERE category = %s"
+            params = [type.lower()]
+            if q:
+                query += " AND (error_code ILIKE %s OR error_content ILIKE %s)"
+                params.extend([f"%{q}%", f"%{q}%"])
+            query += " ORDER BY error_code ASC LIMIT 500"
+            
+            cursor.execute(query, params)
+            for row in cursor.fetchall():
+                errors.append({"code": row[0], "description": row[1]})
+                
+    except Exception as e:
+        print(f"Error reading error manuals from DB: {e}")
+        return []
+
+    return errors
+
+
 @router.post('/start', response_model=StartConsultationResponse)
 def start_consultation(req: StartConsultationRequest):
     request_id = str(req.request_id)
@@ -144,14 +205,29 @@ def start_consultation(req: StartConsultationRequest):
                     detail='duplicate request_id: start flow already exists',
                 )
 
+            # Fetch manufacturer for filtering
             cursor.execute(
-                "SELECT 1 FROM robot_devices WHERE device_id = %s",
+                """
+                SELECT m.manufacturer 
+                FROM robot_devices d
+                JOIN robot_models m ON d.model_id = m.model_id
+                WHERE d.device_id = %s
+                """,
                 (req.device_id,),
             )
-            if cursor.fetchone() is None:
+            device_row = cursor.fetchone()
+            if device_row is None:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail='device_id not found',
+                )
+            manufacturer = device_row['manufacturer']
+
+            # DB/매뉴얼 에러코드 유효성 검사 (필터링 방어막)
+            if not is_valid_error_code(req.error_code, manufacturer=manufacturer):
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"error_code '{req.error_code}' not found for brand '{manufacturer}'",
                 )
 
             error_log_id = resolve_error_log_id(cursor, req.device_id, req.error_code)
@@ -177,7 +253,36 @@ def start_consultation(req: StartConsultationRequest):
                 (session_id, 1, f"{req.device_id}에서 {req.error_code} 에러가 보고되었습니다.", request_id),
             )
 
-            assistant_message, checklist = build_llm_reply(req.error_code, ResponseType.OVERALL, 1)
+            # Real AI Analysis
+            diagnosis = analyze_error_code(req.error_code, language=req.language.value, manufacturer=manufacturer)
+            
+            # Format message for initial response
+            urgency_icon = '🔴' if diagnosis['urgency_level'] in ['높음', 'high'] else '🟡' if diagnosis['urgency_level'] in ['보통', 'medium'] else '🟢'
+            if req.language.value == 'en':
+                assistant_message = (
+                    f"**[{req.error_code} Error Analysis]**\n"
+                    f"Cause: {diagnosis['cause_analysis']}\n"
+                    f"Action: {', '.join(diagnosis['action_method'])}\n"
+                    f"Urgency: {urgency_icon} {diagnosis['urgency_level']}\n\n"
+                    "Please review the checklist below for detailed inspection."
+                )
+            elif req.language.value == 'uz':
+                assistant_message = (
+                    f"**[{req.error_code} Xatolik tahlili]**\n"
+                    f"Sababi: {diagnosis['cause_analysis']}\n"
+                    f"Harakatlar: {', '.join(diagnosis['action_method'])}\n"
+                    f"Shoshilinchlik: {urgency_icon} {diagnosis['urgency_level']}\n\n"
+                    "Batafsil tekshirish uchun quyidagi nazorat ro'yxatini ko'rib chiqing."
+                )
+            else:
+                assistant_message = (
+                    f"**[{req.error_code} 에러 분석 결과]**\n"
+                    f"원인: {diagnosis['cause_analysis']}\n"
+                    f"조치: {', '.join(diagnosis['action_method'])}\n"
+                    f"긴급도: {urgency_icon} {diagnosis['urgency_level']}\n\n"
+                    "상세 점검을 위해 하단의 체크리스트를 확인해 주세요."
+                )
+
             cursor.execute(
                 """
                 INSERT INTO robot_error_chat_histories
@@ -190,6 +295,10 @@ def start_consultation(req: StartConsultationRequest):
                 "UPDATE robot_error_sessions SET last_updated_at = NOW() WHERE session_id = %s",
                 (session_id,),
             )
+
+            # Generate checklist items (using our service logic)
+            followup = generate_followup_checklist(req.error_code, diagnosis_payload=diagnosis, language=req.language.value)
+            checklist = followup['checklist_items']
 
             return ConsultationResponse(
                 status='ok',
@@ -214,12 +323,14 @@ def post_event(session_id: int, req: ConsultationEventRequest):
     with get_db_connection() as conn:
         with conn.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
-                "SELECT session_id, final_status FROM robot_error_sessions WHERE session_id = %s",
+                "SELECT session_id, final_status, language FROM robot_error_sessions WHERE session_id = %s",
                 (session_id,),
             )
             session_row = cursor.fetchone()
             if session_row is None:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='session not found')
+
+            sess_lang = session_row.get('language', 'ko')
 
             if session_row['final_status'] in [SessionStatus.RESOLVED.value, SessionStatus.ABANDONED.value]:
                 raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='session is closed')
@@ -232,7 +343,8 @@ def post_event(session_id: int, req: ConsultationEventRequest):
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='session context lost')
 
             if req.actor == Actor.USER:
-                if req.selected_choice is None:
+                is_call_event = req.message and ("호출" in req.message or "call" in req.message.lower())
+                if req.selected_choice is None and not is_call_event:
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail='selected_choice is required when actor=user',
@@ -257,13 +369,99 @@ def post_event(session_id: int, req: ConsultationEventRequest):
                         assistant=AssistantPayload(
                             actor='llm',
                             response_type=ResponseType.OVERALL,
-                        message='상담이 성공적으로 종료되었습니다. 더 이상 조치가 필요하지 않습니다.',
-                        checklist=None,
-                    ),
-                    session_status=SessionStatus.RESOLVED,
-                    request_id=request_id,
-                )
+                            message='상담이 성공적으로 종료되었습니다. 더 이상 조치가 필요하지 않습니다.' if sess_lang == 'ko' else ('Konsultatsiya muvaffaqiyatli yakunlandi. Boshqa harakatlar talab qilinmaydi.' if sess_lang == 'uz' else 'Consultation completed successfully. No further action is required.'),
+                            checklist=None,
+                        ),
+                        session_status=SessionStatus.RESOLVED,
+                        request_id=request_id,
+                    )
 
+                if req.selected_choice == 'X':
+                    # Real AI Final Solution
+                    checklist_results = (req.payload or {}).get('checklist_results')
+                    solution = generate_final_solution(
+                        session_ctx['error_code'], 
+                        checklist_results=checklist_results,
+                        language=req.language.value
+                    )
+                    
+                    if sess_lang == 'en':
+                        assistant_message = (
+                            f"**[Final Assessment]**\n{solution['final_summary']}\n\n"
+                            f"**[Handling Direction]**\n- " + "\n- ".join(solution['handling_direction']) + "\n\n"
+                            f"**[Work Priority]**\n{solution['work_priority']}"
+                        )
+                    elif sess_lang == 'uz':
+                        assistant_message = (
+                            f"**[Yakuniy xulosa]**\n{solution['final_summary']}\n\n"
+                            f"**[Yo'nalishni boshqarish]**\n- " + "\n- ".join(solution['handling_direction']) + "\n\n"
+                            f"**[Ish ustuvorligi]**\n{solution['work_priority']}"
+                        )
+                    else:
+                        assistant_message = (
+                            f"**[최종 종합 판단]**\n{solution['final_summary']}\n\n"
+                            f"**[처리 방향]**\n- " + "\n- ".join(solution['handling_direction']) + "\n\n"
+                            f"**[작업 우선순위]**\n{solution['work_priority']}"
+                        )
+                    
+                    cursor.execute(
+                        """
+                        INSERT INTO robot_error_chat_histories
+                          (session_id, step_no, actor, response_type, selected_choice, message, is_resolved, request_id)
+                        VALUES (%s, %s, 'llm', 'diagnosis', NULL, %s, NULL, %s)
+                        """,
+                        (session_id, req.step_no + 1, assistant_message, str(uuid.uuid4())),
+                    )
+                    update_session_status(cursor, session_id, SessionStatus.ONGOING)
+
+                    return ConsultationResponse(
+                        status='ok',
+                        session_id=session_id,
+                        step_no=req.step_no + 1,
+                        next_response_type=ResponseType.DIAGNOSIS,
+                        assistant=AssistantPayload(
+                            actor='llm',
+                            response_type=ResponseType.DIAGNOSIS,
+                            message=assistant_message,
+                            checklist=None,
+                        ),
+                        session_status=SessionStatus.ONGOING,
+                        request_id=request_id,
+                    )
+
+                if is_call_event:
+                    assistant_message = "엔지니어가 호출되었습니다. 잠시만 기다려 주십시오."
+                    if req.language.value == 'en':
+                        assistant_message = "Engineer has been called. Please wait."
+                    elif req.language.value == 'uz':
+                        assistant_message = "Muhandis chaqirildi. Iltimos, kuting."
+
+                    cursor.execute(
+                        """
+                        INSERT INTO robot_error_chat_histories
+                          (session_id, step_no, actor, response_type, selected_choice, message, is_resolved, request_id)
+                        VALUES (%s, %s, 'llm', 'overall', NULL, %s, NULL, %s)
+                        """,
+                        (session_id, req.step_no + 1, assistant_message, str(uuid.uuid4())),
+                    )
+                    update_session_status(cursor, session_id, SessionStatus.ONGOING)
+
+                    return ConsultationResponse(
+                        status='ok',
+                        session_id=session_id,
+                        step_no=req.step_no + 1,
+                        next_response_type=ResponseType.OVERALL,
+                        assistant=AssistantPayload(
+                            actor='llm',
+                            response_type=ResponseType.OVERALL,
+                            message=assistant_message,
+                            checklist=None,
+                        ),
+                        session_status=SessionStatus.ONGOING,
+                        request_id=request_id,
+                    )
+
+                # Fallback for unexpected choices
                 next_type = next_response_type_from_step(req.step_no)
                 assistant_message, checklist = build_llm_reply(session_ctx['error_code'], next_type, req.step_no)
                 cursor.execute(
@@ -460,3 +658,14 @@ def get_history(session_id: int):
             ]
 
             return HistoryResponse(session_id=session_id, count=len(events), events=events)
+
+
+@router.post('/translate-text')
+def translate_text(req: TranslateTextRequest):
+    try:
+        from core.worker_core import translate_general_text
+    except ImportError:
+        from backend_ai.core.worker_core import translate_general_text
+        
+    translated = translate_general_text(req.text, req.target_lang)
+    return {"translated": translated}
