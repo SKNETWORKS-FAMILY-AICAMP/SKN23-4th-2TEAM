@@ -134,8 +134,29 @@ def korean_custom_preprocess(text: str) -> List[str]:
     return text.split()
 
 
-def search_manual_exact(query: str, collection_name: str = COLLECTION_NAME, k: int = 2) -> List[Document]:
+def _is_manufacturer_match(doc: Document, manufacturer: str | None) -> bool:
+    if not manufacturer:
+        return True
+    
+    metadata = getattr(doc, 'metadata', {}) or {}
+    source_file = str(metadata.get('source_file') or '').upper()
+    
+    if manufacturer == '현대로보틱스':
+        # Hyundai manuals typically start with those prefixes or contains "현대", "Hi5", "Hi6"
+        prefixes = ('HI', 'HH', 'HX', 'HS', 'HP', 'HR', 'YS', 'UA')
+        return source_file.startswith(prefixes) or '현대' in source_file
+        
+    # Standard manual / universal scripts
+    if 'UNIVERSAL' in manufacturer.upper() or 'UR' in manufacturer.upper():
+        return any(keyword in source_file for keyword in ['E-SERIES', 'UR', 'POLY', 'SCRIPT'])
+        
+    return True
+
+def search_manual_exact(query: str, collection_name: str = COLLECTION_NAME, k: int = 2, manufacturer: str | None = None) -> List[Document]:
     normalized_query = (query or "").strip().upper()
+    # INCREASING K to account for post-filtering losses
+    fetch_k = k * 3 if manufacturer else k
+    
     sql = """
         SELECT e.document, e.cmetadata
         FROM public.langchain_pg_embedding AS e
@@ -153,10 +174,15 @@ def search_manual_exact(query: str, collection_name: str = COLLECTION_NAME, k: i
 
     with _connect_postgres() as conn:
         with conn.cursor() as cur:
-            cur.execute(sql, (collection_name, normalized_query, k))
+            cur.execute(sql, (collection_name, normalized_query, fetch_k))
             rows = cur.fetchall()
 
-    return [Document(page_content=row[0] or "", metadata=row[1] or {}) for row in rows]
+    docs = [Document(page_content=row[0] or "", metadata=row[1] or {}) for row in rows]
+    
+    if manufacturer:
+        docs = [doc for doc in docs if _is_manufacturer_match(doc, manufacturer)]
+        
+    return docs[:k]
 
 
 def _fetch_all_documents_from_postgres(collection_name: str) -> List[Document]:

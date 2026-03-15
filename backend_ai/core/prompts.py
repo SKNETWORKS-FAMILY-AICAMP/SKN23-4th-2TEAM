@@ -1,4 +1,4 @@
-﻿# 1차 진단 프롬프트: 검색된 문서에서 에러코드 기준 작업자 진단 정보를 한 번에 생성합니다.
+# 1차 진단 프롬프트: 검색된 문서에서 에러코드 기준 작업자 진단 정보를 한 번에 생성합니다.
 UNIFIED_DIAGNOSIS_PROMPT = '''너는 생산 설비 작업자를 돕는 현장형 AI 비서다.
 
 아래의 매뉴얼 검색 결과만 근거로, 사용자 입력 에러코드에 대한 작업자용 1차 진단 결과를 작성하라.
@@ -14,7 +14,7 @@ UNIFIED_DIAGNOSIS_PROMPT = '''너는 생산 설비 작업자를 돕는 현장형
 - 설명, 코드블록, 마크다운, 번호, 추가 문장은 절대 쓰지 마라.
 - urgency_level은 반드시 높음, 보통, 낮음 중 하나만 사용하라.
 - action_method는 문서에 있는 조치만 배열로 작성하라.
-- 정확한 근거가 약하면 matched를 false로 작성하라.
+- 검색 결과에 에러코드 정보가 전혀 없거나 불확실하면, cause_analysis를 "매뉴얼 내 해당 에러코드 관련 정보 없음"으로 적고 matched를 false로 하라.
 
 {{
   "cause_analysis": "문자열",
@@ -169,4 +169,18 @@ def build_manager_briefing_prompt(line_name: str, status_text: str, manual_conte
 
 [매뉴얼 검색 결과]
 {manual_context}
+'''
+
+TRANSLATE_GENERAL_PROMPT = '''You are a professional industrial support translator.
+
+Translate the following text into the target language.
+Preserve meaning accurately based on the industrial context.
+Do not add interpretation or change facts.
+Keep formatting, Markdown, list item nodes (e.g., `-` or `1.`), and icons intact exactly.
+
+[Target Language]
+{target_language}
+
+[Text to Translate]
+{text}
 '''

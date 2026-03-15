@@ -1,4 +1,4 @@
-﻿from langchain_core.documents import Document
+from langchain_core.documents import Document
 
 try:
     from .config import COLLECTION_NAME
@@ -20,9 +20,10 @@ def search_manual_with_ranking(
     collection_name: str = COLLECTION_NAME,
     vector_weight: float = DEFAULT_HYBRID_VECTOR_WEIGHT,
     bm25_weight: float = DEFAULT_HYBRID_BM25_WEIGHT,
+    manufacturer: str | None = None,
 ) -> list[Document]:
     normalized_query = (query or '').strip().upper()
-    exact_docs = search_manual_exact(normalized_query, collection_name=collection_name, k=max(k, 2))
+    exact_docs = search_manual_exact(normalized_query, collection_name=collection_name, k=max(k, 2), manufacturer=manufacturer)
     print(f'[pipeline] exact_docs={len(exact_docs)} query={normalized_query}')
 
     hybrid_retriever = get_hybrid_retriever(
@@ -33,6 +34,11 @@ def search_manual_with_ranking(
         k=max(k, 5),
     )
     hybrid_docs = hybrid_retriever.invoke(normalized_query)
+    
+    if manufacturer:
+        from .retriever import _is_manufacturer_match
+        hybrid_docs = [doc for doc in hybrid_docs if _is_manufacturer_match(doc, manufacturer)]
+        
     print(f'[pipeline] hybrid_docs={len(hybrid_docs)}')
 
     combined_docs: list[Document] = []

@@ -21,6 +21,7 @@ class ResponseType(str, Enum):
 class Language(str, Enum):
     KO = 'ko'
     EN = 'en'
+    UZ = 'uz'
 
 
 class SessionStatus(str, Enum):
@@ -34,7 +35,7 @@ class AssistantPayload(BaseModel):
     actor: Literal['llm'] = 'llm'
     response_type: ResponseType
     message: str
-    checklist: Optional[List[str]] = None
+    checklist: Optional[List[Any]] = None
 
 
 class ConsultationResponse(BaseModel):
@@ -95,3 +96,8 @@ class HistoryResponse(BaseModel):
     session_id: int
     count: int
     events: List[HistoryEventItem]
+
+
+class TranslateTextRequest(BaseModel):
+    text: str
+    target_lang: str

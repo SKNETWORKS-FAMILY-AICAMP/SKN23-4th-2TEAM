@@ -31,6 +31,7 @@ export const T: LangPack = {
     paramSettings: "파라미터 설정",
     firmwareUpdate: "펌웨어 업데이트",
     userManagement: "사용자 관리",
+    toggleInput: "숫자/영어 변환",
   },
   EN: {
     robotDiag: "Robot Diag",
@@ -54,6 +55,7 @@ export const T: LangPack = {
     paramSettings: "Parameter Settings",
     firmwareUpdate: "Firmware Update",
     userManagement: "User Management",
+    toggleInput: "Number/English",
   },
   UZ: {
     robotDiag: "Robot diagnostikasi",
@@ -77,6 +79,7 @@ export const T: LangPack = {
     paramSettings: "Parametr sozlamalari",
     firmwareUpdate: "Proshivka yangilanishi",
     userManagement: "Foydalanuvchilarni boshqarish",
+    toggleInput: "Raqam/Ingliz",
   },
 };
 

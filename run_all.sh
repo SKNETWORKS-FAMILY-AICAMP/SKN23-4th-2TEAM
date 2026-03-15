@@ -13,6 +13,10 @@ lsof -ti:5174 | xargs kill -9 2>/dev/null
 pkill -f run_tunnel.py 2>/dev/null
 sleep 2
 
+echo "[0.5/6] 📦 Synchronizing dependencies (Poetry)..."
+poetry install --no-root
+sleep 2
+
 echo "[1/6] 🧹 Clearing Python and Vite caches..."
 find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null
 rm -rf frontend_admin/node_modules/.vite 2>/dev/null
@@ -22,7 +26,20 @@ sleep 1
 echo "[2/6] 🚀 Starting SSH Tunnel (Background)..."
 poetry run python run_tunnel.py &
 TUNNEL_PID=$!
-sleep 4
+sleep 6
+
+echo "[2.5/6] 🧠 Pre-heating AI Models & BM25 Cache (Sync)..."
+PYTHONPATH=backend_ai poetry run python -c "
+import sys
+sys.path.append('backend_ai')
+from core.reranker import load_reranker_singleton
+from core.retriever import refresh_bm25_index
+print('-> Downloading/Loading Reranker Cross-Encoder (if needed)...')
+load_reranker_singleton()
+print('-> Rebuilding BM25 Sparse Index...')
+refresh_bm25_index()
+print('-> AI Cache Pre-heat Complete.')
+"
 
 echo "[3/6] 🚀 Starting Django Backend Hub (Port 8000)..."
 (cd backend_hub && poetry run python manage.py runserver 8000) &
