@@ -38,38 +38,39 @@ export function Keypad({
     "flex items-center justify-center rounded-2xl font-black cursor-pointer transition-all duration-150 select-none bg-zinc-900 text-gray-100 border border-zinc-800 shadow-[0_8px_30px_rgb(0,0,0,0.5)] hover:bg-zinc-800 hover:border-zinc-700 active:scale-95 active:bg-zinc-700";
 
   return (
-    <div className="max-w-[1400px] mx-auto px-6 py-4 flex flex-col h-full bg-zinc-950 overflow-hidden">
-      {/* Top Section with breadcrumb - strictly matching user's reference with white horizontal lines */}
-      <div className="mb-6">
-        <div className="h-[1px] bg-zinc-800 w-full mb-4" />
+    <div className="max-w-[1400px] mx-auto px-6 py-4 flex flex-col h-full bg-zinc-950 overflow-hidden relative">
+      {/* Top Section with breadcrumb */}
+      <div className="mb-4 shrink-0">
+        <div className="h-[1px] bg-zinc-800 w-full mb-3" />
         <div className="flex items-center justify-center">
-          <span className="text-zinc-500 font-bold uppercase tracking-[0.6em] text-lg">
+          <span className="text-zinc-500 font-bold uppercase tracking-[0.6em] text-sm md:text-lg">
             {selectedDevice.line ? (selectedDevice.line.startsWith("LINE") ? selectedDevice.line : `LINE ${selectedDevice.line}`) : "LINE ?"} | {selectedDevice.robot ? (selectedDevice.robot.startsWith("ROBOT") ? selectedDevice.robot : `ROBOT ${selectedDevice.robot}`) : "ROBOT ?"} | {diagType.toUpperCase()}
           </span>
         </div>
-        <div className="h-[1px] bg-zinc-800 w-full mt-4" />
+        <div className="h-[1px] bg-zinc-800 w-full mt-3" />
       </div>
 
-      {/* High Contrast Display Area - Clean style, no red lines */}
-      <div className="bg-black rounded-3xl p-8 mb-8 text-center border border-zinc-800 flex flex-col items-center justify-center min-h-[220px] relative shadow-inner">
-        <div className="text-zinc-600 font-bold text-sm mb-4 uppercase tracking-[0.8em]">
+      {/* High Contrast Display Area - Fluid Height with Centering Layout */}
+      <div className="w-full max-w-[700px] mx-auto bg-black rounded-3xl p-6 mb-4 text-center border border-zinc-800 flex flex-col items-center justify-center aspect-[16/4] max-h-[180px] shrink-0 relative shadow-inner">
+        <div className="text-zinc-600 font-bold text-xs mb-2 uppercase tracking-[0.8em]">
           ENTERING ERROR CODE
         </div>
-        <div className={`font-black text-[10rem] leading-none tracking-widest uppercase ${errorCode ? "text-white" : "text-zinc-900"}`}>
+        <div className={`font-black text-[5rem] md:text-[8rem] leading-none tracking-widest uppercase ${errorCode ? "text-white" : "text-zinc-900"}`}>
           {errorCode || "--------"}
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col gap-6">
-        {/* Toggle Button - Even larger */}
+      <div className="flex-1 flex flex-col gap-4 overflow-hidden">
+        {/* Toggle Button */}
         <button
           onClick={() => setInputType(inputType === "num" ? "abc" : "num")}
-          className="w-full py-6 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center gap-4 text-zinc-300 font-black text-2xl hover:bg-zinc-800 transition-all shadow-[0_10px_40px_rgba(0,0,0,0.6)] border-b-4 border-b-zinc-700"
+          style={{ color: "#d4d4d8" }}
+          className="w-full max-w-[700px] mx-auto py-4 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center gap-4 font-black text-xl hover:bg-zinc-800 transition-all shadow-[0_10px_40px_rgba(0,0,0,0.6)] border-b-4 border-b-zinc-700 shrink-0"
         >
-          <Type size={32} /> {T[lang].toggleInput}
+          <Type size={24} /> {T[lang].toggleInput}
         </button>
 
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex-1 flex items-center justify-center overflow-hidden">
           <AnimatePresence mode="wait">
             {inputType === "num" ? (
               <motion.div
@@ -77,16 +78,17 @@ export function Keypad({
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="grid grid-cols-3 gap-6 w-full max-w-[800px]"
+                className="grid grid-cols-3 grid-rows-4 gap-4 w-full h-full max-w-[700px]"
               >
                 {numbers.map((n) => (
-                  <button key={n} onClick={() => onInput(n)} className={`${keyBase} text-[2rem] min-h-[100px]`}>{n}</button>
+                  <button key={n} onClick={() => onInput(n)} style={{ color: "#ffffff" }} className={`${keyBase} text-[2rem] h-full`}>{n}</button>
                 ))}
                 <button
-                  className={`${keyBase} bg-red-950/20 text-red-500 border-red-900/40 hover:bg-red-900/40 min-h-[100px]`}
+                  className={`${keyBase} bg-red-950/20 text-red-500 border-red-900/40 hover:bg-red-900/40 h-full`}
+                  style={{ color: "#ef4444" }}
                   onClick={onDelete}
                 >
-                  <Delete size={64} />
+                  <Delete size={48} />
                 </button>
               </motion.div>
             ) : (
@@ -95,25 +97,27 @@ export function Keypad({
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="flex flex-col gap-4 w-full h-full justify-center"
+                className="flex flex-col gap-3 w-full h-full justify-center"
               >
                 {qwertyRows.map((row, idx) => (
-                  <div key={idx} className="flex justify-center gap-3">
+                  <div key={idx} className="flex justify-center gap-2 h-1/3">
                     {row.map((char) => (
                       <button
                         key={char}
                         onClick={() => onInput(char)}
-                        className={`${keyBase} flex-1 text-[3rem] min-h-[110px] max-w-[120px]`}
+                        className={`${keyBase} flex-1 text-[2rem] max-w-[110px] h-full`}
+                        style={{ color: "#ffffff" }}
                       >
                         {char}
                       </button>
                     ))}
                     {idx === 2 && (
                       <button
-                        className={`${keyBase} px-12 bg-red-950/20 text-red-500 border-red-900/40 hover:bg-red-900/40 min-h-[110px]`}
+                        className={`${keyBase} px-8 bg-red-950/20 text-red-500 border-red-900/40 hover:bg-red-900/40 h-full`}
+                        style={{ color: "#ef4444" }}
                         onClick={onDelete}
                       >
-                        <Delete size={48} />
+                        <Delete size={58} />
                       </button>
                     )}
                   </div>
@@ -123,15 +127,16 @@ export function Keypad({
           </AnimatePresence>
         </div>
 
-        {/* Primary Submit Button - Massive */}
-        <div className="pt-4">
+        {/* Primary Submit Button */}
+        <div className="pt-2 shrink-0 w-full max-w-[700px] mx-auto">
           <motion.button
             onClick={onSubmit}
             disabled={!errorCode}
-            className={`w-full py-8 rounded-3xl text-[3rem] font-black cursor-pointer shadow-[0_15px_50px_rgba(0,0,0,0.7)] transition-all select-none border-l-[16px] border-l-[#E82127] ${errorCode
+            className={`w-full py-6 rounded-3xl text-[2.5rem] font-black cursor-pointer shadow-[0_15px_50px_rgba(0,0,0,0.7)] transition-all select-none border-l-[12px] border-l-[#E82127] ${errorCode
               ? "bg-zinc-900 text-white hover:bg-zinc-800 active:scale-[0.98]"
               : "bg-zinc-800 text-zinc-700 cursor-not-allowed grayscale"
               }`}
+            style={{ color: errorCode ? "#ffffff" : "#a1a1aa" }}
           >
             {T[lang].submitCode.toUpperCase()}
           </motion.button>

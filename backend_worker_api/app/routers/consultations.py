@@ -58,7 +58,12 @@ def list_recent_logs(device_id: str | None = None, line_name: str | None = None)
                     s.last_updated_at AS timestamp,
                     s.final_status AS status,
                     l.error_code AS code,
-                    d.line_name
+                    d.line_name,
+                    (
+                        SELECT h.message FROM robot_error_chat_histories h 
+                        WHERE h.session_id = s.session_id AND h.step_no = 1 AND h.actor = 'system' 
+                        LIMIT 1
+                    ) as fallback_message
                 FROM robot_error_sessions s
                 JOIN robot_devices d ON d.device_id = s.device_id
                 LEFT JOIN robot_error_logs l ON l.error_log_id = s.error_log_id
@@ -84,10 +89,20 @@ def list_recent_logs(device_id: str | None = None, line_name: str | None = None)
             cursor.execute(query, tuple(params))
             rows = cursor.fetchall()
             logs = []
+            import re
             for row in rows:
                 diag_type = "robot" if "ROBOT" in row['device_id'].upper() else "welder"
+                code = row['code']
+                if not code and row.get('fallback_message'):
+                    m = re.search(r'([A-Z0-9]+)\s+에러', row['fallback_message'])
+                    if m:
+                        code = m.group(1).strip()
+                    else:
+                        m2 = re.search(r'([A-Z0-9]+)에러', row['fallback_message'])
+                        if m2:
+                            code = m2.group(1).strip()
                 logs.append({
-                    "code": row['code'],
+                    "code": code,
                     "timestamp": row['timestamp'].timestamp() * 1000, 
                     "diagType": diag_type,
                     "device": f"{row['line_name']} - {row['device_id']}",
@@ -95,6 +110,50 @@ def list_recent_logs(device_id: str | None = None, line_name: str | None = None)
                 })
             return logs
 
+@router.get('/engineer-calls')
+def list_engineer_calls():
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(
+                """
+                SELECT s.session_id, h.created_at, h.message, s.device_id, l.error_code as code, d.line_name,
+                    (
+                        SELECT sub_h.message FROM robot_error_chat_histories sub_h 
+                        WHERE sub_h.session_id = s.session_id AND sub_h.step_no = 1 AND sub_h.actor = 'system' 
+                        LIMIT 1
+                    ) as fallback_message
+                FROM robot_error_chat_histories h
+                JOIN robot_error_sessions s ON h.session_id = s.session_id
+                JOIN robot_devices d ON s.device_id = d.device_id
+                LEFT JOIN robot_error_logs l ON s.error_log_id = l.error_log_id
+                WHERE (h.message ILIKE '%%호출%%' OR h.message ILIKE '%%call%%') AND h.actor = 'user'
+                ORDER BY h.created_at DESC
+                LIMIT 50
+                """
+            )
+            rows = cursor.fetchall()
+            calls = []
+            for row in rows:
+                from datetime import datetime
+                ts = row['created_at']
+                ts_ms = ts.timestamp() * 1000 if isinstance(ts, datetime) else 0
+                code = row['code']
+                if not code and row.get('fallback_message'):
+                    import re
+                    match = re.search(r'([A-Z0-9]+)\s+에러', row['fallback_message'])
+                    if match:
+                        code = match.group(1).strip()
+                    else:
+                        match2 = re.search(r'([A-Z0-9]+)에러', row['fallback_message'])
+                        if match2:
+                            code = match2.group(1).strip()
+                calls.append({
+                    "code": code,
+                    "timestamp": ts_ms,
+                    "device": f"{row['line_name']} - {row['device_id']}",
+                    "message": row['message']
+                })
+            return calls
 
 @router.get('/stats')
 def get_dashboard_stats():
@@ -280,7 +339,7 @@ def start_consultation(req: StartConsultationRequest):
                     f"원인: {diagnosis['cause_analysis']}\n"
                     f"조치: {', '.join(diagnosis['action_method'])}\n"
                     f"긴급도: {urgency_icon} {diagnosis['urgency_level']}\n\n"
-                    "상세 점검을 위해 하단의 체크리스트를 확인해 주세요."
+                    "상세 점검을 위해 하단의 상세 점검 버튼을 선택해 주세요."
                 )
 
             cursor.execute(
@@ -320,162 +379,238 @@ def start_consultation(req: StartConsultationRequest):
 def post_event(session_id: int, req: ConsultationEventRequest):
     request_id = str(req.request_id)
 
-    with get_db_connection() as conn:
-        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-            cursor.execute(
-                "SELECT session_id, final_status, language FROM robot_error_sessions WHERE session_id = %s",
-                (session_id,),
-            )
-            session_row = cursor.fetchone()
-            if session_row is None:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='session not found')
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                cursor.execute(
+                    "SELECT session_id, final_status, language FROM robot_error_sessions WHERE session_id = %s",
+                    (session_id,),
+                )
+                session_row = cursor.fetchone()
+                if session_row is None:
+                    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='session not found')
 
-            sess_lang = session_row.get('language', 'ko')
+                sess_lang = session_row.get('language', 'ko')
 
-            if session_row['final_status'] in [SessionStatus.RESOLVED.value, SessionStatus.ABANDONED.value]:
-                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='session is closed')
+                if session_row['final_status'] in [SessionStatus.RESOLVED.value, SessionStatus.ABANDONED.value]:
+                    raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='session is closed')
 
-            if create_request_fingerprint_event(cursor, session_id, request_id):
-                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='duplicate request_id')
+                if create_request_fingerprint_event(cursor, session_id, request_id):
+                    raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='duplicate request_id')
 
-            session_ctx = get_session_device_and_error(cursor, session_id)
-            if session_ctx is None:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='session context lost')
+                session_ctx = get_session_device_and_error(cursor, session_id)
+                if session_ctx is None:
+                    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='session context lost')
 
-            if req.actor == Actor.USER:
-                is_call_event = req.message and ("호출" in req.message or "call" in req.message.lower())
-                if req.selected_choice is None and not is_call_event:
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail='selected_choice is required when actor=user',
+                if req.actor == Actor.USER:
+                    is_call_event = req.message and ("호출" in req.message or "call" in req.message.lower())
+                    if req.selected_choice is None and not is_call_event:
+                        raise HTTPException(
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            detail='selected_choice is required when actor=user',
+                        )
+
+                    cursor.execute(
+                        """
+                        INSERT INTO robot_error_chat_histories
+                          (session_id, step_no, actor, response_type, selected_choice, message, is_resolved, request_id)
+                        VALUES (%s, %s, 'user', NULL, %s, %s, NULL, %s)
+                        """,
+                        (session_id, req.step_no, req.selected_choice, req.message, request_id), # .value 제거
                     )
 
-                cursor.execute(
-                    """
-                    INSERT INTO robot_error_chat_histories
-                      (session_id, step_no, actor, response_type, selected_choice, message, is_resolved, request_id)
-                    VALUES (%s, %s, 'user', NULL, %s, %s, NULL, %s)
-                    """,
-                    (session_id, req.step_no, req.selected_choice, req.message, request_id), # .value 제거
-                )
+                    if req.selected_choice == 'O':
+                        update_session_status(cursor, session_id, SessionStatus.RESOLVED)
+                        return ConsultationResponse(
+                            status='ok',
+                            session_id=session_id,
+                            step_no=req.step_no,
+                            next_response_type=None,
+                            assistant=AssistantPayload(
+                                actor='llm',
+                                response_type=ResponseType.OVERALL,
+                                 message='상담이 성공적으로 종료되었습니다. 더 이상 조치가 필요하지 않습니다.' if sess_lang == 'ko' else ('Konsultatsiya muvaffaqiyatli yakunlandi. Boshqa harakatlar talab qilinmaydi.' if sess_lang == 'uz' else 'Consultation completed successfully. No further action is required.'),
+                                checklist=None,
+                            ),
+                            session_status=SessionStatus.RESOLVED,
+                            request_id=request_id,
+                        )
 
-                if req.selected_choice == 'O':
-                    update_session_status(cursor, session_id, SessionStatus.RESOLVED)
+                    if req.selected_choice == 'X':
+                        # Real AI Final Solution
+                        checklist_results = (req.payload or {}).get('checklist_results')
+                        solution = generate_final_solution(
+                            session_ctx['error_code'], 
+                            checklist_results=checklist_results,
+                            language=req.language.value
+                        )
+                    
+                        if sess_lang == 'en':
+                            assistant_message = (
+                                f"**[Final Assessment]**\n{solution['final_summary']}\n\n"
+                                f"**[Handling Direction]**\n- " + "\n- ".join(solution['handling_direction']) + "\n\n"
+                                f"**[Work Priority]**\n{solution['work_priority']}"
+                            )
+                        elif sess_lang == 'uz':
+                            assistant_message = (
+                                f"**[Yakuniy xulosa]**\n{solution['final_summary']}\n\n"
+                                f"**[Yo'nalishni boshqarish]**\n- " + "\n- ".join(solution['handling_direction']) + "\n\n"
+                                f"**[Ish ustuvorligi]**\n{solution['work_priority']}"
+                            )
+                        else:
+                            assistant_message = (
+                                f"**[최종 종합 판단]**\n{solution['final_summary']}\n\n"
+                                f"**[처리 방향]**\n- " + "\n- ".join(solution['handling_direction']) + "\n\n"
+                                f"**[작업 우선순위]**\n{solution['work_priority']}"
+                            )
+                    
+                        cursor.execute(
+                            """
+                            INSERT INTO robot_error_chat_histories
+                              (session_id, step_no, actor, response_type, selected_choice, message, is_resolved, request_id)
+                            VALUES (%s, %s, 'llm', 'diagnosis', NULL, %s, NULL, %s)
+                            """,
+                            (session_id, req.step_no + 1, assistant_message, str(uuid.uuid4())),
+                        )
+                        update_session_status(cursor, session_id, SessionStatus.ONGOING)
+
+                        return ConsultationResponse(
+                            status='ok',
+                            session_id=session_id,
+                            step_no=req.step_no + 1,
+                            next_response_type=ResponseType.DIAGNOSIS,
+                            assistant=AssistantPayload(
+                                actor='llm',
+                                response_type=ResponseType.DIAGNOSIS,
+                                message=assistant_message,
+                                checklist=None,
+                            ),
+                            session_status=SessionStatus.ONGOING,
+                            request_id=request_id,
+                        )
+
+                    if is_call_event:
+                        assistant_message = "엔지니어가 호출되었습니다. 잠시만 기다려 주십시오."
+                        if req.language.value == 'en':
+                            assistant_message = "Engineer has been called. Please wait."
+                        elif req.language.value == 'uz':
+                            assistant_message = "Muhandis chaqirildi. Iltimos, kuting."
+
+                        cursor.execute(
+                            """
+                            INSERT INTO robot_error_chat_histories
+                              (session_id, step_no, actor, response_type, selected_choice, message, is_resolved, request_id)
+                            VALUES (%s, %s, 'llm', 'overall', NULL, %s, NULL, %s)
+                            """,
+                            (session_id, req.step_no + 1, assistant_message, str(uuid.uuid4())),
+                        )
+                        update_session_status(cursor, session_id, SessionStatus.ONGOING)
+
+                        return ConsultationResponse(
+                            status='ok',
+                            session_id=session_id,
+                            step_no=req.step_no + 1,
+                            next_response_type=ResponseType.OVERALL,
+                            assistant=AssistantPayload(
+                                actor='llm',
+                                response_type=ResponseType.OVERALL,
+                                message=assistant_message,
+                                checklist=None,
+                            ),
+                            session_status=SessionStatus.ONGOING,
+                            request_id=request_id,
+                        )
+
+                    # Fallback for unexpected choices
+                    next_type = next_response_type_from_step(req.step_no)
+                    assistant_message, checklist = build_llm_reply(session_ctx['error_code'], next_type, req.step_no)
+                    cursor.execute(
+                        """
+                        INSERT INTO robot_error_chat_histories
+                          (session_id, step_no, actor, response_type, selected_choice, message, is_resolved, request_id)
+                        VALUES (%s, %s, 'llm', %s, NULL, %s, NULL, %s)
+                        """,
+                        (
+                            session_id,
+                            req.step_no + 1,
+                            next_type.value,
+                            assistant_message,
+                            str(uuid.uuid4()),
+                        ),
+                    )
+                    update_session_status(cursor, session_id, SessionStatus.ONGOING)
+
+                    return ConsultationResponse(
+                        status='ok',
+                        session_id=session_id,
+                        step_no=req.step_no + 1,
+                        next_response_type=next_type,
+                        assistant=AssistantPayload(
+                            actor='llm',
+                            response_type=next_type,
+                            message=assistant_message,
+                            checklist=checklist,
+                        ),
+                        session_status=SessionStatus.ONGOING,
+                        request_id=request_id,
+                    )
+
+                if req.actor == Actor.SYSTEM:
+                    if req.selected_choice is not None:
+                        raise HTTPException(
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            detail='selected_choice must be null when actor=system',
+                        )
+                    if req.message == 'user_back':
+                        next_status = SessionStatus.ABANDONED
+                    else:
+                        next_status = SessionStatus.UNRESOLVED
+
+                    update_session_status(cursor, session_id, next_status)
+
+                    cursor.execute(
+                        """
+                        INSERT INTO robot_error_chat_histories
+                          (session_id, step_no, actor, response_type, selected_choice, message, is_resolved, request_id)
+                        VALUES (%s, %s, 'system', NULL, NULL, %s, NULL, %s)
+                        """,
+                        (session_id, req.step_no, req.message, request_id),
+                    )
+
                     return ConsultationResponse(
                         status='ok',
                         session_id=session_id,
                         step_no=req.step_no,
                         next_response_type=None,
-                        assistant=AssistantPayload(
-                            actor='llm',
-                            response_type=ResponseType.OVERALL,
-                            message='상담이 성공적으로 종료되었습니다. 더 이상 조치가 필요하지 않습니다.' if sess_lang == 'ko' else ('Konsultatsiya muvaffaqiyatli yakunlandi. Boshqa harakatlar talab qilinmaydi.' if sess_lang == 'uz' else 'Consultation completed successfully. No further action is required.'),
-                            checklist=None,
-                        ),
-                        session_status=SessionStatus.RESOLVED,
+                        assistant=None,
+                        session_status=next_status,
                         request_id=request_id,
                     )
 
-                if req.selected_choice == 'X':
-                    # Real AI Final Solution
-                    checklist_results = (req.payload or {}).get('checklist_results')
-                    solution = generate_final_solution(
-                        session_ctx['error_code'], 
-                        checklist_results=checklist_results,
-                        language=req.language.value
+                if req.actor == Actor.LLM and req.response_type is None:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail='response_type is required when actor=llm',
                     )
-                    
-                    if sess_lang == 'en':
-                        assistant_message = (
-                            f"**[Final Assessment]**\n{solution['final_summary']}\n\n"
-                            f"**[Handling Direction]**\n- " + "\n- ".join(solution['handling_direction']) + "\n\n"
-                            f"**[Work Priority]**\n{solution['work_priority']}"
-                        )
-                    elif sess_lang == 'uz':
-                        assistant_message = (
-                            f"**[Yakuniy xulosa]**\n{solution['final_summary']}\n\n"
-                            f"**[Yo'nalishni boshqarish]**\n- " + "\n- ".join(solution['handling_direction']) + "\n\n"
-                            f"**[Ish ustuvorligi]**\n{solution['work_priority']}"
-                        )
-                    else:
-                        assistant_message = (
-                            f"**[최종 종합 판단]**\n{solution['final_summary']}\n\n"
-                            f"**[처리 방향]**\n- " + "\n- ".join(solution['handling_direction']) + "\n\n"
-                            f"**[작업 우선순위]**\n{solution['work_priority']}"
-                        )
-                    
-                    cursor.execute(
-                        """
-                        INSERT INTO robot_error_chat_histories
-                          (session_id, step_no, actor, response_type, selected_choice, message, is_resolved, request_id)
-                        VALUES (%s, %s, 'llm', 'diagnosis', NULL, %s, NULL, %s)
-                        """,
-                        (session_id, req.step_no + 1, assistant_message, str(uuid.uuid4())),
-                    )
-                    update_session_status(cursor, session_id, SessionStatus.ONGOING)
-
-                    return ConsultationResponse(
-                        status='ok',
-                        session_id=session_id,
-                        step_no=req.step_no + 1,
-                        next_response_type=ResponseType.DIAGNOSIS,
-                        assistant=AssistantPayload(
-                            actor='llm',
-                            response_type=ResponseType.DIAGNOSIS,
-                            message=assistant_message,
-                            checklist=None,
-                        ),
-                        session_status=SessionStatus.ONGOING,
-                        request_id=request_id,
+                if req.actor == Actor.LLM and req.selected_choice is not None:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail='selected_choice must be null when actor=llm',
                     )
 
-                if is_call_event:
-                    assistant_message = "엔지니어가 호출되었습니다. 잠시만 기다려 주십시오."
-                    if req.language.value == 'en':
-                        assistant_message = "Engineer has been called. Please wait."
-                    elif req.language.value == 'uz':
-                        assistant_message = "Muhandis chaqirildi. Iltimos, kuting."
-
-                    cursor.execute(
-                        """
-                        INSERT INTO robot_error_chat_histories
-                          (session_id, step_no, actor, response_type, selected_choice, message, is_resolved, request_id)
-                        VALUES (%s, %s, 'llm', 'overall', NULL, %s, NULL, %s)
-                        """,
-                        (session_id, req.step_no + 1, assistant_message, str(uuid.uuid4())),
-                    )
-                    update_session_status(cursor, session_id, SessionStatus.ONGOING)
-
-                    return ConsultationResponse(
-                        status='ok',
-                        session_id=session_id,
-                        step_no=req.step_no + 1,
-                        next_response_type=ResponseType.OVERALL,
-                        assistant=AssistantPayload(
-                            actor='llm',
-                            response_type=ResponseType.OVERALL,
-                            message=assistant_message,
-                            checklist=None,
-                        ),
-                        session_status=SessionStatus.ONGOING,
-                        request_id=request_id,
-                    )
-
-                # Fallback for unexpected choices
-                next_type = next_response_type_from_step(req.step_no)
-                assistant_message, checklist = build_llm_reply(session_ctx['error_code'], next_type, req.step_no)
                 cursor.execute(
                     """
                     INSERT INTO robot_error_chat_histories
                       (session_id, step_no, actor, response_type, selected_choice, message, is_resolved, request_id)
-                    VALUES (%s, %s, 'llm', %s, NULL, %s, NULL, %s)
+                    VALUES (%s, %s, 'llm', %s, NULL, %s, %s, %s)
                     """,
                     (
                         session_id,
-                        req.step_no + 1,
-                        next_type.value,
-                        assistant_message,
-                        str(uuid.uuid4()),
+                        req.step_no,
+                        req.response_type.value if req.response_type else ResponseType.OVERALL.value,
+                        req.message,
+                        req.is_resolved,
+                        request_id,
                     ),
                 )
                 update_session_status(cursor, session_id, SessionStatus.ONGOING)
@@ -483,91 +618,21 @@ def post_event(session_id: int, req: ConsultationEventRequest):
                 return ConsultationResponse(
                     status='ok',
                     session_id=session_id,
-                    step_no=req.step_no + 1,
-                    next_response_type=next_type,
+                    step_no=req.step_no,
+                    next_response_type=req.response_type,
                     assistant=AssistantPayload(
                         actor='llm',
-                        response_type=next_type,
-                        message=assistant_message,
-                        checklist=checklist,
+                        response_type=req.response_type or ResponseType.OVERALL,
+                        message=req.message,
                     ),
                     session_status=SessionStatus.ONGOING,
                     request_id=request_id,
                 )
-
-            if req.actor == Actor.SYSTEM:
-                if req.selected_choice is not None:
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail='selected_choice must be null when actor=system',
-                    )
-                if req.message == 'user_back':
-                    next_status = SessionStatus.ABANDONED
-                else:
-                    next_status = SessionStatus.UNRESOLVED
-
-                update_session_status(cursor, session_id, next_status)
-
-                cursor.execute(
-                    """
-                    INSERT INTO robot_error_chat_histories
-                      (session_id, step_no, actor, response_type, selected_choice, message, is_resolved, request_id)
-                    VALUES (%s, %s, 'system', NULL, NULL, %s, NULL, %s)
-                    """,
-                    (session_id, req.step_no, req.message, request_id),
-                )
-
-                return ConsultationResponse(
-                    status='ok',
-                    session_id=session_id,
-                    step_no=req.step_no,
-                    next_response_type=None,
-                    assistant=None,
-                    session_status=next_status,
-                    request_id=request_id,
-                )
-
-            if req.actor == Actor.LLM and req.response_type is None:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail='response_type is required when actor=llm',
-                )
-            if req.actor == Actor.LLM and req.selected_choice is not None:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail='selected_choice must be null when actor=llm',
-                )
-
-            cursor.execute(
-                """
-                INSERT INTO robot_error_chat_histories
-                  (session_id, step_no, actor, response_type, selected_choice, message, is_resolved, request_id)
-                VALUES (%s, %s, 'llm', %s, NULL, %s, %s, %s)
-                """,
-                (
-                    session_id,
-                    req.step_no,
-                    req.response_type.value if req.response_type else ResponseType.OVERALL.value,
-                    req.message,
-                    req.is_resolved,
-                    request_id,
-                ),
-            )
-            update_session_status(cursor, session_id, SessionStatus.ONGOING)
-
-            return ConsultationResponse(
-                status='ok',
-                session_id=session_id,
-                step_no=req.step_no,
-                next_response_type=req.response_type,
-                assistant=AssistantPayload(
-                    actor='llm',
-                    response_type=req.response_type or ResponseType.OVERALL,
-                    message=req.message,
-                ),
-                session_status=SessionStatus.ONGOING,
-                request_id=request_id,
-            )
+    except Exception as e:
+        import traceback
+        with open('/tmp/global_crash.txt', 'w') as f:
+            f.write(traceback.format_exc())
+        raise e
 
 
 

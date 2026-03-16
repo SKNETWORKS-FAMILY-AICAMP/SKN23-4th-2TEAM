@@ -22,6 +22,17 @@ interface ErrorHistory {
     status?: string;
 }
 
+const genUuid = () => {
+    if (typeof crypto !== "undefined" && crypto.randomUUID) {
+        return crypto.randomUUID();
+    }
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+        const r = Math.random() * 16 | 0;
+        const v = c === "x" ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}; ㅌ
+
 export default function App() {
     // Load configuration from localStorage
     const [config, setConfig] = useState<Config>(() => {
@@ -79,12 +90,14 @@ export default function App() {
 
     const fetchHistory = useCallback(async () => {
         try {
-            const [logs, stats] = await Promise.all([
+            const [logs, stats, calls] = await Promise.all([
                 api.getRecentLogs(),
-                api.getStats()
+                api.getStats(),
+                api.getEngineerCalls()
             ]);
             setErrorHistory(logs);
             setDashboardStats(stats);
+            setEngineerCalls(calls);
         } catch (err) {
             console.error("Failed to fetch global data:", err);
         }
@@ -130,12 +143,12 @@ export default function App() {
             if (messageToTranslate) {
                 api.translateText(messageToTranslate, lang as "ko" | "en" | "uz")
                     .then(res => { if (res && res.translated) setAiMessage(res.translated); })
-                    .catch(() => {});
+                    .catch(() => { });
             }
             if (checklistToTranslate && checklistToTranslate.length > 0) {
                 api.translateText(JSON.stringify(checklistToTranslate), lang as "ko" | "en" | "uz")
                     .then(res => { if (res && res.translated) setAiChecklist(JSON.parse(res.translated)); })
-                    .catch(() => {});
+                    .catch(() => { });
             }
         }
     }, [lang, aiActive, sessionId, originalAiMessage, originalAiChecklist]);
@@ -198,13 +211,14 @@ export default function App() {
             toast.error(lang === "KO" ? "네트워크 연결을 확인하세요" : "Please check your network connection");
             return;
         }
+
         if (errorCode) {
             setIsDiagnosing(true);
             setAiActive(true);
             setAiMessage("");
             try {
                 const res = await api.startConsultation({
-                    request_id: crypto.randomUUID(),
+                    request_id: genUuid(),
                     language: lang.toLowerCase() as "ko" | "en" | "uz",
                     device_id: deviceId || `${selectedDevice.line}-${selectedDevice.robot}`,
                     error_code: errorCode
@@ -232,7 +246,7 @@ export default function App() {
                         msg = lang === "KO" ? "이미 진행 중인 요청입니다" : "Request already in progress";
                     }
                 }
-                toast.error(msg);
+                toast.error(`${msg} [상세: ${err.message || "Unknown Error"}]`);
                 setAiMessage("");
                 setAiMode("diagnosis");
                 setAiActive(false); // Disable on actual failure
@@ -273,9 +287,9 @@ export default function App() {
 
         if (sessionId) {
             try {
-                let selectedChoice: "O" | "X" | null = isResolvedEvent ? "O" : (text.includes("(X)") ? "X" : null);
+                let selectedChoice: "O" | "X" | null = isResolvedEvent ? "O" : (isChecklistSubmit ? "X" : (text.includes("(X)") ? "X" : null));
                 const res = await api.sendConsultationEvent(sessionId, {
-                    request_id: crypto.randomUUID(),
+                    request_id: genUuid(),
                     actor: "user",
                     step_no: stepNo + 1,
                     language: lang.toLowerCase() as "ko" | "en" | "uz",
@@ -401,7 +415,7 @@ export default function App() {
                             <h3 style={{ fontSize: "24px", fontWeight: "900", color: "#ffffff" }}>🛠️ 해당 라인 정비 이력</h3>
                             <button style={{ color: "#a1a1aa", fontSize: "32px", background: "none", border: "none", cursor: "pointer" }} onClick={() => setIsHistoryModalOpen(false)}>×</button>
                         </div>
-                        
+
                         {/* Scrollable List */}
                         <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "12px", paddingRight: "8px" }}>
                             {historyLogs.length === 0 ? (
@@ -437,8 +451,8 @@ export default function App() {
 
                         {/* Controls: Type & Search */}
                         <div style={{ display: "flex", gap: "12px" }}>
-                            <select 
-                                value={csvType} 
+                            <select
+                                value={csvType}
                                 onChange={async (e) => {
                                     setCsvType(e.target.value);
                                     const logs = await api.listCsvErrors(e.target.value, csvSearch);
@@ -451,9 +465,9 @@ export default function App() {
                                 <option value="welding">용접기 모듈</option>
                             </select>
 
-                            <input 
-                                type="text" 
-                                placeholder="에러코드 또는 설명 검색..." 
+                            <input
+                                type="text"
+                                placeholder="에러코드 또는 설명 검색..."
                                 value={csvSearch}
                                 onFocus={() => setIsCsvKeyboardOpen(true)}
                                 onChange={async (e) => {
@@ -471,26 +485,26 @@ export default function App() {
                                 <div style={{ display: "flex", justifyContent: "flex-end" }}>
                                     <button style={{ backgroundColor: "#1c1c1e", color: "#a1a1aa", padding: "8px 16px", borderRadius: "8px", border: "1px solid #3f3f46", fontSize: "14px", fontWeight: "900", cursor: "pointer" }} onClick={() => setIsCsvKeyboardOpen(false)}>키보드 닫기 ✕</button>
                                 </div>
-                                
+
                                 {[{
-                                    keys: ["1","2","3","4","5","6","7","8","9","0","-"]
+                                    keys: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-"]
                                 }, {
-                                    keys: ["Q","W","E","R","T","Y","U","I","O","P"]
+                                    keys: ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"]
                                 }, {
-                                    keys: ["A","S","D","F","G","H","J","K","L"]
+                                    keys: ["A", "S", "D", "F", "G", "H", "J", "K", "L"]
                                 }, {
-                                    keys: ["Z","X","C","V","B","N","M"]
+                                    keys: ["Z", "X", "C", "V", "B", "N", "M"]
                                 }].map((row, rIdx) => (
                                     <div key={rIdx} style={{ display: "flex", gap: "6px", justifyContent: "center" }}>
                                         {row.keys.map(key => (
-                                            <button 
-                                                key={key} 
+                                            <button
+                                                key={key}
                                                 onClick={async () => {
                                                     const newVal = csvSearch + key;
                                                     setCsvSearch(newVal);
                                                     const logs = await api.listCsvErrors(csvType, newVal);
                                                     setCsvErrors(logs);
-                                                }} 
+                                                }}
                                                 style={{ flex: 1, minHeight: "60px", backgroundColor: "#1c1c1e", color: "#ffffff", borderRadius: "8px", border: "1px solid #3f3f46", fontSize: "20px", fontWeight: "900", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                                             >
                                                 {key}
@@ -501,24 +515,24 @@ export default function App() {
 
                                 {/* Space & Backspace Row */}
                                 <div style={{ display: "flex", gap: "6px", justifyContent: "center" }}>
-                                    <button 
+                                    <button
                                         onClick={async () => {
                                             const newVal = csvSearch + " ";
                                             setCsvSearch(newVal);
                                             const logs = await api.listCsvErrors(csvType, newVal);
                                             setCsvErrors(logs);
-                                        }} 
+                                        }}
                                         style={{ flex: 3, minHeight: "60px", backgroundColor: "#3f3f46", color: "#ffffff", borderRadius: "8px", border: "1px solid #52525b", fontSize: "18px", fontWeight: "900" }}
                                     >
                                         Space
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={async () => {
                                             const newVal = csvSearch.slice(0, -1);
                                             setCsvSearch(newVal);
                                             const logs = await api.listCsvErrors(csvType, newVal);
                                             setCsvErrors(logs);
-                                        }} 
+                                        }}
                                         style={{ flex: 1, minHeight: "60px", backgroundColor: "rgba(239,68,68,0.2)", color: "#f87171", borderRadius: "8px", border: "1px solid rgba(239,68,68,0.4)", fontSize: "18px", fontWeight: "900" }}
                                     >
                                         Delete
@@ -526,7 +540,7 @@ export default function App() {
                                 </div>
                             </div>
                         )}
-                        
+
                         {/* Scrollable List */}
                         <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "12px", paddingRight: "8px" }}>
                             {csvErrors.length === 0 ? (

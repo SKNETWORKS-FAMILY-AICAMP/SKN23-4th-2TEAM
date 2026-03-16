@@ -94,10 +94,10 @@ export function DeviceSelection({ lang, onSelect }: DeviceSelectionProps) {
                                     key={line}
                                     onClick={() => handleLineSelect(line)}
                                     className={`${buttonClass} bg-zinc-900 text-white active:bg-[#E82127] border-2 border-zinc-800 rounded-none`}
-                                    style={{ borderLeft: "20px solid #E82127" }}
+                                    style={{ borderLeft: "20px solid #E82127", color: "#ffffff" }}
                                 >
                                     <span>{formatLineDisplay(line)}</span>
-                                    <ChevronRight size={32} style={{ color: "#007AFF" }} />
+                                    <ChevronRight size={32} style={{ color: "#ffffff" }} />
                                 </button>
                             ))}
                         </motion.div>
@@ -114,17 +114,18 @@ export function DeviceSelection({ lang, onSelect }: DeviceSelectionProps) {
                                     key={device.device_id}
                                     onClick={() => handleRobotSelect(device)}
                                     className={`${buttonClass} bg-zinc-900 text-white active:bg-[#E82127] border-2 border-zinc-800 rounded-none`}
-                                    style={{ borderLeft: "20px solid #E82127" }}
+                                    style={{ borderLeft: "20px solid #E82127", color: "#ffffff" }}
                                 >
                                     <div className="flex flex-col items-start gap-1">
                                         <span className="leading-tight">{device.device_id}</span>
                                     </div>
-                                    <ChevronRight size={32} style={{ color: "#007AFF" }} />
+                                    <ChevronRight size={32} style={{ color: "#ffffff" }} />
                                 </button>
                             ))}
                             <button
                                 onClick={() => setStep("line")}
-                                className="mt-8 text-xl text-gray-500 font-bold hover:text-white transition-colors"
+                                className="mt-8 text-xl font-bold hover:text-white transition-colors"
+                                style={{ color: "#a1a1aa" }}
                             >
                                 {lang === "KO" ? "← 라인 다시 선택하기" : lang === "UZ" ? "← Liniyani qayta tanlash" : "← Reselect Line"}
                             </button>

@@ -23,7 +23,8 @@ export function MainMenu({ lang, onDiagnostic, onOpenTechDict, onOpenConsumables
         {buttons.map((button, index) => (
           <motion.button
             key={index}
-            className="group w-full py-16 rounded-2xl text-[2.8rem] cursor-pointer text-gray-200 font-bold select-none transition-all flex flex-col items-center justify-center gap-6 bg-zinc-900 border border-zinc-800 border-l-[12px] border-l-[#E82127] shadow-xl"
+            className="group w-full py-16 rounded-2xl text-[2.8rem] cursor-pointer font-bold select-none transition-all flex flex-col items-center justify-center gap-6 bg-zinc-900 border border-zinc-800 border-l-[12px] border-l-[#E82127] shadow-xl"
+            style={{ color: "#e5e7eb" }} // Explicit Gray-200 to block Safari Blue
             whileHover={{
               backgroundColor: "#27272a", // zinc-800
               scale: 1.01,
@@ -35,7 +36,7 @@ export function MainMenu({ lang, onDiagnostic, onOpenTechDict, onOpenConsumables
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05, duration: 0.4 }}
           >
-            <button.icon size={64} className="text-gray-400 group-hover:text-[#E82127] transition-colors" />
+            <button.icon size={64} style={{ color: "#9ca3af" }} className="group-hover:text-[#E82127] transition-colors" />
             <div className="flex items-center justify-center text-center px-4 tracking-tight">
               {button.label.toUpperCase()}
             </div>

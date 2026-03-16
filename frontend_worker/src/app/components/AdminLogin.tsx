@@ -50,9 +50,9 @@ export function AdminLogin({ lang, onSuccess, onBack }: AdminLoginProps) {
           onClick={onBack}
           className="flex items-center gap-3 text-neutral-500 hover:text-white transition-colors outline-none"
         >
-          <ArrowLeft size={32} />
-          <span className="font-black text-xl uppercase tracking-widest">
-            {lang === "KO" ? "뒤로가기" : "BACK"}
+          <ArrowLeft size={32} style={{ color: "#737373" }} />
+          <span className="font-black text-xl uppercase tracking-widest" style={{ color: "#737373" }}>
+            {lang === "KO" ? "뒤로가기" : lang === "EN" ? "BACK" : "ORQAGA"}
           </span>
         </button>
       </div>
@@ -68,23 +68,29 @@ export function AdminLogin({ lang, onSuccess, onBack }: AdminLoginProps) {
           {/* 로고 & 타이틀 */}
           <div className="flex flex-col items-center mb-10 text-center">
             <ShieldCheck className="text-[#E82127] mb-6" size={64} strokeWidth={1.5} />
-            <h1 className="text-[32px] font-black text-white tracking-tighter uppercase italic mb-2">
+            <h1 className="text-[32px] font-black text-white tracking-tighter uppercase italic mb-2" style={{ color: "#ffffff" }}>
               MANAGER ACCESS
             </h1>
-            <p className="text-[15px] text-zinc-500 font-bold uppercase tracking-widest">
-              {lang === "KO" ? "관리자 핀 번호를 입력하세요" : "Enter Manager PIN"}
+            <p className="text-[15px] text-zinc-500 font-bold uppercase tracking-widest" style={{ color: "#71717a" }}>
+              {lang === "KO" ? "관리자 핀 번호를 입력하세요" : lang === "EN" ? "Enter Manager PIN" : "PIN kodini kiriting"}
             </p>
           </div>
 
           {/* PIN Dots */}
-          <div className="flex gap-6 mb-8 h-[24px]">
+          <div className="flex mb-8 h-[24px]" style={{ gap: "24px" }}>
             {[0, 1, 2, 3].map((i) => (
               <div
                 key={i}
-                className={`w-6 h-6 rounded-full transition-all duration-200 ${pin.length > i
-                  ? "bg-[#E82127] scale-110 shadow-[0_0_15px_rgba(232,33,39,0.5)]"
-                  : "bg-zinc-800"
-                  }`}
+                className={`transition-all duration-200 ${pin.length > i ? "scale-110" : ""}`}
+                style={{
+                  width: "24px",
+                  height: "24px",
+                  borderRadius: "50%",
+                  flexShrink: 0,
+                  backgroundColor: pin.length > i ? "#E82127" : "transparent",
+                  border: pin.length > i ? "none" : "2px solid #ffffff",
+                  boxShadow: pin.length > i ? "0 0 15px rgba(232,33,39,0.5)" : "none"
+                }}
               />
             ))}
           </div>
@@ -96,6 +102,7 @@ export function AdminLogin({ lang, onSuccess, onBack }: AdminLoginProps) {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 className="text-[#E82127] font-black text-[18px] animate-pulse tracking-tight"
+                style={{ color: "#E82127" }}
               >
                 {error}
               </motion.p>
@@ -109,25 +116,29 @@ export function AdminLogin({ lang, onSuccess, onBack }: AdminLoginProps) {
                 key={num}
                 onClick={() => handlePinInput(num)}
                 className="h-[100px] bg-[#18181b] border border-neutral-800 text-white text-[40px] font-black hover:bg-[#E82127] hover:border-[#E82127] active:bg-red-700 transition-colors outline-none"
+                style={{ color: "#ffffff" }}
               >
                 {num}
               </button>
             ))}
             <button
               onClick={handleClear}
-              className="h-[100px] bg-neutral-900 border border-neutral-800 text-red-500 text-[32px] font-black hover:bg-neutral-800 active:bg-neutral-700 transition-colors outline-none"
+              className="h-[100px] bg-neutral-900 border border-neutral-800 text-white text-[32px] font-black hover:bg-neutral-800 active:bg-neutral-700 transition-colors outline-none"
+              style={{ color: "#ffffff" }}
             >
               C
             </button>
             <button
               onClick={() => handlePinInput("0")}
               className="h-[100px] bg-[#18181b] border border-neutral-800 text-white text-[40px] font-black hover:bg-[#E82127] hover:border-[#E82127] active:bg-red-700 transition-colors outline-none"
+              style={{ color: "#ffffff" }}
             >
               0
             </button>
             <button
               onClick={handleDelete}
-              className="h-[100px] flex items-center justify-center bg-neutral-900 border border-neutral-800 text-neutral-400 hover:bg-neutral-800 active:bg-neutral-700 transition-colors outline-none"
+              className="h-[100px] flex items-center justify-center bg-neutral-900 border border-neutral-800 hover:bg-neutral-800 active:bg-neutral-700 transition-colors outline-none"
+              style={{ color: "#ffffff" }}
             >
               <Delete size={36} />
             </button>
