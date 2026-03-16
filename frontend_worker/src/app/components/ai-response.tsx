@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Lang, AI_RESPONSES } from "./language-pack";
 import { motion } from "motion/react";
-import { CheckCircle, XCircle, Bot, BookOpen, Wrench, ChevronRight, Loader2, AlertTriangle } from "lucide-react";
+import { CheckCircle, XCircle, Bot, BookOpen, Wrench, ChevronRight, Loader2, AlertTriangle, Check } from "lucide-react";
 import { SAFETY_TIPS_KO, SAFETY_TIPS_EN } from "../../lib/safetyTips";
 
 interface AiResponseProps {
@@ -129,7 +129,7 @@ export function AiResponse({ lang, errorCode, isActive, mode, aiMessage, aiCheck
                         </span>
                         <span style={{ fontSize: "30px", fontWeight: "900", color: "#f4f4f5", lineHeight: "1.3", letterSpacing: "-0.5px" }}>{cause}</span>
                     </div>
-                    
+
                     {/* 조치 Card */}
                     <div style={{ backgroundColor: "rgba(39, 39, 42, 0.4)", padding: "32px", borderRadius: "16px", display: "flex", flexDirection: "column", gap: "12px", boxShadow: "0 10px 40px rgba(0,0,0,0.3)" }}>
                         <span style={{ fontSize: "20px", fontWeight: "900", color: "#10b981", letterSpacing: "1px" }}>
@@ -252,81 +252,45 @@ export function AiResponse({ lang, errorCode, isActive, mode, aiMessage, aiCheck
                         ) : (
                             <div className="flex flex-col gap-6 py-4">
                                 <h3 className="text-5xl font-black text-white mb-12 tracking-tighter uppercase italic">
-                                    <span className="text-[#E82127]">CHECKLIST:</span> 추가 상황을 선택해 주세요
+                                    <span className="text-[#E82127]">CHECKLIST:</span> {(!aiChecklist || aiChecklist.length === 0) ? (lang === "KO" ? "상세 점검 불가" : "Inspection Unavailable") : (lang === "KO" ? "추가 상황을 선택해 주세요" : "Select Additional Status")}
                                 </h3>
+
                                 <div className="grid grid-cols-1 gap-12">
-                                    {(aiChecklist || []).map((item, idx) => {
-                                        const found = selectedOptions.find(o => o.startsWith(`${idx}:`));
-                                        const status = found ? found.split(":")[1] : null;
-
-                                        return (
-                                            <div key={idx} className="flex flex-col gap-4 bg-zinc-900/50 p-8 border border-zinc-800">
-                                                <span className="text-3xl lg:text-4xl font-black text-white leading-tight tracking-tighter mb-4">
-                                                    {item}
-                                                </span>
-                                                <div className="grid grid-cols-2 gap-6">
-                                                    <button
-                                                        onClick={() => {
-                                                            const filtered = selectedOptions.filter(o => !o.startsWith(`${idx}:`));
-                                                            setSelectedOptions([...filtered, `${idx}:O`]);
-                                                        }}
-                                                        className={`h-32 flex items-center justify-center border-4 transition-all active:scale-95 ${status === "O"
-                                                            ? "bg-green-600 border-white text-white"
-                                                            : "bg-zinc-800 border-zinc-700 text-zinc-500 hover:border-zinc-600"
-                                                            }`}
-                                                    >
-                                                        <CheckCircle size={60} strokeWidth={3} />
-                                                        <span className="ml-4 text-4xl font-black">정상</span>
-                                                    </button>
-                                                    <button
-                                                        onClick={() => {
-                                                            const filtered = selectedOptions.filter(o => !o.startsWith(`${idx}:`));
-                                                            setSelectedOptions([...filtered, `${idx}:X`]);
-                                                        }}
-                                                        className={`h-32 flex items-center justify-center border-4 transition-all active:scale-95 ${status === "X"
-                                                            ? "bg-red-600 border-white text-white"
-                                                            : "bg-zinc-800 border-zinc-700 text-zinc-500 hover:border-zinc-600"
-                                                            }`}
-                                                    >
-                                                        <XCircle size={60} strokeWidth={3} />
-                                                        <span className="ml-4 text-4xl font-black">이상</span>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
+                                    {(!aiChecklist || aiChecklist.length === 0) ? (
+                                        <div className="text-3xl font-bold text-zinc-500 text-center py-20 border-4 border-dashed border-zinc-800 bg-zinc-900/40">
+                                            {lang === "KO" 
+                                                ? "⚠️ 매뉴얼 정보가 부재하여 상세 점검표를 구성할 수 없습니다." 
+                                                : "⚠️ No detailed checklist available for this error code."}
+                                        </div>
+                                    ) : (
+                                        (aiChecklist || []).map((item: any, idx: number) => {
+                                            const isSelected = selectedOptions.includes(`${idx}`);
+                                            return (
+                                                <button
+                                                    key={idx}
+                                                    onClick={() => {
+                                                        if (isSelected) {
+                                                            setSelectedOptions(selectedOptions.filter(o => o !== `${idx}`));
+                                                        } else {
+                                                            setSelectedOptions([...selectedOptions, `${idx}`]);
+                                                        }
+                                                    }}
+                                                    className={`flex items-center justify-between p-6 lg:p-8 border-4 transition-all active:scale-[0.98] text-left min-h-[90px] focus:!outline-none focus:!shadow-none ${isSelected
+                                                        ? "bg-[#E82127]/20 border-[#E82127] text-white"
+                                                        : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-500"
+                                                        }`}
+                                                >
+                                                    <span className="text-3xl lg:text-4xl font-black leading-tight tracking-tighter" style={{ color: "white" }}>
+                                                        {item.item || item}
+                                                    </span>
+                                                    <div className={`w-6 h-6 flex items-center justify-center border-4 ${isSelected ? "bg-[#E82127] border-[#E82127]" : "border-zinc-600"}`}>
+                                                        {isSelected && <Check size={32} className="text-white" strokeWidth={5} style={{ stroke: "white" }} />}
+                                                    </div>
+                                                </button>
+                                            );
+                                        })
+                                    )}
                                 </div>
-
-                                <button
-                                    onClick={() => {
-                                        if (!aiChecklist) return;
-                                        const results = aiChecklist.map((item, idx) => {
-                                            const found = selectedOptions.find(o => o.startsWith(`${idx}:`));
-                                            return {
-                                                question: item,
-                                                is_ok: found?.endsWith(":O") ? true : false
-                                            };
-                                        });
-                                        // results is [{question: "...", is_ok: boolean}]
-                                        onFollowUp("체크리스트 점검 완료", true, results as any);
-                                        setShowChecklist(false);
-                                        setSelectedOptions([]);
-                                    }}
-                                    disabled={!aiChecklist || selectedOptions.length < (aiChecklist.length)}
-                                    className={`mt-16 h-40 flex items-center justify-center font-black text-5xl tracking-tighter italic transition-all border-8 ${aiChecklist && selectedOptions.length === aiChecklist.length
-                                        ? "bg-white text-black border-white hover:bg-zinc-200"
-                                        : "bg-zinc-900 text-zinc-700 border-zinc-800 cursor-not-allowed"
-                                        }`}
-                                >
-                                    [ 점검 결과 전송 및 최종 판단 요청 ]
-                                </button>
-
-                                <button
-                                    onClick={() => setShowChecklist(false)}
-                                    className="text-zinc-500 font-bold text-xl hover:text-white transition-colors"
-                                >
-                                    돌아가기
-                                </button>
                             </div>
                         )}
                     </div>
@@ -363,8 +327,8 @@ export function AiResponse({ lang, errorCode, isActive, mode, aiMessage, aiCheck
                             }}
                             disabled={isStreaming}
                         >
-                            <Icon size={36} className={isConfirming ? "!text-white" : "!text-[#E82127]"} />
-                            <span style={{ fontSize: "26px", letterSpacing: "-0.5px", fontWeight: "800" }}>
+                            <Icon size={36} className={isConfirming ? "!text-white" : "!text-[#E82127]"} style={{ color: isConfirming ? "white" : "#E82127" }} />
+                            <span className="text-[#d1d5db]" style={{ fontSize: "26px", letterSpacing: "-0.5px", fontWeight: "800", color: isConfirming ? "white" : "#d1d5db" }}>
                                 {isConfirming ? "호출하시겠습니까?" : text}
                             </span>
                         </button>
@@ -375,23 +339,46 @@ export function AiResponse({ lang, errorCode, isActive, mode, aiMessage, aiCheck
             {/* 3. 하단 O/X 대형 버튼 */}
             <div className={`grid grid-cols-2 gap-12 shrink-0 pb-6 transition-opacity duration-500 ${isStreaming ? "opacity-30 pointer-events-none" : "opacity-100"}`}>
                 <button
-                    className="!bg-green-600 hover:!bg-green-500 !border !border-white/10 !rounded-3xl h-48 flex flex-col items-center justify-center gap-3 !shadow-[0_20px_60px_rgba(22,163,74,0.3)] transition-all active:scale-95"
-                    onClick={() => onFollowUp("해결 완료 (O)")}
+                    className="!bg-green-600 hover:!bg-green-500 !border !border-white/10 !rounded-3xl h-48 flex flex-col items-center justify-center gap-3 !shadow-[0_20px_60px_rgba(22,163,74,0.3)] transition-all active:scale-95 focus:!outline-none focus:!shadow-none"
+                    onClick={() => {
+                        if (showChecklist) {
+                            setShowChecklist(false);
+                            setSelectedOptions([]);
+                        } else {
+                            onFollowUp("해결 완료 (O)");
+                        }
+                    }}
                     disabled={isStreaming}
                 >
-                    <CheckCircle size={80} className="!text-white" strokeWidth={2} />
-                    <span className="text-2xl font-black text-white">{lang === "KO" ? "조치 완료 (상담 종료)" : "Resolved (Finish)"}</span>
+                    <CheckCircle size={80} className="!text-white" style={{ color: "white", stroke: "white" }} strokeWidth={2} />
+                    <span className="text-2xl font-black text-white" style={{ color: "white" }}>
+                        {showChecklist ? "돌아가기" : (lang === "KO" ? "조치 완료 (상담 종료)" : "Resolved (Finish)")}
+                    </span>
                 </button>
 
                 <button
-                    className="!bg-red-600 hover:!bg-red-500 !border !border-white/10 !rounded-3xl h-48 flex flex-col items-center justify-center gap-3 !shadow-[0_20px_60px_rgba(220,38,38,0.3)] transition-all active:scale-95"
+                    className="!bg-red-600 hover:!bg-red-500 !border !border-white/10 !rounded-3xl h-48 flex flex-col items-center justify-center gap-3 !shadow-[0_20px_60px_rgba(220,38,38,0.3)] transition-all active:scale-95 focus:!outline-none focus:!shadow-none"
                     onClick={() => {
-                        setShowChecklist(true);
+                        if (showChecklist) {
+                            const results = (aiChecklist || []).map((item: any, idx: number) => {
+                                return {
+                                    question: item.item || item,
+                                    is_ok: selectedOptions.includes(`${idx}`)
+                                };
+                            });
+                            onFollowUp("체크리스트 점검 완료", true, results as any);
+                            setShowChecklist(false);
+                            setSelectedOptions([]);
+                        } else {
+                            setShowChecklist(true);
+                        }
                     }}
-                    disabled={isStreaming || showChecklist}
+                    disabled={isStreaming}
                 >
-                    <XCircle size={80} className="!text-white" strokeWidth={2} />
-                    <span className="text-2xl font-black text-white">{lang === "KO" ? "미해결 (상세 점검)" : "Unresolved (Checklist)"}</span>
+                    {!showChecklist && <XCircle size={80} className="!text-white" style={{ color: "white", stroke: "white" }} strokeWidth={2} />}
+                    <span className={`font-black text-white text-center ${showChecklist ? "text-[30px] px-4 leading-tight" : "text-2xl"}`} style={{ color: "white" }}>
+                        {showChecklist ? "점검 결과 및 최종 판단 요청" : (lang === "KO" ? "미해결 (상세 점검)" : "Unresolved (Checklist)")}
+                    </span>
                 </button>
             </div>
         </motion.div>

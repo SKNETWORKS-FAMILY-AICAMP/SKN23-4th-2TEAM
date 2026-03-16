@@ -11,6 +11,8 @@ export default defineConfig({
       '/api': {
         target: 'http://127.0.0.1:8001',
         changeOrigin: true,
+        timeout: 60000,     // 프록시 타임아웃 60초로 증가 (부하 대비)
+        proxyTimeout: 60000, // 프록시 타임아웃 60초로 증가
       }
     }
   },

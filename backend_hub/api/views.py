@@ -4,6 +4,8 @@ from django.db.models import Count
 from .models import RobotDevice
 from .serializers import RobotModelSerializer, RobotDeviceSerializer, RobotErrorLogSerializer, RobotErrorSessionSerializer, RobotErrorChatHistorySerializer
 from .models import RobotModel, RobotDevice, RobotErrorLog, RobotErrorSession, RobotErrorChatHistory
+from datetime import datetime, timedelta
+from django.db.models.functions import TruncDate
 
 # =========================
 # 대시보드 관련 API

@@ -13,9 +13,13 @@ lsof -ti:5174 | xargs kill -9 2>/dev/null
 pkill -f run_tunnel.py 2>/dev/null
 sleep 2
 
-echo "[0.5/6] 📦 Synchronizing dependencies (Poetry)..."
+echo "[0.5/6] 📦 Synchronizing dependencies (Poetry & NPM)..."
 poetry install --no-root
-sleep 2
+echo "-> [NPM] Installing frontend_admin dependencies..."
+(cd frontend_admin && npm install)
+echo "-> [NPM] Installing frontend_worker dependencies..."
+(cd frontend_worker && npm install)
+sleep 1
 
 echo "[1/6] 🧹 Clearing Python and Vite caches..."
 find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null
