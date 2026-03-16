@@ -7,32 +7,35 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { mockdata } from "../mock/mockdata";
 
-function ErrorChart() {
+function ErrorChart({ data }) {
+
   const [selectedLine, setSelectedLine] = useState("all");
 
-  // 오늘 기준 최근 7일 생성
   const today = new Date();
   const last7Days = Array.from({ length: 7 }).map((_, i) => {
     const d = new Date();
     d.setDate(today.getDate() - (6 - i));
-    return d.toISOString().slice(0, 10); // yyyy-mm-dd
+    return d.toISOString().slice(0, 10);
   });
 
-  // 7일 기본 데이터 생성
   const baseData = last7Days.reduce((acc, date) => {
-    acc[date] = { time: date, a: 0, b: 0 };
+    acc[date] = { time: date, a: 0, b: 0, c: 0, d: 0 };
     return acc;
   }, {});
 
-  // mockdata 집계
-  mockdata.forEach((log) => {
-    if (!log.errorCode) return;
-    if (!baseData[log.date]) return;
+  // API 데이터 반영
+  data.forEach((item) => {
+    const date = item.date;
+    const line = item.device__line_name;
+    const count = item.count;
 
-    if (log.line === "A") baseData[log.date].a += 1;
-    if (log.line === "B") baseData[log.date].b += 1;
+    if (!baseData[date]) return;
+
+    if (line === "A") baseData[date].a = count;
+    if (line === "B") baseData[date].b = count;
+    if (line === "C") baseData[date].c = count;
+    if (line === "D") baseData[date].d = count;
   });
 
   const chartData = Object.values(baseData);
@@ -41,13 +44,15 @@ function ErrorChart() {
     { id: "all", label: "All" },
     { id: "a", label: "A라인" },
     { id: "b", label: "B라인" },
+    { id: "c", label: "C라인" },
+    { id: "d", label: "D라인" },
   ];
 
   return (
     <div className="h-full flex flex-col bg-white p-4 rounded-lg shadow border">
       <h2 className="font-bold mb-4">라인별 에러 발생 비교 (최근 7일)</h2>
 
-      <div className="flex gap-2 mb-4">
+      <div className="flex gap-2 mb-4 flex-wrap">
         {lines.map((line) => (
           <button
             key={line.id}
@@ -77,6 +82,15 @@ function ErrorChart() {
             {(selectedLine === "all" || selectedLine === "b") && (
               <Line type="monotone" dataKey="b" stroke="#3b82f6" strokeWidth={2} />
             )}
+
+            {(selectedLine === "all" || selectedLine === "c") && (
+              <Line type="monotone" dataKey="c" stroke="#22c55e" strokeWidth={2} />
+            )}
+
+            {(selectedLine === "all" || selectedLine === "d") && (
+              <Line type="monotone" dataKey="d" stroke="#f59e0b" strokeWidth={2} />
+            )}
+
           </LineChart>
         </ResponsiveContainer>
       </div>

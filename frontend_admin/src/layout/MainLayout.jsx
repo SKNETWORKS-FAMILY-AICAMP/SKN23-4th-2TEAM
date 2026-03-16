@@ -20,6 +20,14 @@ function MainLayout() {
         >
           💬
         </button>
+
+        {/* 챗봇 UI */}
+        {chatOpen && (
+          <div className="fixed bottom-20 right-6 w-80 h-96 bg-white shadow-lg rounded-lg z-50 p-4">
+            <h2 className="font-bold text-lg">Chatbot</h2>
+            <p>여기에 챗봇 메시지 표시</p>
+          </div>
+        )}
       </main>
     </div>
   );
