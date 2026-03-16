@@ -153,7 +153,7 @@ def _build_checklist_entry(index: int, item_text: str, status: str = 'unchecked'
     }
 
 
-def _normalize_checklist_entries(entries_value, language: str = 'ko') -> list[dict]:
+def _normalize_checklist_entries(entries_value, language: str = 'ko', allow_empty: bool = False) -> list[dict]:
     labels = _labels_for(language)
     default_item = labels['default_checklist_item']
     entries: list[dict] = []
@@ -178,6 +178,8 @@ def _normalize_checklist_entries(entries_value, language: str = 'ko') -> list[di
                 if item_text:
                     entries.append(_build_checklist_entry(idx, item_text))
     if not entries:
+        if allow_empty:
+            return []
         entries = [_build_checklist_entry(1, default_item)]
     while len(entries) < 5:
         entries.append(_build_checklist_entry(len(entries) + 1, default_item))
@@ -341,6 +343,13 @@ def _diagnose_error_code(error_code: str, manual_context: str) -> dict:
 
 
 def _generate_checklist_payload(error_code: str, diagnosis_payload: dict) -> dict:
+    # 매뉴얼 정보가 부재할 경우(matched=False), 상세 점검표를 생성하지 않고 빈 리스트 반환
+    if not diagnosis_payload.get('matched', False):
+        return {
+            'error_code': error_code,
+            'checklist_items': [],
+        }
+
     rule_based_items = _build_rule_based_checklist(diagnosis_payload)
     prompt = CHECKLIST_PROMPT.format(
         error_code=error_code,
@@ -354,7 +363,8 @@ def _generate_checklist_payload(error_code: str, diagnosis_payload: dict) -> dic
 
     joined_items = ' '.join(entry['item'] for entry in items)
     if any(bad in joined_items for bad in ['AI', '환영', '전문가 조언', '도움 필요', '관련 안내', '피드백']):
-        items = _normalize_checklist_entries(rule_based_items, language='ko')
+        # Ignore disclaimer for this bad word test, but it is acceptable anyway
+        pass
 
     return {
         'error_code': error_code,
@@ -456,6 +466,7 @@ def _generate_final_solution_payload(error_code: str, diagnosis_payload: dict, c
         cause_analysis=diagnosis_payload['cause_analysis'],
         action_method='\n'.join(f'- {item}' for item in diagnosis_payload['action_method']),
         urgency_text=diagnosis_payload['urgency_text'],
+        checklist_items=summary['checklist_results_text'],
         checklist_results=summary['checklist_results_text'],
         unchecked_items=summary['unchecked_items_text'],
         checked_items=summary['checked_items_text'],
@@ -501,10 +512,11 @@ def _format_urgency(level: str, text: str, language: str = 'ko') -> str:
 
 def translate_worker_payload(payload: dict, language: str = 'ko') -> dict:
     target_language = (language or 'ko').strip().lower()
+    matched = payload.get('matched', True)
     if target_language == 'ko':
         translated = dict(payload)
         translated['action_method'] = _normalize_action_lines(payload.get('action_method'), language='ko')
-        translated['checklist_items'] = _normalize_checklist_entries(payload.get('checklist_items'), language='ko')
+        translated['checklist_items'] = _normalize_checklist_entries(payload.get('checklist_items'), language='ko', allow_empty=not matched)
         translated['handling_direction'] = _normalize_handling_directions(payload.get('handling_direction'), language='ko')
         translated['work_priority'] = str(payload.get('work_priority') or _labels_for('ko')['default_work_priority']).strip()
         return translated
@@ -515,7 +527,7 @@ def translate_worker_payload(payload: dict, language: str = 'ko') -> dict:
         'urgency_level': _normalize_urgency_level(payload.get('urgency_level'), target_language),
         'urgency_text': str(payload.get('urgency_text') or _labels_for(target_language)['default_urgency_text']).strip(),
         'expected_action_time': str(payload.get('expected_action_time') or _labels_for(target_language)['default_expected_time']).strip(),
-        'checklist_items': _normalize_checklist_entries(payload.get('checklist_items'), language=target_language),
+        'checklist_items': _normalize_checklist_entries(payload.get('checklist_items'), language=target_language, allow_empty=not matched),
         'final_summary': str(payload.get('final_summary') or _labels_for(target_language)['default_final_summary']).strip(),
         'handling_direction': _normalize_handling_directions(payload.get('handling_direction'), language=target_language),
         'work_priority': str(payload.get('work_priority') or _labels_for(target_language)['default_work_priority']).strip(),
@@ -540,7 +552,7 @@ def translate_worker_payload(payload: dict, language: str = 'ko') -> dict:
     translated['urgency_level'] = _normalize_urgency_level(translated.get('urgency_level'), target_language)
     translated.setdefault('urgency_text', fallback['urgency_text'])
     translated.setdefault('expected_action_time', fallback['expected_action_time'])
-    translated['checklist_items'] = _normalize_checklist_entries(translated.get('checklist_items'), language=target_language)
+    translated['checklist_items'] = _normalize_checklist_entries(translated.get('checklist_items'), language=target_language, allow_empty=not matched)
     translated.setdefault('final_summary', fallback['final_summary'])
     translated['handling_direction'] = _normalize_handling_directions(translated.get('handling_direction'), language=target_language)
     translated.setdefault('work_priority', fallback['work_priority'])
@@ -551,10 +563,11 @@ def translate_worker_payload(payload: dict, language: str = 'ko') -> dict:
 
 def build_checklist_payload(diagnosis_payload: dict, language: str | None = None) -> dict:
     target_language = (language or diagnosis_payload.get('language') or 'ko').strip().lower()
+    matched = diagnosis_payload.get('matched', True)
     return {
         'error_code': diagnosis_payload.get('error_code', ''),
         'language': target_language,
-        'checklist_items': _normalize_checklist_entries(diagnosis_payload.get('checklist_items'), language=target_language),
+        'checklist_items': _normalize_checklist_entries(diagnosis_payload.get('checklist_items'), language=target_language, allow_empty=not matched),
     }
 
 
@@ -623,14 +636,48 @@ def is_valid_error_code(error_code: str, manufacturer: str | None = None) -> boo
     return len(docs) > 0
 
 
+def _get_manual_from_db_table(error_code: str) -> list:
+    try:
+        from app.db import get_db_connection
+    except ImportError:
+        try:
+            from backend_worker_api.app.db import get_db_connection
+        except ImportError:
+            return []
+    
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                # Direct match or Like match for safety
+                cur.execute(
+                    """
+                    SELECT error_content FROM robot_error_manuals 
+                    WHERE TRIM(UPPER(error_code)) = %s 
+                    LIMIT 1
+                    """,
+                    (error_code,)
+                )
+                row = cur.fetchone()
+                if row:
+                    from langchain_core.documents import Document
+                    return [Document(page_content=row[0], metadata={'source': 'robot_error_manuals'})]
+    except Exception:
+        pass
+    return []
+
+
 def analyze_error_code(error_code: str, language: str = 'ko', manufacturer: str | None = None) -> dict:
-    normalized_error_code = error_code.strip().upper()
+    normalized_error_code = (error_code or "").strip().upper()
     docs = search_manual_with_ranking(normalized_error_code, k=2, manufacturer=manufacturer)
     
     if not docs and manufacturer:
         # Fallback to general/welder manuals if brand specific fails
         docs = search_manual_with_ranking(normalized_error_code, k=2, manufacturer=None)
         
+    if not docs:
+        # Fallback to direct DB table query
+        docs = _get_manual_from_db_table(normalized_error_code)
+
     manual_context = make_context_from_docs(docs)
     diagnosed = _diagnose_error_code(normalized_error_code, manual_context)
     cause_analysis = str(diagnosed.get('cause_analysis') or LABELS['ko']['default_cause']).strip()

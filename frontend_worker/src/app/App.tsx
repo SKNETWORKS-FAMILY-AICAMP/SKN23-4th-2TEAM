@@ -22,6 +22,17 @@ interface ErrorHistory {
     status?: string;
 }
 
+const genUuid = () => {
+    if (typeof crypto !== "undefined" && crypto.randomUUID) {
+        return crypto.randomUUID();
+    }
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+        const r = Math.random() * 16 | 0;
+        const v = c === "x" ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+};
+
 export default function App() {
     // Load configuration from localStorage
     const [config, setConfig] = useState<Config>(() => {
@@ -79,12 +90,14 @@ export default function App() {
 
     const fetchHistory = useCallback(async () => {
         try {
-            const [logs, stats] = await Promise.all([
+            const [logs, stats, calls] = await Promise.all([
                 api.getRecentLogs(),
-                api.getStats()
+                api.getStats(),
+                api.getEngineerCalls()
             ]);
             setErrorHistory(logs);
             setDashboardStats(stats);
+            setEngineerCalls(calls);
         } catch (err) {
             console.error("Failed to fetch global data:", err);
         }
@@ -198,13 +211,14 @@ export default function App() {
             toast.error(lang === "KO" ? "네트워크 연결을 확인하세요" : "Please check your network connection");
             return;
         }
+
         if (errorCode) {
             setIsDiagnosing(true);
             setAiActive(true);
             setAiMessage("");
             try {
                 const res = await api.startConsultation({
-                    request_id: crypto.randomUUID(),
+                    request_id: genUuid(),
                     language: lang.toLowerCase() as "ko" | "en" | "uz",
                     device_id: deviceId || `${selectedDevice.line}-${selectedDevice.robot}`,
                     error_code: errorCode
@@ -232,7 +246,7 @@ export default function App() {
                         msg = lang === "KO" ? "이미 진행 중인 요청입니다" : "Request already in progress";
                     }
                 }
-                toast.error(msg);
+                toast.error(`${msg} [상세: ${err.message || "Unknown Error"}]`);
                 setAiMessage("");
                 setAiMode("diagnosis");
                 setAiActive(false); // Disable on actual failure
@@ -273,9 +287,9 @@ export default function App() {
 
         if (sessionId) {
             try {
-                let selectedChoice: "O" | "X" | null = isResolvedEvent ? "O" : (text.includes("(X)") ? "X" : null);
+                let selectedChoice: "O" | "X" | null = isResolvedEvent ? "O" : (isChecklistSubmit ? "X" : (text.includes("(X)") ? "X" : null));
                 const res = await api.sendConsultationEvent(sessionId, {
-                    request_id: crypto.randomUUID(),
+                    request_id: genUuid(),
                     actor: "user",
                     step_no: stepNo + 1,
                     language: lang.toLowerCase() as "ko" | "en" | "uz",

@@ -43,11 +43,22 @@ app = FastAPI(
     default_response_class=AsciiJSONResponse,
 )
 
-# CORS 설정
+@app.on_event("startup")
+def startup_event():
+    logger.info("🧠 [Startup] Pre-heating AI models (Cross-Encoder / Reranker)...")
+    try:
+        from core.reranker import load_reranker_singleton
+        load_reranker_singleton()
+        logger.info("✅ [Startup] Reranker Cross-Encoder loaded successfully into memory.")
+    except Exception as e:
+        logger.error(f"❌ [Startup] Failed to pre-heat AI models: {e}")
+
+
+# CORS 설정 - Safari 연동을 위해 credentials와 wildcard 충돌 방지
 app.add_middleware(
     CORSMiddleware,
     allow_origins=['*'],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=['*'],
     allow_headers=['*'],
 )

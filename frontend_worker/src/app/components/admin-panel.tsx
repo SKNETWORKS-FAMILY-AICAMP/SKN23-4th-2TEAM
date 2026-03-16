@@ -25,6 +25,132 @@ import {
 } from "recharts";
 import { motion, AnimatePresence } from "motion/react";
 
+const ADMIN_T = {
+  KO: {
+    sidebarTitle: "Admin",
+    dashboard: "대시보드",
+    history: "에러 로그",
+    stats: "호출 현황",
+    settings: "시스템 설정",
+    systemShutdown: "시스템 종료",
+    todayErrors: "금일 에러 발생",
+    engineerCalls: "엔지니어 호출",
+    resolution: "에러 해결률",
+    subErrors: "건",
+    subCalls: "긴급",
+    subGoal: "목표 달성",
+    trendTitle: "에러 트렌드 분석",
+    all: "전체",
+    line: "라인",
+    realtimeLog: "실시간 활동 로그",
+    timestamp: "TIMESTAMP",
+    deviceIdent: "DEVICE IDENTIFICATION",
+    status: "STATUS",
+    callTime: "호출 일시",
+    callMessage: "호출 메시지",
+    noCalls: "현재 접수된 고가동 호출 데이터가 없습니다.",
+    resetFilter: "Reset All View",
+    type: "Type",
+    lineFilter: "Line",
+    searchDate: "Search Date",
+    searchFilter: "History Search Filter",
+    allTypes: "ALL TYPES",
+    allLines: "ALL LINES",
+    saveApply: "설정 저장 및 적용",
+    deviceBinding: "기기 고정 할당 (Device Binding Mode)",
+    fixedMode: "고정 모드",
+    fixedDesc: "특정 라인과 로봇에 기기를 영구히 고정합니다. 작업자는 에러코드만 입력하게 됩니다.",
+    floatingMode: "이동 모드",
+    floatingDesc: "들고 다니는 태블릿용입니다. 메인 화면에서 라인과 기기를 매번 변경할 수 있습니다.",
+    lineName: "라인 이름",
+    robotName: "로봇 명칭",
+    deviceId: "장비 고유 ID",
+    backendIp: "백엔드 서버 IP",
+  },
+  EN: {
+    sidebarTitle: "Admin",
+    dashboard: "Dashboard",
+    history: "Error Logs",
+    stats: "Call Status",
+    settings: "System Settings",
+    systemShutdown: "Shutdown",
+    todayErrors: "Today's Errors",
+    engineerCalls: "Engineer Calls",
+    resolution: "Resolution Rate",
+    subErrors: "cases",
+    subCalls: "Urgent",
+    subGoal: "Target",
+    trendTitle: "Error Trend Analysis",
+    all: "ALL",
+    line: "Line",
+    realtimeLog: "Real-time Activity Log",
+    timestamp: "TIMESTAMP",
+    deviceIdent: "DEVICE IDENTIFICATION",
+    status: "STATUS",
+    callTime: "Call Time",
+    callMessage: "Message",
+    noCalls: "No pending engineer calls.",
+    resetFilter: "Reset All View",
+    type: "Type",
+    lineFilter: "Line",
+    searchDate: "Search Date",
+    searchFilter: "History Search Filter",
+    allTypes: "ALL TYPES",
+    allLines: "ALL LINES",
+    saveApply: "Save & Apply Config",
+    deviceBinding: "Device Binding Mode",
+    fixedMode: "FIXED MODE",
+    fixedDesc: "Lock this device to a specific station. Workers only see the error keypad.",
+    floatingMode: "FLOATING MODE",
+    floatingDesc: "Mobile tablet mode. Allows on-screen switching of stations/robots.",
+    lineName: "Line Name",
+    robotName: "Robot Name",
+    deviceId: "Device ID",
+    backendIp: "Backend Server IP",
+  },
+  UZ: {
+    sidebarTitle: "Admin",
+    dashboard: "Boshqaruv paneli",
+    history: "Xatolar jurnali",
+    stats: "Chaqiruv holati",
+    settings: "Tizim sozlamalari",
+    systemShutdown: "Tizimni o'chirish",
+    todayErrors: "Bugungi xatolar",
+    engineerCalls: "Muhandis chaqiruvi",
+    resolution: "Hal qilish darajasi",
+    subErrors: "ta",
+    subCalls: "Shoshilinch",
+    subGoal: "Maqsad",
+    trendTitle: "Xatolar tendentsiyasi tahlili",
+    all: "Barchasi",
+    line: "Liniya",
+    realtimeLog: "Haqiqiy vaqt jurnali",
+    timestamp: "TIMESTAMP",
+    deviceIdent: "DEVICE IDENTIFICATION",
+    status: "STATUS",
+    callTime: "Chaqiruv vaqti",
+    callMessage: "Xabar",
+    noCalls: "Kutilayotgan chaqiruvlar yo'q.",
+    resetFilter: "Reset All View",
+    type: "Type",
+    lineFilter: "Line",
+    searchDate: "Search Date",
+    searchFilter: "Tarix qidirish filtri",
+    allTypes: "BARCHA TURDAGI",
+    allLines: "BARCHA LINIYALAR",
+    saveApply: "Saqlash va qo'llash",
+    deviceBinding: "Qurilmani biriktirish rejimi",
+    fixedMode: "RUXSAT ETILGAN REJIM",
+    fixedDesc: "Qurilmani aniq liniya/robotga mahkamlang. Faqat kadr klaviaturasini ko'rasiz.",
+    floatingMode: "SUZUVCHI REJIM",
+    floatingDesc: "Planshet rejimi. Liniya va robot stantsiyalarni qo'lda almashtirishga ruxsat beradi.",
+    lineName: "Liniya nomi",
+    robotName: "Robot nomi",
+    deviceId: "Qurilma ID",
+    backendIp: "Backend Server IP",
+  }
+};
+
 interface AdminPanelProps {
   lang: Lang;
   onBack: () => void;
@@ -35,7 +161,7 @@ interface AdminPanelProps {
     device?: string;
     status?: string;
   }>;
-  engineerCalls: Array<{ code: string; timestamp: number; device: string }>;
+  engineerCalls: Array<{ code: string; timestamp: number; device: string; message?: string }>;
   onClearCalls: () => void;
   onResolveCall: (timestamp: number) => void;
   stats?: {
@@ -136,14 +262,16 @@ export function AdminPanel({
     currentPage * ROWS_PER_PAGE,
   );
 
+  const t = ADMIN_T[lang] || ADMIN_T.KO;
+
   const menuItems = [
-    { id: "dashboard", label: "대시보드", icon: LayoutDashboard },
-    { id: "history", label: "에러 로그", icon: ListOrdered },
+    { id: "dashboard", label: t.dashboard, icon: LayoutDashboard },
+    { id: "history", label: t.history, icon: ListOrdered },
     {
-      id: "stats", label: "호출 현황", icon: AlertTriangle,
+      id: "stats", label: t.stats, icon: AlertTriangle,
       badge: engineerCalls.length > 0 ? engineerCalls.length : undefined
     },
-    { id: "settings", label: "시스템 설정", icon: Settings },
+    { id: "settings", label: t.settings, icon: Settings },
   ];
 
   return (
@@ -232,7 +360,7 @@ export function AdminPanel({
             onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; (e.currentTarget as HTMLButtonElement).style.color = "#737373"; }}
           >
             <LogOut size={16} />
-            <span>시스템 종료</span>
+            <span>{t.systemShutdown}</span>
           </button>
         </div>
       </div>
@@ -251,9 +379,9 @@ export function AdminPanel({
               {/* ── STAT CARDS: 3등분, 좌측 아이콘 + 우측 텍스트 수직중앙 ── */}
               <div className="grid grid-cols-3 shrink-0 border-b border-neutral-800/60" style={{ height: 90 }}>
                 {[
-                  { label: "금일 에러 발생", value: String(stats?.today_total ?? 0), sub: "건", icon: AlertTriangle, color: "#FF3B30" },
-                  { label: "엔지니어 호출", value: String(engineerCalls.length), sub: "긴급", icon: Wrench, color: "#E82127", pulse: true },
-                  { label: "에러 해결률", value: `${stats?.today_resolution_rate ?? 0}%`, sub: "목표 달성", icon: CheckCircle, color: "#34C759" },
+                  { label: t.todayErrors, value: String(stats?.today_total ?? 0), sub: t.subErrors, icon: AlertTriangle, color: "#FF3B30" },
+                  { label: t.engineerCalls, value: String(engineerCalls.length), sub: t.subCalls, icon: Wrench, color: "#E82127", pulse: true },
+                  { label: t.resolution, value: `${stats?.today_resolution_rate ?? 0}%`, sub: t.subGoal, icon: CheckCircle, color: "#34C759" },
                 ].map((stat, i) => (
                   <div
                     key={i}
@@ -333,7 +461,7 @@ export function AdminPanel({
                         color: "#fff",
                       }}
                     >
-                      에러 트렌드 분석
+                      {t.trendTitle}
                     </span>
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
@@ -354,7 +482,7 @@ export function AdminPanel({
                           cursor: "pointer",
                         }}
                       >
-                        {line === "ALL" ? "전체" : `라인 ${line}`}
+                        {line === "ALL" ? t.all : `${t.line} ${line}`}
                       </button>
                     ))}
                   </div>
@@ -422,7 +550,7 @@ export function AdminPanel({
                         color: "#fff",
                       }}
                     >
-                      실시간 활동 로그
+                      {t.realtimeLog}
                     </span>
                   </div>
                   <button
@@ -491,7 +619,7 @@ export function AdminPanel({
                             return (
                               <>
                                 <span style={{ color: "#E82127", fontWeight: 700, marginRight: 8, fontSize: 12 }}>
-                                  [{(lineInfo.toUpperCase().startsWith("LINE") ? lineInfo.replace(/line\s*/gi, "").trim() : lineInfo.trim()) + "라인"}]
+                                  [{(lineInfo.toUpperCase().startsWith("LINE") ? lineInfo.replace(/line\s*/gi, "").trim() : lineInfo.trim()) + " " + t.line}]
                                 </span>
                                 {deviceId}
                               </>
@@ -526,6 +654,58 @@ export function AdminPanel({
             </>
           )}
 
+          {/* ══ STATS (CALLS) ══ */}
+          {activeTab === "stats" && (
+            <div className="flex-1 flex flex-col overflow-hidden h-full">
+              <div className="border-b border-neutral-800/60 shrink-0" style={{ background: "#0d0d0f", padding: "16px 24px" }}>
+                <span style={{ fontSize: 14, fontWeight: 800, fontStyle: "italic", textTransform: "uppercase", color: "#fff", letterSpacing: "0.05em" }}>
+                  {t.engineerCalls}
+                </span>
+              </div>
+              <div className="flex-1 overflow-y-auto" style={{ background: "#000" }}>
+                <table className="w-full table-fixed">
+                  <thead>
+                    <tr style={{ background: "#0d0d0f", borderBottom: "1px solid rgba(64,64,64,0.4)" }}>
+                      {[t.callTime, t.deviceIdent, t.callMessage].map((h, i) => (
+                        <th key={h} style={{ padding: "12px 24px", fontSize: 11, fontWeight: 700, color: "#525252", textAlign: "left", width: i===0 ? "180px" : i===1 ? "220px" : undefined }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {engineerCalls.map((call, i) => (
+                      <tr key={i} style={{ height: 60, borderBottom: "1px solid rgba(38,38,38,0.3)" }}>
+                        <td style={{ padding: "0 24px", fontFamily: "monospace", fontSize: 13, color: "#e5e5e5" }}>
+                          {formatDate(call.timestamp)}
+                        </td>
+                        <td style={{ padding: "0 24px", fontSize: 13, fontWeight: 600, color: "#e5e5e5" }}>
+                          {(() => {
+                            const parts = (call.device || "").split(" - ");
+                            const line = parts[0] || "A";
+                            const device = parts[1] || "";
+                            return (
+                              <>
+                                <span style={{ color: "#E82127", fontWeight: 700, marginRight: 8 }}>[{line} {t.line}]</span>
+                                {device} <span style={{ color: "#737373", fontSize: 11 }}>(ERR: {call.code})</span>
+                              </>
+                            );
+                          })()}
+                        </td>
+                        <td style={{ padding: "0 24px", fontSize: 13, color: "#a1a1aa" }}>{call.message}</td>
+                      </tr>
+                    ))}
+                    {engineerCalls.length === 0 && (
+                      <tr>
+                        <td colSpan={3} style={{ textAlign: "center", padding: 40, color: "#737373", fontSize: 13 }}>
+                          {t.noCalls}
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           {/* ══ HISTORY ══ */}
           {activeTab === "history" && (
             <div className="flex-1 flex flex-col overflow-hidden h-full">
@@ -536,14 +716,14 @@ export function AdminPanel({
                 <div className="flex flex-col gap-4" style={{ marginBottom: 20 }}>
                   <div className="flex items-center justify-between">
                     <span style={{ fontSize: 14, fontWeight: 800, fontStyle: "italic", textTransform: "uppercase", color: "#fff", letterSpacing: "0.05em" }}>
-                      History Search Filter
+                      {t.searchFilter}
                     </span>
                   </div>
 
                   <div className="flex flex-wrap items-end gap-4">
                     {/* Device Type */}
                     <div className="flex flex-col gap-2">
-                      <label style={{ fontSize: 10, fontWeight: 700, color: "#525252", textTransform: "uppercase" }}>Type</label>
+                      <label style={{ fontSize: 10, fontWeight: 700, color: "#525252", textTransform: "uppercase" }}>{t.type}</label>
                       <select
                         value={filterType}
                         onChange={(e) => handleFilterChange(setFilterType, e.target.value as any)}
@@ -560,7 +740,7 @@ export function AdminPanel({
                           boxSizing: "border-box"
                         }}
                       >
-                        <option value="ALL">ALL TYPES</option>
+                        <option value="ALL">{t.allTypes}</option>
                         <option value="robot">ROBOT</option>
                         <option value="welder">WELDER</option>
                       </select>
@@ -568,7 +748,7 @@ export function AdminPanel({
 
                     {/* Line Select */}
                     <div className="flex flex-col gap-2">
-                      <label style={{ fontSize: 10, fontWeight: 700, color: "#525252", textTransform: "uppercase" }}>Line</label>
+                      <label style={{ fontSize: 10, fontWeight: 700, color: "#525252", textTransform: "uppercase" }}>{t.lineFilter}</label>
                       <select
                         value={filterLine}
                         onChange={(e) => handleFilterChange(setFilterLine, e.target.value as any)}
@@ -585,14 +765,14 @@ export function AdminPanel({
                           boxSizing: "border-box"
                         }}
                       >
-                        <option value="ALL">ALL LINES</option>
+                        <option value="ALL">{t.allLines}</option>
                         {["A", "B", "C", "D"].map(l => <option key={l} value={l}>LINE {l}</option>)}
                       </select>
                     </div>
 
                     {/* Date Picker */}
                     <div className="flex flex-col gap-2">
-                      <label style={{ fontSize: 10, fontWeight: 700, color: "#525252", textTransform: "uppercase" }}>Search Date</label>
+                      <label style={{ fontSize: 10, fontWeight: 700, color: "#525252", textTransform: "uppercase" }}>{t.searchDate}</label>
                       <input
                         type="date"
                         value={filterDate}
@@ -638,7 +818,7 @@ export function AdminPanel({
                         boxSizing: "border-box"
                       }}
                     >
-                      Reset All View
+                      {t.resetFilter}
                     </button>
                   </div>
                 </div>
@@ -695,7 +875,7 @@ export function AdminPanel({
                             return (
                               <>
                                 <span style={{ color: "#E82127", fontWeight: 700, marginRight: 8, fontSize: 12 }}>
-                                  [{(lineInfo.toUpperCase().startsWith("LINE") ? lineInfo.replace(/line\s*/gi, "").trim() : lineInfo.trim()) + "라인"}]
+                                  [{(lineInfo.toUpperCase().startsWith("LINE") ? lineInfo.replace(/line\s*/gi, "").trim() : lineInfo.trim()) + " " + t.line}]
                                 </span>
                                 {deviceId}
                                 <span style={{ color: "#a1a1aa", fontWeight: 400, fontSize: 12, marginLeft: 8 }}>
@@ -797,10 +977,11 @@ export function AdminPanel({
                   </div>
                   <button
                     onClick={() => onConfigChange(tempConfig)}
-                    className="px-8 py-4 bg-[#E82127] text-white font-black text-lg italic tracking-tighter hover:bg-[#c41b21] transition-all flex items-center gap-3 shadow-2xl active:scale-95 rounded-md"
+                    className="px-8 py-4 bg-[#E82127] font-black text-lg italic tracking-tighter hover:bg-[#c41b21] transition-all flex items-center gap-3 shadow-2xl active:scale-95 rounded-md"
+                    style={{ color: "#ffffff" }}
                   >
                     <Save size={20} />
-                    {lang === "KO" ? "설정 저장 및 적용" : "SAVE & APPLY CONFIG"}
+                    {t.saveApply}
                   </button>
                 </div>
 
@@ -811,7 +992,7 @@ export function AdminPanel({
                   <div className="space-y-5">
                     <label className="flex items-center gap-3 text-sm font-black text-zinc-500 uppercase tracking-[0.2em]">
                       <Cpu size={18} />
-                      {lang === "KO" ? "기기 고정 할당 (Device Binding Mode)" : "Device Binding Mode"}
+                      {t.deviceBinding}
                     </label>
                     <div className="grid grid-cols-2 gap-6 w-full">
                       <button
@@ -819,9 +1000,9 @@ export function AdminPanel({
                         className={`p-8 border transition-all flex flex-col items-start gap-3 text-left rounded-lg ${tempConfig.mode === "fixed" ? "bg-red-950/20 border-[#E82127] text-white" : "bg-black border-zinc-800 text-zinc-500 hover:border-zinc-700"
                           }`}
                       >
-                        <span className="text-2xl font-black italic">{lang === "KO" ? "고정 모드" : "FIXED"}</span>
-                        <p className="text-[13px] font-bold opacity-70 leading-relaxed uppercase">
-                          {lang === "KO" ? "특정 라인과 로봇에 기기를 영구히 고정합니다. 작업자는 에러코드만 입력하게 됩니다." : "Lock this device to a specific station. Workers only see the error keypad."}
+                        <span style={{ color: tempConfig.mode === "fixed" ? "#ffffff" : "#a1a1aa" }} className="text-2xl font-black italic">{t.fixedMode}</span>
+                        <p style={{ color: tempConfig.mode === "fixed" ? "#ffffff" : "#a1a1aa" }} className="text-[13px] font-bold opacity-70 leading-relaxed uppercase">
+                          {t.fixedDesc}
                         </p>
                       </button>
                       <button
@@ -829,9 +1010,9 @@ export function AdminPanel({
                         className={`p-8 border transition-all flex flex-col items-start gap-3 text-left rounded-lg ${tempConfig.mode === "floating" ? "bg-red-950/20 border-[#E82127] text-white" : "bg-black border-zinc-800 text-zinc-500 hover:border-zinc-700"
                           }`}
                       >
-                        <span className="text-2xl font-black italic">{lang === "KO" ? "이동 모드" : "FLOATING"}</span>
-                        <p className="text-[13px] font-bold opacity-70 leading-relaxed uppercase">
-                          {lang === "KO" ? "들고 다니는 태블릿용입니다. 메인 화면에서 라인과 기기를 매번 변경할 수 있습니다." : "Mobile tablet mode. Allows on-screen switching of stations/robots."}
+                        <span style={{ color: tempConfig.mode === "floating" ? "#ffffff" : "#a1a1aa" }} className="text-2xl font-black italic">{t.floatingMode}</span>
+                        <p style={{ color: tempConfig.mode === "floating" ? "#ffffff" : "#a1a1aa" }} className="text-[13px] font-bold opacity-70 leading-relaxed uppercase">
+                          {t.floatingDesc}
                         </p>
                       </button>
                     </div>
@@ -840,7 +1021,7 @@ export function AdminPanel({
                     {tempConfig.mode === "fixed" && (
                       <div className="grid grid-cols-3 gap-6 p-8 bg-black/50 border border-zinc-800 rounded-lg mt-4">
                         <div className="space-y-3">
-                          <label className="text-[11px] font-black text-zinc-500 uppercase tracking-widest">{lang === "KO" ? "라인 이름" : "Line Name"}</label>
+                          <label className="text-[11px] font-black text-zinc-500 uppercase tracking-widest">{t.lineName}</label>
                           <input
                             type="text"
                             value={tempConfig.line}
@@ -850,7 +1031,7 @@ export function AdminPanel({
                           />
                         </div>
                         <div className="space-y-3">
-                          <label className="text-[11px] font-black text-zinc-500 uppercase tracking-widest">{lang === "KO" ? "로봇 명칭" : "Robot Name"}</label>
+                          <label className="text-[11px] font-black text-zinc-500 uppercase tracking-widest">{t.robotName}</label>
                           <input
                             type="text"
                             value={tempConfig.robot}
@@ -860,7 +1041,7 @@ export function AdminPanel({
                           />
                         </div>
                         <div className="space-y-3">
-                          <label className="text-[11px] font-black text-zinc-500 uppercase tracking-widest">{lang === "KO" ? "장비 고유 ID" : "Device ID"}</label>
+                          <label className="text-[11px] font-black text-zinc-500 uppercase tracking-widest">{t.deviceId}</label>
                           <input
                             type="text"
                             value={tempConfig.deviceId}
@@ -883,7 +1064,7 @@ export function AdminPanel({
                     <div className="space-y-5">
                       <label className="flex items-center gap-3 text-sm font-black text-zinc-500 uppercase tracking-[0.2em]">
                         <Link size={18} />
-                        {lang === "KO" ? "백엔드 서버 IP" : "Backend Server IP"}
+                        {t.backendIp}
                       </label>
                       <input
                         type="text"

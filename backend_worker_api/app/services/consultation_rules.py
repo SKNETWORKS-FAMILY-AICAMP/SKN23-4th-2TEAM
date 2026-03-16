@@ -36,7 +36,33 @@ def get_session_device_and_error(cursor: RealDictCursor, session_id: int) -> Opt
         """,
         (session_id,),
     )
-    return cursor.fetchone()
+    row = cursor.fetchone()
+    if not row:
+        return None
+
+    # Fallback: If error_code is None, extract from chat histories (e.g. from start request)
+    if row.get('error_code') is None:
+        cursor.execute(
+            """
+            SELECT message FROM robot_error_chat_histories 
+            WHERE session_id = %s AND step_no = 1 AND actor = 'system'
+            LIMIT 1
+            """,
+            (session_id,)
+        )
+        history_row = cursor.fetchone()
+        if history_row and history_row.get('message'):
+            import re
+            match = re.search(r'([A-Z0-9]+)\s+에러', history_row['message'])
+            if match:
+                row['error_code'] = match.group(1).strip()
+            else:
+                # Secondary fallback if spacing differs
+                match2 = re.search(r'([A-Z0-9]+)에러', history_row['message'])
+                if match2:
+                    row['error_code'] = match2.group(1).strip()
+
+    return row
 
 
 def create_request_fingerprint_event(cursor: RealDictCursor, session_id: int, request_id: str) -> bool:

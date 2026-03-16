@@ -38,7 +38,7 @@ export function Header({ lang, onLangChange, onAdminActivate, onHome, isOnline }
   return (
     <div style={{ width: "100%", backgroundColor: "#09090b", borderBottom: "1px solid #27272a", flexShrink: 0 }}>
       {/* Container: maxWidth를 1400px로 늘려 여백을 줄임 */}
-      <div style={{ width: "100%", maxWidth: "1300px", margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 40px" }}>
+      <div style={{ width: "100%", maxWidth: "1300px", margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 12px 12px 20px" }}>
 
         <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
           <motion.div
@@ -121,7 +121,7 @@ export function Header({ lang, onLangChange, onAdminActivate, onHome, isOnline }
           </motion.div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "16px", marginRight: "40px" }}>
           <select
             value={lang}
             onChange={(e) => onLangChange(e.target.value as Lang)}
@@ -130,7 +130,7 @@ export function Header({ lang, onLangChange, onAdminActivate, onHome, isOnline }
               color: "#f4f4f5",
               border: "1px solid #3f3f46",
               borderRadius: "10px",
-              padding: "12px 12px",
+              padding: "14px 12px",
               fontSize: "18px",
               fontWeight: "900",
               cursor: "pointer",
@@ -146,6 +146,7 @@ export function Header({ lang, onLangChange, onAdminActivate, onHome, isOnline }
             ))}
           </select>
         </div>
+
       </div>
     </div>
   );
