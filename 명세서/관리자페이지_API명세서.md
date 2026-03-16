@@ -8,21 +8,21 @@
 ## 1. 대시보드 (Dashboard)
 ### 종합 요약 정보
 - Method : GET
-- Path : /api/v1/admin/dashboard/summary
+- Path : /api/admin/dashboard/summary
 - Description : 실시간 총 에러, 처리 완료, 처리중 수치 및 설비 가동률 반환
 - Response Body
 ```json
 {
-  "error_log_id_count": 25,         <!-- 전체 에러 수(error_log_id의 총 합계) -->
-  "final_status_resolved": 18,      <!-- 처리 완료 건 수(error_log_id 전체 수에서 final_status가 resolved인 것) -->
-  "final_status_ongoing": 7,        <!-- 처리중인 건 수(error_log_id 전체 수에서 final_status가 ongoing인 것)-->
-  "device_id_operation_rate": 85.5  <!-- 설비 가동률(전체 robot_devices 수 - ongoing 세션 장비 수) / 전체 장비 수 * 100 -->
+  "total_errors": 25,         <!-- 전체 에러 수(error_log_id의 총 합계) -->
+  "resolved_count": 18,       <!-- 처리 완료 건 수(error_log_id 전체 수에서 final_status가 resolved인 것) -->
+  "ongoing_count": 7,         <!-- 처리중인 건 수(error_log_id 전체 수에서 final_status가 ongoing인 것)-->
+  "total_devices": 85.5       <!-- 설비 가동률(전체 robot_devices 수 - ongoing 세션 장비 수) / 전체 장비 수 * 100 -->
 }
 ```
 
 ### 라인별 에러 발생 비교
 - Method : GET
-- Path : /api/v1/admin/dashboard/line-trends
+- Path : /api/admin/dashboard/line-trends
 - Description : 
   - 최근 7일간의 날짜별, 라인별 에러 발생 건수 집계
 - Response Body
@@ -48,7 +48,7 @@
 ```
 ### 최근 에러 로그
 - Method : GET
-- Path : /api/v1/admin/dashboard/recent-logs
+- Path : /api/admin/dashboard/recent-logs
 - Description : 
   - 최근 에러 발생 순 N개 반환
 - Response Body
@@ -77,7 +77,7 @@
 
 ### 빈출 에러 TOP N
 - Method : GET
-- Path : /api/v1/admin/dashboard/top-errors
+- Path : /api/admin/dashboard/top-errors
 - Description : 
   - 에러 코드별 발생 빈도수 계산 상위 N개 반환
 - Response Body
@@ -98,7 +98,7 @@
 
 ## 2. 로봇 현황 (Lines)
 - Method : GET
-- Path : /api/v1/admin/lines
+- Path : /api/admin/lines
 - Description : 
   - 라인별 로봇의 현재 상태 반환
 - Response Body
@@ -127,7 +127,7 @@
 
 ## 3. 로그 (Logs)
 - Method : GET
-- Path : /api/v1/admin/logs
+- Path : /api/admin/logs
 - Description : 
   - 전체 에러 발생 이력 조회 및 필터링
 - Response Body
@@ -156,7 +156,7 @@
 
 ## 4. 통계 (Stats)  
 - Method : GET
-- Path : /api/v1/admin/stats
+- Path : /api/admin/stats
 - Description : 
   - 날짜별/라인별 에러 밀도를 표현하기 위한 통계 데이터 반환
 - Response Body
