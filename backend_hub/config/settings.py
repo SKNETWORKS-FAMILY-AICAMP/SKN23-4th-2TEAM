@@ -133,3 +133,41 @@ STATICFILES_DIRS = [
     FRONTEND_DIST_DIR / 'assets',
 ]
 CORS_ALLOW_ALL_ORIGINS = True   # 모든 도메인에서의 요청을 허용
+
+
+# ORM 쿼리 로그 출력 형식 지정
+import sqlparse     # sql 쿼리를 조작
+
+class SQLFormatter:
+    def format(self, record):
+        if record.sql:  # sql 로그이면
+            # keyword_case='upper' : 키워드 대문자, reindent : 들여쓰기 적용
+            formatted_sql = sqlparse.format(record.sql, reindent=True, keyword_case='upper')
+            # record에 duration(처리하는데 걸린 총 시간) 속성이 있으면 사용, 없으면 0.0
+            execution_time = getattr(record, 'duration', 0.0)   
+            return f'{formatted_sql}\n[Execution Time: {execution_time:.3f} ms]'
+        return record.getMessage()  # 일반 로그 메시지면 메시지 그대로 반환
+
+# 로그 설정
+# DB 쿼리 발생(logger가 감지) -> SQLFormatter함수를 통해 다듬기(Formatter가 가공) -> 터미널에 출력(Handler가 출력)
+LOGGING = {
+    'version': 1,                       # 로깅 설정 버전
+    'disable_existing_loggers' : False, # 기존 로거 비활성화 여부
+    'handlers' : {
+        'console' : {
+            'class' : 'logging.StreamHandler',  # 콘솔에 로그 출력
+            'formatter' : 'custom_sql',         # 포맷터 설정
+        },
+    },
+    'formatters' : {
+        'custom_sql' : {
+            '()' : SQLFormatter,    # 사용자 정의 포맷터 클래스 등록
+        },
+    },
+    'loggers' : {
+        'django.db.backends' : {
+            'level' : 'DEBUG',          # DB 쿼리 로그는 DEBUG 레벨로 출력
+            'handlers' : ['console'],   # console 핸들러 사용
+        },
+    },
+}
