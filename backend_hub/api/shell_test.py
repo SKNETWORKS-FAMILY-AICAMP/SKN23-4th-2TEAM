@@ -1,19 +1,28 @@
+import os
+import django
+
+# Django 환경 설정
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+django.setup()
+
 from api.models import RobotErrorLog, RobotDevice, RobotErrorSession
 from django.db.models.functions import TruncDate
 from django.db.models import Count
 from datetime import datetime, timedelta
+from django.utils import timezone
 # ============================
-# 대시보드 (총 에러 수)
+# 대시보드 (총 에러 수 - 금일)
 # ============================
-print(f"전체 로그 수: {RobotErrorSession.objects.count()}")
+today = timezone.localdate()
+print(f"전체 로그 수: {RobotErrorSession.objects.filter(started_at__date=today).count()}")
 
 # ============================
 # 대시보드 (상태  = 정상/처리중)
 # ============================
 # 처리 중인
-ongoing_count = RobotErrorSession.objects.filter(final_status='ongoing').count()
+ongoing_count = RobotErrorSession.objects.filter(started_at__date=today, final_status='ongoing').count()
 # 처리 완료(정상)
-resolved_count = RobotErrorSession.objects.filter(final_status='resolved').count()
+resolved_count = RobotErrorSession.objects.filter(started_at__date=today, final_status='resolved').count()
 
 print(f"정상: {resolved_count}")
 print(f"처리 중: {ongoing_count}")
@@ -93,15 +102,15 @@ for i, err in enumerate(top_errors, 1):
 # ============================
 # 라인별 로봇 현황(카드용)
 # ============================
-devices = RobotDevice.objects.all()
+devices = RobotDevice.objects.select_related('model').all()
 
 for d in devices:
-    # 모델에 만든 property 사용
+
     log = d.latest_error 
     status = d.current_status 
     err_time = log.occurred_at.strftime('%Y-%m-%d %H:%M') if log else "-"
     err_code = log.error_code if log else "-"
-    print(f"장비ID: {d.device_id:<15} | 상태: {status:<10} | 에러코드: {err_code:<10} | 발생시간: {err_time} | 라인: {d.line_name} | 번호: {d.line_num}")
+    print(f"장비ID: {d.device_id:<15} | 상태: {status:<10} | 제조사: {d.model.manufacturer:<10} | 에러코드: {err_code:<10} | 발생시간: {err_time} | 라인: {d.line_name} | 번호: {d.line_num}")
 
 # ============================
 # 전체 로봇 현황(리스트용)
@@ -118,11 +127,10 @@ logs = RobotErrorLog.objects.all().order_by('-occurred_at')[:5]
 serializer = RobotErrorLogSerializer(logs, many=True)
 
 # 3. 결과 확인
-print(f"\n총 {len(serializer.data)}건의 로그를 불러왔습니다.")
+print(f"\n총 {len(serializer.data)}건의 로그를 시리얼라이저로 변환했습니다.")
 
-# 데이터가 너무 많으면 화면이 꽉 찰 수 있으니 주의하세요! 😊
-print(f"\n{'발생 시간':<18} | {'장비 ID':<12} | {'에러 코드'}")
-print("-" * 45)
+print(f"\n{'발생 시간':<18} | {'장비 ID':<12} | {'제조사':<10} | {'에러':<10} | {'체크리스트':<10} | {'메시지'}")
+print("-" * 110)
 for data in serializer.data:
-    # serializer.data는 이제 딕셔너리 리스트입니다.
-    print(f"{data['occurred_at']:<18} | {data['device']:<12} | {data['error_code']}")
+    msg = (data['last_message'][:30] + '...') if data['last_message'] and len(data['last_message']) > 30 else (data['last_message'] or "-")
+    print(f"{data['occurred_at']:<18} | {data['device']:<12} | {data['manufacturer']:<10} | {data['error_code']:<10} | {data['checklist_status']:<10} | {msg}")

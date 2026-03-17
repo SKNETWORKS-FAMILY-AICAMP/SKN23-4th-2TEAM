@@ -106,7 +106,8 @@
 {
   "lines": [
   {
-    "device_id": "Device A",            <!-- 에러 발생 장비 ID -->
+    "device_id": "ROBOT_A1",            <!-- 에러 발생 장비 ID -->
+    "manufacturer" : "현대로보틱스",     <!-- 브랜드명 -->
     "line_name": "A",                   <!-- 라인명 -->
     "line_num": 1,                      <!-- 라인 내 번호 -->
     "error_code": "C153",               <!-- 에러 코드 (final_status가 resolved이면 null 값) -->
@@ -114,7 +115,8 @@
     "final_status": "error"             <!-- 세션 상태 -->
   },
   {
-    "device_id": "Device B",
+    "device_id": "ROBOT_A2",
+    "manufacturer" : "현대로보틱스",
     "line_name": "A",
     "line_num": 2,
     "error_code": null,
@@ -154,27 +156,6 @@
 }
 ```
 
-## 4. 통계 (Stats)  
-- Method : GET
-- Path : /api/admin/stats
-- Description : 
-  - 날짜별/라인별 에러 밀도를 표현하기 위한 통계 데이터 반환
-- Response Body
-```json
-{
-  "stats": [
-  {
-    "occurred_at": "2026-02-20", <!-- 에러 발생 시각 -->
-    "line_name": "A",            <!-- 라인명 -->
-    "error_count": 5             <!-- 에러 횟수(error_log_id의 총 합계) -->
-  },
-  {
-    "occurred_at": "2026-02-20",
-    "line_name": "B",
-    "error_count": 2
-  }
-]
-}
-```
+
 
 처리 상태"를 나타낼 때는 robot_error_sessions의 final_status를 기준

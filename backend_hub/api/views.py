@@ -6,6 +6,7 @@ from .serializers import RobotModelSerializer, RobotDeviceSerializer, RobotError
 from .models import RobotModel, RobotDevice, RobotErrorLog, RobotErrorSession, RobotErrorChatHistory
 from datetime import datetime, timedelta
 from django.db.models.functions import TruncDate
+from django.utils import timezone
 
 # =========================
 # 대시보드 관련 API
@@ -17,14 +18,17 @@ class DashboardSummaryView(APIView):
     path :  /api/admin/dashboard/summary
     """
     def get(self, request):
+            # 오늘 날짜 가져오기
+            today = timezone.localdate()
+
             # 전체 에러 수
-            total_errors = RobotErrorSession.objects.count()
+            total_errors = RobotErrorSession.objects.filter(started_at__date=today).count()
             
             # 처리 완료(정상) 수 (final_status가 resolved인 것)
-            resolved_count = RobotErrorSession.objects.filter(final_status='resolved').count()
+            resolved_count = RobotErrorSession.objects.filter(started_at__date=today, final_status='resolved').count()
             
             # 처리중인 수 (final_status가 ongoing인 것)
-            ongoing_count = RobotErrorSession.objects.filter(final_status='ongoing').count()
+            ongoing_count = RobotErrorSession.objects.filter(started_at__date=today, final_status='ongoing').count()
     
             # 설비 가동률 계산
             # 실제 에러 발생 중인 로봇 대수
@@ -109,7 +113,7 @@ class DashboardTopErrorsView(APIView):
         return Response({"top_errors": list(top_errors)})
 
 # =========================
-# 로봇 현황 관련 API
+# 라인별 로봇 현황(카드용)
 # =========================
 class RobotDeviceListView(APIView):
     """
@@ -117,20 +121,31 @@ class RobotDeviceListView(APIView):
     path : /api/admin/lines
     """
     def get(self, request):
-        devices = RobotDevice.objects.all()                     # 모든 데이터 조회
-        serializer = RobotDeviceSerializer(devices, many=True)  # 데이터 변환(리스트기에 many=True 작성)
-        return Response(serializer.data)                        # JSON 형태의 데이터 반환
+        devices = RobotDevice.objects.select_related('model').all()
+        serializer = RobotDeviceSerializer(devices, many=True)
+        return Response(serializer.data)
 
 # =========================
-# 로그 관련 API
+# 전체 로봇 현황(리스트용) - 브랜드명, 에러 내용 추가해야함
 # =========================
 class RobotErrorLogListView(APIView):
     """
     전체 오류 로그 목록용 view(사이드바 - Logs)
     path : /api/admin/logs
     """
+    # def get(self, request):
+    #     error_logs = RobotErrorLog.objects.all()
+    #     serializer = RobotErrorLogSerializer(error_logs, many=True)
+    #     return Response(serializer.data)
+
     def get(self, request):
         qs = RobotErrorLog.objects.select_related('device')
+        # select_related: 로봇 모델 정보를 한 번에 가져옴
+        # prefetch_related: 세션과 채팅/체크리스트 내역을 미리 로드함
+        error_logs = RobotErrorLog.objects.select_related('device__model').prefetch_related('roboterrorsession_set__roboterrorchathistory_set', 'roboterrorsession_set__roboterrorchecklistitem_set').order_by('-occurred_at')
+        
+        serializer = RobotErrorLogSerializer(error_logs, many=True)
+        return Response(serializer.data)
 
         # 필터
         line = request.GET.get('line')
