@@ -20,10 +20,10 @@ ChartJS.register(
   Legend
 );
 
-export default function StatsErrorTop5Bar({ data }) {
-  // data = [{ errorCode, count }, ...]
+export default function StatsErrorTop5Bar({ data = [] }) {
+
   const chartData = {
-    labels: data.map((d) => d.errorCode),
+    labels: data.map((d) => d.error_code),
     datasets: [
       {
         label: "Top 3 Error Codes",
