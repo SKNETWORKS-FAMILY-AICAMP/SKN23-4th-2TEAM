@@ -8,6 +8,59 @@ export default function RagIngestion() {
   const [markdown, setMarkdown] = useState("");
   const [metadata, setMetadata] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [commitBusy, setCommitBusy] = useState(false);
+
+  const toErrorMessage = (value) => {
+    if (!value) return "요청 처리에 실패했습니다.";
+    if (typeof value === "string") return value;
+    if (Array.isArray(value)) return value.join(", ");
+    if (typeof value === "object") {
+      if (value.message) return String(value.message);
+      if (value.detail) return toErrorMessage(value.detail);
+      try {
+        return JSON.stringify(value, null, 2);
+      } catch {
+        return "요청 처리 중 알 수 없는 오류가 발생했습니다.";
+      }
+    }
+    return String(value);
+  };
+
+  const parseJsonResponse = async (res) => {
+    const text = await res.text();
+    if (!text) {
+      return {
+        ok: false,
+        data: null,
+        error: {
+          detail: `서버 응답이 비어있습니다. (HTTP ${res.status})`,
+        },
+      };
+    }
+    try {
+      const data = JSON.parse(text);
+      if (res.ok) {
+        return { ok: true, data };
+      }
+      return {
+        ok: false,
+        data,
+        error: {
+          detail: data?.detail || data?.message || data?.error || "요청 처리에 실패했습니다.",
+          raw: data,
+        },
+      };
+    } catch {
+      return {
+        ok: false,
+        data: null,
+        error: {
+          detail: `JSON 파싱 실패 (HTTP ${res.status})`,
+          raw: text,
+        },
+      };
+    }
+  };
 
   // Step 1: Parse Preview
   const handlePreview = async () => {
@@ -19,25 +72,78 @@ export default function RagIngestion() {
     formData.append("file", file);
 
     setLoading(true);
-    const res = await fetch("http://localhost:8000/api/rag/preview", {
-      method: "POST",
-      body: formData,
-    });
-    const data = await res.json();
-    setMarkdown(data.markdown);
-    setMetadata(data.metadata);
-    setLoading(false);
+    try {
+      const res = await fetch("/api/v1/rag/preview", {
+        method: "POST",
+        body: formData,
+      });
+      const parsed = await parseJsonResponse(res);
+      if (!parsed.ok) {
+        throw new Error(
+          toErrorMessage(
+            parsed.error?.detail ||
+              parsed.error?.message ||
+              parsed.data?.detail ||
+              parsed.data?.message ||
+              "파싱에 실패했습니다."
+          )
+        );
+      }
+      const data = parsed.data;
+      if (!data) {
+        throw new Error("파싱 응답 데이터가 없습니다.");
+      }
+      setMarkdown(data.markdown || "");
+      setMetadata(data.metadata || null);
+      alert(`미리보기 파싱 완료 (parser: ${data.parser_used || parser})`);
+    } catch (err) {
+      alert(err.message || "파싱 요청에 실패했습니다.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Step 3: Commit
   const handleCommit = async () => {
-    const res = await fetch("http://localhost:8000/api/rag/commit", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ markdown, metadata }),
-    });
-    await res.json();
-    alert("Vector DB 저장 완료");
+    if (!markdown || !metadata) return alert("먼저 Preview를 완료하세요.");
+    if (!file) return alert("커밋할 때도 PDF 파일이 필요합니다.");
+
+    setCommitBusy(true);
+    try {
+      const formData = new FormData();
+      formData.append("markdown", markdown);
+      formData.append(
+        "metadata",
+        JSON.stringify({
+          ...metadata,
+          creator: adminName || metadata.creator || "admin",
+        })
+      );
+      formData.append("file", file);
+
+      const res = await fetch("/api/v1/rag/commit", {
+        method: "POST",
+        body: formData,
+      });
+      const parsed = await parseJsonResponse(res);
+      if (!parsed.ok) {
+        throw new Error(
+          toErrorMessage(
+            parsed.error?.detail ||
+              parsed.error?.message ||
+              parsed.data?.detail ||
+              parsed.data?.message ||
+              "저장에 실패했습니다."
+          )
+        );
+      }
+      const data = parsed.data;
+      alert(`Vector DB 저장 완료: inserted=${data.inserted}, deleted=${data.deleted}, bm25=${data.bm25_status}`);
+    } catch (err) {
+      alert(err.message || "저장 요청에 실패했습니다.");
+    } finally {
+      setCommitBusy(false);
+    }
   };
 
   return (
@@ -63,6 +169,7 @@ export default function RagIngestion() {
             >
               <option>marker</option>
               <option>pymupdf4llm</option>
+              <option>pdfplumber</option>
             </select>
             <input
               type="file"
@@ -79,8 +186,8 @@ export default function RagIngestion() {
           </button>
         </div>
 
-        {/* Step 2 */}
-        <div className="bg-white shadow rounded-lg p-6 mb-6 w-full max-w-full">
+      {/* Step 2 */}
+      <div className="bg-white shadow rounded-lg p-6 mb-6 w-full max-w-full">
           <h2 className="font-semibold text-lg mb-4">Step 2 · Parse Preview</h2>
           {loading && <p>Parsing 중...</p>}
           <div className="grid grid-cols-2 gap-6 w-full max-w-full">
@@ -101,10 +208,11 @@ export default function RagIngestion() {
           <div className="flex gap-4">
             <button className="px-4 py-2 bg-gray-400 text-white rounded">Cancel</button>
             <button
+              disabled={commitBusy}
               onClick={handleCommit}
-              className="px-4 py-2 bg-green-600 text-white rounded"
+              className={`px-4 py-2 rounded text-white ${commitBusy ? "bg-green-300" : "bg-green-600"}`}
             >
-              Commit to Vector DB
+              {commitBusy ? "저장 중..." : "Commit to Vector DB"}
             </button>
           </div>
         </div>

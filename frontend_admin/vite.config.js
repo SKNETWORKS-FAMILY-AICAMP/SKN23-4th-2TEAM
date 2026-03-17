@@ -23,6 +23,21 @@ export default defineConfig({
         target: 'http://localhost:8001',
         changeOrigin: true,
       },
+      '/api/v1/rag': {
+        target: 'http://127.0.0.1:8001',
+        changeOrigin: true,
+        configure: (proxy) => {
+          proxy.on('error', (err, _req, res) => {
+            res.writeHead(502, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(
+              JSON.stringify({
+                detail: 'proxy_error',
+                error: err instanceof Error ? err.message : String(err),
+              })
+            );
+          });
+        },
+      },
     },
   },
 })

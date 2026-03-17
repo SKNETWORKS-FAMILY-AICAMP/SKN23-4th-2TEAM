@@ -1,0 +1,168 @@
+from __future__ import annotations
+
+import json
+import re
+from datetime import datetime
+from pathlib import Path
+from typing import Any
+
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+
+from app.services import rag_ingestion_service as service
+
+try:
+    from infrastructure.aws.s3_client import S3Client
+except Exception:
+    from app.infrastructure.aws.s3_client import S3Client
+
+router = APIRouter(prefix="/rag", tags=["rag-ingestion"])
+
+
+def _safe_slug(value: str) -> str:
+    return re.sub(r"[^A-Za-z0-9._-]", "_", (value or "").strip()) or "file"
+
+
+def _build_s3_keys(admin_name: str, filename: str, file_hash: str | None = None) -> tuple[str, str, str]:
+    safe_admin = _safe_slug(admin_name)
+    safe_filename = _safe_slug(filename)
+    safe_stem = _safe_slug(Path(filename).stem)
+    date_str = datetime.now().strftime("%Y%m%d")
+    hash_suffix = f"_{file_hash[:8]}" if file_hash else ""
+    base_prefix = f"ingested_docs/{date_str}_{safe_admin}_{safe_filename}{hash_suffix}"
+    return (
+        f"{base_prefix}/{safe_filename}",
+        f"{base_prefix}/{safe_stem}.md",
+        f"{base_prefix}/{safe_stem}.json",
+    )
+
+
+def _coerce_metadata(metadata: str | dict[str, Any]) -> dict[str, Any]:
+    if isinstance(metadata, dict):
+        return metadata
+    if not isinstance(metadata, str):
+        raise HTTPException(status_code=400, detail="metadata must be a JSON object or JSON string.")
+    try:
+        parsed = json.loads(metadata)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"metadata must be valid JSON: {exc}")
+    if not isinstance(parsed, dict):
+        raise HTTPException(status_code=400, detail="metadata must be a JSON object.")
+    return parsed
+
+
+@router.post("/preview")
+async def preview_rag(
+    admin_name: str = Form(""),
+    parser: str = Form("marker"),
+    file: UploadFile = File(...),
+):
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="file name is required")
+
+    file_bytes = await file.read()
+    if not file_bytes:
+        raise HTTPException(status_code=400, detail="empty file")
+
+    try:
+        markdown_text, _used_parser, metadata = service.parse_pdf_to_markdown(
+            file_bytes=file_bytes,
+            filename=file.filename,
+            parser_choice=parser,
+            creator=admin_name or "admin",
+        )
+        response = {
+            "status": "ok",
+            "markdown": markdown_text,
+            "metadata": metadata,
+            "parser_used": _used_parser,
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"preview failed: {exc}")
+    return response
+
+
+@router.post("/commit")
+async def commit_rag(
+    markdown: str = Form(...),
+    metadata: str = Form(...),
+    file: UploadFile = File(...),
+):
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="file name is required")
+
+    file_bytes = await file.read()
+    if not file_bytes:
+        raise HTTPException(status_code=400, detail="Uploaded PDF is empty")
+
+    if not markdown.strip():
+        raise HTTPException(status_code=400, detail="markdown is required")
+
+    metadata_obj = _coerce_metadata(metadata)
+    source_file = _pick_source_file(metadata_obj) or file.filename
+    if not source_file:
+        raise HTTPException(status_code=400, detail="source file is required")
+
+    admin_name = (
+        str(metadata_obj.get("creator") or "")
+        .strip()
+        or "admin"
+    )
+    file_hash = str(metadata_obj.get("file_hash") or "").strip() or None
+
+    s3_pdf_key, s3_md_key, s3_json_key = _build_s3_keys(admin_name=admin_name, filename=source_file, file_hash=file_hash)
+    metadata_json = json.dumps(metadata_obj, ensure_ascii=False)
+    try:
+        s3_client = S3Client()
+        s3_client.upload_file_bytes(file_bytes, s3_pdf_key, "application/pdf")
+        s3_client.upload_file_bytes(markdown.encode("utf-8"), s3_md_key, "text/markdown; charset=utf-8")
+        s3_client.upload_file_bytes(metadata_json.encode("utf-8"), s3_json_key, "application/json; charset=utf-8")
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"S3 Upload Error: {exc}")
+
+    try:
+        result = service.embed_markdown_to_pgvector(
+            markdown_text=markdown,
+            original_filename=source_file,
+            admin_name=admin_name,
+            file_bytes=file_bytes,
+            extra_metadata=metadata_obj,
+            s3_pdf_key=s3_pdf_key,
+            s3_md_key=s3_md_key,
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=f"commit failed ({type(exc).__name__}): {exc}",
+        )
+
+    return {
+        "status": "success",
+        "chunks": result.get("total_chunks_parsed", 0),
+        "inserted": result.get("db_chunks_inserted", 0),
+        "deleted": result.get("db_chunks_deleted", 0),
+        "skipped": result.get("db_chunks_skipped", 0),
+        "bm25_cache_updated": result.get("bm25_cache_updated", False),
+        "bm25_status": result.get("bm25_status", ""),
+        "file_hash": result.get("file_hash", ""),
+        "message": result.get("message", ""),
+        "s3_pdf_key": s3_pdf_key,
+        "s3_md_key": s3_md_key,
+        "s3_json_key": s3_json_key,
+        "details": result,
+    }
+
+
+def _pick_source_file(metadata: dict[str, Any]) -> str | None:
+    candidate = (
+        metadata.get("source_file")
+        or metadata.get("file")
+        or metadata.get("filename")
+        or metadata.get("file_name")
+    )
+    if isinstance(candidate, str) and candidate.strip():
+        return candidate.strip()
+    return None
