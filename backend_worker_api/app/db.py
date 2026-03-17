@@ -43,6 +43,9 @@ def _build_conn_kwargs() -> dict:
 def get_db_connection():
     conn = psycopg2.connect(**_build_conn_kwargs())
     try:
+        # Force timezone to Asia/Seoul for uniform stats & logs aggregation over Dates
+        with conn.cursor() as cur:
+            cur.execute("SET TIME ZONE 'Asia/Seoul'")
         yield conn
         conn.commit()
     except Exception:

@@ -164,7 +164,8 @@ export default function App() {
         setAiMode("diagnosis");
         setSessionId(null);
         setSessionStatus("ongoing");
-    }, []);
+        fetchHistory(); // Refresh dashboard stats/logs immediately
+    }, [fetchHistory]);
 
     const handleDiagnostic = useCallback((type: "robot" | "welder") => {
         setDiagType(type);
@@ -286,6 +287,7 @@ export default function App() {
         }
 
         if (sessionId) {
+            setIsDiagnosing(true);
             try {
                 let selectedChoice: "O" | "X" | null = isResolvedEvent ? "O" : (isChecklistSubmit ? "X" : (text.includes("(X)") ? "X" : null));
                 const res = await api.sendConsultationEvent(sessionId, {
@@ -317,6 +319,8 @@ export default function App() {
                 }
             } catch (err) {
                 toast.error("Error");
+            } finally {
+                setIsDiagnosing(false);
             }
         } else if (isResolvedEvent) {
             setTimeout(handleBackToMain, 1500);
@@ -330,7 +334,7 @@ export default function App() {
     const renderContent = () => {
         if (view === "admin") {
             return (
-                <div className="flex-1 overflow-hidden">
+                <div className="flex-1 overflow-hidden flex flex-col">
                     <AdminPanel
                         lang={lang}
                         onBack={handleBackToMain}
@@ -390,7 +394,7 @@ export default function App() {
                 </AnimatePresence>
                 <AiResponse
                     key={aiKey} lang={lang} errorCode={errorCode} isActive={aiActive}
-                    mode={sessionStatus === "resolved" ? "resolved" : aiMode}
+                    mode={sessionStatus === "resolved" ? "diagnosis" : aiMode}
                     aiMessage={aiMessage} aiChecklist={aiChecklist} aiResponseType={aiResponseType}
                     onFollowUp={handleFollowUp}
                     isDiagnosing={isDiagnosing}

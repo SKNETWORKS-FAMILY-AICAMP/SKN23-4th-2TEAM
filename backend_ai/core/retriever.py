@@ -213,9 +213,13 @@ def _load_or_create_bm25_retriever(collection_name: str = COLLECTION_NAME, force
     BM25_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
 
     if BM25_CACHE_PATH.exists() and not force_refresh:
-        with open(BM25_CACHE_PATH, "rb") as file_obj:
-            CACHED_BM25_RETRIEVER = pickle.load(file_obj)
-            return CACHED_BM25_RETRIEVER
+        try:
+            with open(BM25_CACHE_PATH, "rb") as file_obj:
+                CACHED_BM25_RETRIEVER = pickle.load(file_obj)
+                return CACHED_BM25_RETRIEVER
+        except (ModuleNotFoundError, AttributeError, pickle.PickleError, EOFError) as exc:
+            print(f"[retriever] bm25 cache reload failed, rebuilding cache: {exc}")
+            CACHED_BM25_RETRIEVER = None
 
     all_docs = [doc for doc in _fetch_all_documents_from_postgres(collection_name) if _is_doc_active(doc)]
     bm25_retriever = BM25Retriever.from_documents(all_docs, preprocess_func=korean_custom_preprocess)
