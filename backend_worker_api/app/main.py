@@ -19,9 +19,11 @@ if AI_CORE_DIR not in sys.path:
 try:
     from app.routers.consultations import router as consultation_router
     from app.routers.admin_ai import router as admin_ai_router
+    from app.routers.rag_ingestion import router as rag_ingestion_router
 except ImportError:
     from routers.consultations import router as consultation_router
     from routers.admin_ai import router as admin_ai_router
+    from routers.rag_ingestion import router as rag_ingestion_router
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -68,6 +70,7 @@ app.add_middleware(
 # 최종 경로는 /api/v1/consultations/... 가 됩니다.
 app.include_router(consultation_router, prefix='/api/v1')
 app.include_router(admin_ai_router, prefix='/api/v1')
+app.include_router(rag_ingestion_router, prefix='/api/v1')
 
 @app.middleware("http")
 async def capture_all_exceptions(request: Request, call_next):
