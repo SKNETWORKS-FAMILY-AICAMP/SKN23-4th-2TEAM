@@ -130,7 +130,45 @@ class RobotErrorLogListView(APIView):
     path : /api/admin/logs
     """
     def get(self, request):
-        error_logs = RobotErrorLog.objects.all()
-        serializer = RobotErrorLogSerializer(error_logs, many=True)
-        return Response(serializer.data)
+        qs = RobotErrorLog.objects.select_related('device')
 
+        # 필터
+        line = request.GET.get('line')
+        if line and line != 'all':
+            qs = qs.filter(device__line_name=line)
+
+        device = request.GET.get('device')
+        if device:
+            qs = qs.filter(device__device_name__icontains=device)
+
+        code = request.GET.get('code')
+        if code:
+            qs = qs.filter(error_code__icontains=code)
+
+        start = request.GET.get('startDate')
+        end = request.GET.get('endDate')
+
+        if start:
+            qs = qs.filter(occurred_at__date__gte=start)
+        if end:
+            qs = qs.filter(occurred_at__date__lte=end)
+
+        # 정렬
+        qs = qs.order_by('-occurred_at')
+
+        # 페이지네이션
+        page = int(request.GET.get('page', 1))
+        size = int(request.GET.get('size', 20))
+
+        start_idx = (page - 1) * size
+        end_idx = start_idx + size
+
+        total = qs.count()
+        data = qs[start_idx:end_idx]
+
+        serializer = RobotErrorLogSerializer(data, many=True)
+
+        return Response({
+            "total": total,
+            "results": serializer.data
+        })

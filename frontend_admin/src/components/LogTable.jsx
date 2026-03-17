@@ -9,15 +9,15 @@ function LogTable({ logs = [] }) {
             <th className="w-32 py-2 px-2 text-left">장비</th>
             <th className="w-24 py-2 px-2 text-right">코드</th>
             <th className="w-24 py-2 px-2 text-center">상태</th>
-            <th className="py-2 px-2 text-left">에러내용</th> {/* 남는 공간 활용 */}
+            <th className="py-2 px-2 text-left">에러내용</th>
           </tr>
         </thead>
 
         <tbody>
-          {logs.map((log, i) => {
+          {logs.map((log) => {
             const status = log.errorCode ? "error" : "normal";
             return (
-              <tr key={i} className="hover:bg-gray-50 border-b">
+              <tr key={log.id || `${log.date}-${log.hour}-${log.device}`} className="hover:bg-gray-50 border-b">
                 <td className="py-2 px-2">{log.date} {String(log.hour).padStart(2,"0")}:00</td>
                 <td className="py-2 px-2">{log.line}</td>
                 <td className="py-2 px-2">{log.device}</td>
@@ -25,7 +25,7 @@ function LogTable({ logs = [] }) {
                 <td className={`py-2 px-2 text-center ${status === "error" ? "text-red-500" : "text-green-500"}`}>
                   {status === "error" ? "발생" : "정상"}
                 </td>
-                <td className="py-2 px-2">{log.errorMessage || "-"}</td>
+                <td className="py-2 px-2 break-words">{log.errorMessage || "-"}</td>
               </tr>
             );
           })}
@@ -34,4 +34,5 @@ function LogTable({ logs = [] }) {
     </div>
   );
 }
+
 export default LogTable;

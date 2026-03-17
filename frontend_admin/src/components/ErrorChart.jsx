@@ -84,11 +84,11 @@ function ErrorChart({ data }) {
             )}
 
             {(selectedLine === "all" || selectedLine === "c") && (
-              <Line type="monotone" dataKey="c" stroke="#22c55e" strokeWidth={2} />
+              <Line type="monotone" dataKey="c" stroke="#f59e0b" strokeWidth={2} />
             )}
 
             {(selectedLine === "all" || selectedLine === "d") && (
-              <Line type="monotone" dataKey="d" stroke="#f59e0b" strokeWidth={2} />
+              <Line type="monotone" dataKey="d" stroke="#22c55e" strokeWidth={2} />
             )}
 
           </LineChart>

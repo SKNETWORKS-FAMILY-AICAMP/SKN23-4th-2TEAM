@@ -63,11 +63,18 @@ class RobotDeviceSerializer(serializers.ModelSerializer):
 # RobotErrorLog : 전체 오류 로그 목록용
 # ============================
 class RobotErrorLogSerializer(serializers.ModelSerializer):
-    line_name = serializers.ReadOnlyField(source='device.line_name')
+    line = serializers.ReadOnlyField(source='device.line_name')
+    device = serializers.ReadOnlyField(source='device.device_name')
 
     class Meta:
         model = RobotErrorLog
-        fields = ['error_log_id', 'device', 'error_code', 'occurred_at', 'line_name']
+        fields = [
+            'error_log_id',
+            'line',
+            'device',
+            'error_code',
+            'occurred_at'
+        ]
 
 # ============================
 # RobotErrorSession : 오류 세션 내부 관리용

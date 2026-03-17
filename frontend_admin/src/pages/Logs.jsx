@@ -1,15 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
-import { mockdata } from "../mock/mockdata";
 import LogFilters from "../components/LogFilters";
 import LogTable from "../components/LogTable";
 import ExcelDownloadBtn from "../components/ExcelDownloadBtn";
+import { API } from "../utils/api";
 
 export default function Logs() {
-
   const location = useLocation();
 
-  const [logs] = useState(mockdata);
+  const [logs, setLogs] = useState([]);
+  const [total, setTotal] = useState(0);
 
   const [filters, setFilters] = useState({
     line: "all",
@@ -21,69 +21,49 @@ export default function Logs() {
   });
 
   const [page, setPage] = useState(1);
-
   const pageSize = 20;
 
-  const filteredLogs = logs
-  .filter((log) => {
+  const totalPages = Math.ceil(total / pageSize);
 
-    if (filters.line !== "all" && log.line !== filters.line) return false;
+  useEffect(() => {
+    const params = new URLSearchParams({
+      ...filters,
+      page,
+      size: pageSize
+    });
 
-    if (
-      filters.device &&
-      !log.device.toLowerCase().includes(filters.device.toLowerCase())
-    )
-      return false;
+    fetch(`${API.errorLogs}?${params}`)
+      .then(res => res.json())
+      .then(data => {
+        const mapped = (data.results || []).map((log) => ({
+          id: log.error_log_id,
+          line: log.line,
+          device: log.device,
+          errorCode: log.error_code,
+          date: log.occurred_at?.split("T")[0] || "",
+          hour: parseInt(log.occurred_at?.split("T")[1]?.split(":")[0]) || 0,
+        }));
 
-    if (
-      filters.code &&
-      !(log.errorCode || "")
-        .toLowerCase()
-        .includes(filters.code.toLowerCase())
-    )
-      return false;
+        setLogs(mapped);
+        setTotal(data.total || 0);
+      })
+      .catch(err => console.error("API error:", err));
+  }, [filters, page]);
 
-    if (filters.startDate && log.date < filters.startDate) return false;
-
-    if (filters.endDate && log.date > filters.endDate) return false;
-
-    // 상태 필터
-    if (filters.status === "error" && !log.errorCode) return false;
-
-    if (filters.status === "normal" && log.errorCode) return false;
-
-    return true;
-
-  })
-  .sort((a, b) => {
-
-    if (a.date !== b.date) {
-      return b.date.localeCompare(a.date);
-    }
-
-    return b.hour - a.hour;
-
-  });
-
-  const totalPages = Math.ceil(filteredLogs.length / pageSize);
-
-  const pagedLogs = filteredLogs.slice(
-    (page - 1) * pageSize,
-    page * pageSize
-  );
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [page]);
 
   return (
     <div className="flex flex-col p-6 space-y-4 w-full h-full">
-
       <div className="flex items-center justify-between">
         <LogFilters filters={filters} setFilters={setFilters} />
         <ExcelDownloadBtn className="px-2 py-1 text-sm" />
       </div>
 
-      <LogTable logs={pagedLogs} />
+      <LogTable logs={logs} />
 
       <div className="flex justify-center mt-2 space-x-2">
-
         {Array.from({ length: totalPages }, (_, i) => (
           <button
             key={i}
@@ -97,9 +77,7 @@ export default function Logs() {
             {i + 1}
           </button>
         ))}
-
       </div>
-
     </div>
   );
 }

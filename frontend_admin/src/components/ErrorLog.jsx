@@ -11,13 +11,13 @@ function ErrorLog({ logs = [] }) {
 
       <h3 className="font-bold mb-2">최근 에러 로그</h3>
 
-      <div className="overflow-auto max-h-[20rem]">
+      <div className="overflow-auto max-h-full">
         <table className="w-full table-fixed text-sm border-collapse">
 
           <thead className="border-b bg-gray-50 sticky top-0 z-10">
             <tr>
-              <th className="px-4 py-3 text-left w-1/4">발생 시각</th>
-              <th className="px-4 py-3 text-left w-1/2">장치 식별자 및 에러</th>
+              <th className="px-4 py-3 text-left w-1/3">발생 시각</th>
+              <th className="px-4 py-3 text-left w-1/3">장치 식별자 및 에러</th>
               <th className="px-4 py-3 text-right w-1/4">조치 상태</th>
             </tr>
           </thead>
