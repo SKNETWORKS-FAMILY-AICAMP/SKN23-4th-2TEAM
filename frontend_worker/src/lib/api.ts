@@ -201,10 +201,49 @@ export class ApiClient {
     /**
      * 엔지니어 호출 목록 조회
      */
-    async getEngineerCalls(): Promise<Array<{ code: string; timestamp: number; device: string; message?: string }>> {
+    async getEngineerCalls(): Promise<Array<{ call_id: number; status: string; code: string; timestamp: number; device: string; message?: string }>> {
         const response = await fetch(`${this.baseUrl}/consultations/engineer-calls`);
         if (!response.ok) {
             throw new Error(`Failed to list engineer calls: ${response.status} ${response.statusText}`);
+        }
+        return response.json();
+    }
+
+    /**
+     * 엔지니어 호출 완료 처리
+     */
+    async resolveEngineerCall(callId: number): Promise<{ status: string }> {
+        const response = await fetch(`${this.baseUrl}/consultations/engineer-calls/${callId}/resolve`, {
+            method: "POST"
+        });
+        if (!response.ok) {
+            throw new Error(`Failed to resolve call: ${response.status} ${response.statusText}`);
+        }
+        return response.json();
+    }
+
+    /**
+     * 엔지니어 호출 전체 완료 처리
+     */
+    async resolveAllEngineerCalls(): Promise<{ status: string }> {
+        const response = await fetch(`${this.baseUrl}/consultations/engineer-calls/resolve-all`, {
+            method: "POST"
+        });
+        if (!response.ok) {
+            throw new Error(`Failed to resolve all calls: ${response.status} ${response.statusText}`);
+        }
+        return response.json();
+    }
+
+    /**
+     * 엔지니어 호출 완료 취소
+     */
+    async unresolveEngineerCall(callId: number): Promise<{ status: string }> {
+        const response = await fetch(`${this.baseUrl}/consultations/engineer-calls/${callId}/unresolve`, {
+            method: "POST"
+        });
+        if (!response.ok) {
+            throw new Error(`Failed to unresolve call: ${response.status} ${response.statusText}`);
         }
         return response.json();
     }

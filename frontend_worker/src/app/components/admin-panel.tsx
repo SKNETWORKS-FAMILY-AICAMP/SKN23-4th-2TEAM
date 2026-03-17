@@ -161,9 +161,11 @@ interface AdminPanelProps {
     device?: string;
     status?: string;
   }>;
-  engineerCalls: Array<{ code: string; timestamp: number; device: string; message?: string }>;
+  engineerCalls: Array<{ call_id: number; status: string; code: string; timestamp: number; device: string; message?: string }>;
   onClearCalls: () => void;
-  onResolveCall: (timestamp: number) => void;
+  onResolveCall: (callId: number) => void;
+  onResolveAllCalls: () => void;
+  onUnresolveCall: (callId: number) => void;
   stats?: {
     today_total: number;
     today_resolution_rate: number;
@@ -180,6 +182,8 @@ export function AdminPanel({
   engineerCalls,
   onClearCalls,
   onResolveCall,
+  onResolveAllCalls,
+  onUnresolveCall,
   stats,
   currentConfig,
   onConfigChange,
@@ -634,17 +638,25 @@ export function AdminPanel({
           {/* ══ STATS (CALLS) ══ */}
           {activeTab === "stats" && (
             <div className="flex-1 flex flex-col overflow-hidden min-h-0">
-              <div className="border-b border-neutral-800/60 shrink-0" style={{ background: "#0d0d0f", padding: "16px 24px" }}>
+              <div className="flex items-center justify-between border-b border-neutral-800/60 shrink-0" style={{ background: "#0d0d0f", padding: "16px 24px" }}>
                 <span style={{ fontSize: 14, fontWeight: 800, fontStyle: "italic", textTransform: "uppercase", color: "#fff", letterSpacing: "0.05em" }}>
                   {t.engineerCalls}
                 </span>
+                {engineerCalls.some(c => c.status !== "resolved") && (
+                  <button 
+                    onClick={onResolveAllCalls} 
+                    style={{ padding: "6px 14px", background: "#dc2626", color: "#fff", border: "none", borderRadius: "4px", fontSize: 12, fontWeight: 900, cursor: "pointer", fontStyle: "italic" }}
+                  >
+                    {lang === "KO" ? "전체 완료" : "Resolve All"}
+                  </button>
+                )}
               </div>
               <div className="flex-1 overflow-y-auto" style={{ background: "#000" }}>
                 <table className="w-full table-fixed">
                   <thead>
                     <tr style={{ background: "#0d0d0f", borderBottom: "1px solid rgba(64,64,64,0.4)" }}>
-                      {[t.callTime, t.deviceIdent, t.callMessage].map((h, i) => (
-                        <th key={h} style={{ padding: "12px 24px", fontSize: 11, fontWeight: 700, color: "#525252", textAlign: "left", width: i===0 ? "180px" : i===1 ? "220px" : undefined }}>{h}</th>
+                      {[t.callTime, t.deviceIdent, t.callMessage, t.status].map((h, i) => (
+                        <th key={h} style={{ padding: "12px 24px", fontSize: 11, fontWeight: 700, color: "#525252", textAlign: i === 3 ? "right" : "left", width: i === 0 ? "180px" : i === 1 ? "220px" : i === 3 ? "120px" : undefined }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -668,11 +680,35 @@ export function AdminPanel({
                           })()}
                         </td>
                         <td style={{ padding: "0 24px", fontSize: 13, color: "#a1a1aa" }}>{call.message}</td>
+                        <td style={{ padding: "0 24px", textAlign: "right" }}>
+                          <div className="flex items-center gap-3 justify-end">
+                            {call.status === "resolved" ? (
+                              <>
+                                <span style={{ color: "#22c55e", fontSize: 11, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.1em", padding: "4px 10px", background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)" }}>처리완료</span>
+                                <button 
+                                  onClick={() => onUnresolveCall(call.call_id)} 
+                                  style={{ padding: "4px 8px", background: "#27272a", color: "#a1a1aa", border: "1px solid #3f3f46", borderRadius: "4px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}
+                                >
+                                  {lang === "KO" ? "취소" : "Undo"}
+                                </button>
+                              </>
+                            ) : (
+                              <button 
+                                onClick={() => onResolveCall(call.call_id)} 
+                                style={{ padding: "6px 12px", background: "#E82127", color: "#fff", border: "none", borderRadius: "4px", fontSize: 11, fontWeight: 800, cursor: "pointer", fontStyle: "italic", transition: "all" }}
+                                onMouseEnter={e => e.currentTarget.style.opacity = "0.8"}
+                                onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+                              >
+                                처리 완료
+                              </button>
+                            )}
+                          </div>
+                        </td>
                       </tr>
                     ))}
                     {engineerCalls.length === 0 && (
                       <tr>
-                        <td colSpan={3} style={{ textAlign: "center", padding: 40, color: "#737373", fontSize: 13 }}>
+                        <td colSpan={4} style={{ textAlign: "center", padding: 40, color: "#737373", fontSize: 13 }}>
                           {t.noCalls}
                         </td>
                       </tr>

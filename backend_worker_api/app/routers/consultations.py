@@ -116,7 +116,7 @@ def list_engineer_calls():
         with conn.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
                 """
-                SELECT c.session_id, c.created_at, s.device_id, c.error_code as code, d.line_name
+                SELECT c.call_id, c.session_id, c.created_at, s.device_id, c.error_code as code, d.line_name, c.status
                 FROM engineer_calls c
                 JOIN robot_error_sessions s ON c.session_id = s.session_id
                 JOIN robot_devices d ON s.device_id = d.device_id
@@ -131,12 +131,53 @@ def list_engineer_calls():
                 ts = row['created_at']
                 ts_ms = ts.timestamp() * 1000 if isinstance(ts, datetime) else 0
                 calls.append({
+                    "call_id": row['call_id'],
+                    "status": row['status'],
                     "code": row['code'] or '알 수 없음',
                     "timestamp": ts_ms,
                     "device": f"{row['line_name']} - {row['device_id']}",
                     "message": '엔지니어 호출'
                 })
             return calls
+
+
+@router.post('/engineer-calls/{call_id}/resolve')
+def resolve_engineer_call(call_id: int):
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "UPDATE engineer_calls SET status = 'resolved', updated_at = NOW() WHERE call_id = %s",
+                (call_id,)
+            )
+            if cursor.rowcount == 0:
+                raise HTTPException(status_code=404, detail="Call not found")
+        conn.commit()
+    return {"status": "ok"}
+
+
+@router.post('/engineer-calls/resolve-all')
+def resolve_all_engineer_calls():
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "UPDATE engineer_calls SET status = 'resolved', updated_at = NOW() WHERE status = 'pending'"
+            )
+        conn.commit()
+    return {"status": "ok"}
+
+
+@router.post('/engineer-calls/{call_id}/unresolve')
+def unresolve_engineer_call(call_id: int):
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "UPDATE engineer_calls SET status = 'pending', updated_at = NOW() WHERE call_id = %s",
+                (call_id,)
+            )
+            if cursor.rowcount == 0:
+                raise HTTPException(status_code=404, detail="Call not found")
+        conn.commit()
+    return {"status": "ok"}
 
 @router.get('/stats')
 def get_dashboard_stats():

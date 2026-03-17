@@ -73,7 +73,7 @@ export default function App() {
     const [hasUncheckedItems, setHasUncheckedItems] = useState<boolean>(false);
     const [isOnline, setIsOnline] = useState(true);
 
-    const [engineerCalls, setEngineerCalls] = useState<Array<{ code: string; timestamp: number; device: string }>>([]);
+    const [engineerCalls, setEngineerCalls] = useState<Array<{ call_id: number; status: string; code: string; timestamp: number; device: string }>>([]);
     const [errorHistory, setErrorHistory] = useState<ErrorHistory[]>([]);
     const [dashboardStats, setDashboardStats] = useState<{ today_total: number; today_resolution_rate: number; daily_trend: any[] }>({
         today_total: 0,
@@ -344,7 +344,30 @@ export default function App() {
                         errorHistory={errorHistory}
                         engineerCalls={engineerCalls}
                         onClearCalls={() => setEngineerCalls([])}
-                        onResolveCall={(ts) => setEngineerCalls(p => p.filter(c => c.timestamp !== ts))}
+                        onResolveCall={async (callId) => {
+                            try {
+                                await api.resolveEngineerCall(callId);
+                                setEngineerCalls(p => p.map(c => c.call_id === callId ? { ...c, status: "resolved" } : c));
+                            } catch (err) {
+                                console.error("Failed to resolve call:", err);
+                            }
+                        }}
+                        onResolveAllCalls={async () => {
+                            try {
+                                await api.resolveAllEngineerCalls();
+                                setEngineerCalls(p => p.map(c => ({ ...c, status: "resolved" })));
+                            } catch (err) {
+                                console.error("Failed to resolve all calls:", err);
+                            }
+                        }}
+                        onUnresolveCall={async (callId) => {
+                            try {
+                                await api.unresolveEngineerCall(callId);
+                                setEngineerCalls(p => p.map(c => c.call_id === callId ? { ...c, status: "pending" } : c));
+                            } catch (err) {
+                                console.error("Failed to unresolve call:", err);
+                            }
+                        }}
                         stats={dashboardStats}
                         currentConfig={config}
                         onConfigChange={(c) => {
