@@ -116,18 +116,11 @@ def list_engineer_calls():
         with conn.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
                 """
-                SELECT s.session_id, h.created_at, h.message, s.device_id, l.error_code as code, d.line_name,
-                    (
-                        SELECT sub_h.message FROM robot_error_chat_histories sub_h 
-                        WHERE sub_h.session_id = s.session_id AND sub_h.step_no = 1 AND sub_h.actor = 'system' 
-                        LIMIT 1
-                    ) as fallback_message
-                FROM robot_error_chat_histories h
-                JOIN robot_error_sessions s ON h.session_id = s.session_id
+                SELECT c.session_id, c.created_at, s.device_id, c.error_code as code, d.line_name
+                FROM engineer_calls c
+                JOIN robot_error_sessions s ON c.session_id = s.session_id
                 JOIN robot_devices d ON s.device_id = d.device_id
-                LEFT JOIN robot_error_logs l ON s.error_log_id = l.error_log_id
-                WHERE (h.message ILIKE '%%호출%%' OR h.message ILIKE '%%call%%') AND h.actor = 'user'
-                ORDER BY h.created_at DESC
+                ORDER BY c.created_at DESC
                 LIMIT 50
                 """
             )
@@ -137,21 +130,11 @@ def list_engineer_calls():
                 from datetime import datetime
                 ts = row['created_at']
                 ts_ms = ts.timestamp() * 1000 if isinstance(ts, datetime) else 0
-                code = row['code']
-                if not code and row.get('fallback_message'):
-                    import re
-                    match = re.search(r'([A-Z0-9]+)\s+에러', row['fallback_message'])
-                    if match:
-                        code = match.group(1).strip()
-                    else:
-                        match2 = re.search(r'([A-Z0-9]+)에러', row['fallback_message'])
-                        if match2:
-                            code = match2.group(1).strip()
                 calls.append({
-                    "code": code,
+                    "code": row['code'] or '알 수 없음',
                     "timestamp": ts_ms,
                     "device": f"{row['line_name']} - {row['device_id']}",
-                    "message": row['message']
+                    "message": '엔지니어 호출'
                 })
             return calls
 
@@ -352,6 +335,17 @@ def start_consultation(req: StartConsultationRequest):
                 # Generate checklist items (using our service logic)
                 followup = generate_followup_checklist(req.error_code, diagnosis_payload=diagnosis, language=req.language.value)
                 checklist = followup['checklist_items']
+
+                # 체크리스트 DB 적재 이력 기록 추가
+                for c_idx, c_item in enumerate(checklist, start=1):
+                    cursor.execute(
+                        """
+                        INSERT INTO robot_error_checklist_items 
+                          (session_id, item_order, item_content, is_presented, is_checked, created_at, updated_at)
+                        VALUES (%s, %s, %s, true, false, NOW(), NOW())
+                        """,
+                        (session_id, c_idx, c_item['item']),
+                    )
             else:
                 assistant_message = (
                     f"**[{req.error_code} 에러 보고]**\n\n"
@@ -476,13 +470,26 @@ def post_event(session_id: int, req: ConsultationEventRequest):
                         last_type = last_resp['response_type'] if last_resp else 'overall'
 
                         # 2. Stage 1 -> Stage 2 (Overall to Checklist)
-                        if last_type == 'overall':
+                        # 페이로드에 체크리스트 결과가 포함되어 있다면 Stage 3(진단)로 바로 이동하도록 조건을 수정합니다.
+                        if last_type == 'overall' and not (req.payload and req.payload.get('checklist_results')):
                             followup = generate_followup_checklist(
                                 session_ctx['error_code'], 
                                 language=req.language.value
                             )
                             checklist = followup['checklist_items']
                             
+                            # 기존 체크리스트 항목 초기화 후 신규 적재
+                            cursor.execute("DELETE FROM robot_error_checklist_items WHERE session_id = %s", (session_id,))
+                            for c_idx, c_item in enumerate(checklist, start=1):
+                                cursor.execute(
+                                    """
+                                    INSERT INTO robot_error_checklist_items 
+                                      (session_id, item_order, item_content, is_presented, is_checked, created_at, updated_at)
+                                    VALUES (%s, %s, %s, true, false, NOW(), NOW())
+                                    """,
+                                    (session_id, c_idx, c_item['item']),
+                                )
+
                             assistant_message = "상세 점검을 위해 아래 체크리스트를 확인하고 조치 결과를 제출해 주세요."
                             if req.language.value == 'en':
                                 assistant_message = "Please review the checklist below and submit the results."
@@ -517,6 +524,22 @@ def post_event(session_id: int, req: ConsultationEventRequest):
                         # 3. Stage 2 -> Stage 3 (Checklist to Diagnosis)
                         else:
                             checklist_results = (req.payload or {}).get('checklist_results')
+                            
+                            # 체크리스트 점검 완료 시 DB 업데이트 연동
+                            if checklist_results and isinstance(checklist_results, list):
+                                for res_item in checklist_results:
+                                    if isinstance(res_item, dict):
+                                        item_text = res_item.get('item') or res_item.get('question')
+                                        is_ok = bool(res_item.get('is_ok'))
+                                        cursor.execute(
+                                            """
+                                            UPDATE robot_error_checklist_items
+                                            SET is_checked = %s, updated_at = NOW()
+                                            WHERE session_id = %s AND item_content = %s
+                                            """,
+                                            (is_ok, session_id, item_text)
+                                        )
+
                             solution = generate_final_solution(
                                 session_ctx['error_code'], 
                                 checklist_results=checklist_results,
@@ -582,6 +605,16 @@ def post_event(session_id: int, req: ConsultationEventRequest):
                             """,
                             (session_id, req.step_no + 1, assistant_message, str(uuid.uuid4())),
                         )
+
+                        # 전용 호출 테이블에 적재 연동
+                        cursor.execute(
+                            """
+                            INSERT INTO engineer_calls (session_id, device_id, error_code, status, created_at, updated_at)
+                            VALUES (%s, %s, %s, 'pending', NOW(), NOW())
+                            """,
+                            (session_id, session_ctx['device_id'], session_ctx['error_code'])
+                        )
+
                         update_session_status(cursor, session_id, SessionStatus.ONGOING)
 
                         return ConsultationResponse(
