@@ -483,6 +483,9 @@ def embed_markdown_to_pgvector(
     except Exception as exc:
         bm25_result = {"bm25_cache_updated": False, "bm25_status": f"error:{exc}", "bm25_total_docs": None}
 
+    extracted_count = _extract_and_insert_errors_to_sql(markdown_text, source_key)
+    bm25_result["extracted_sql_errors"] = extracted_count
+
     unchanged = bool(existing_ids and set(existing_ids) == current_ids)
     return {
         "message": "No change (already up-to-date)." if unchanged else "Embedding pipeline completed.",
@@ -494,6 +497,86 @@ def embed_markdown_to_pgvector(
         "db_chunks_deleted": len(stale_ids),
         **bm25_result,
     }
+
+def _extract_and_insert_errors_to_sql(markdown_text: str, filename: str) -> int:
+    import json
+    from langchain_openai import ChatOpenAI
+    
+    # 1. 브랜드 판별
+    lower_source = filename.lower()
+    category = "general"
+    if 'ur' in lower_source or 'e-series' in lower_source:
+         category = "ur"
+    elif 'hi6' in lower_source or 'hi5' in lower_source or 'hyundai' in lower_source or '로봇' in lower_source:
+         category = "hyundai"
+    elif 'welding' in lower_source or '용접' in lower_source:
+         category = "welding"
+
+    # 2. 에러 테이블 청크 추출 (Regex 다이어트)
+    lines = markdown_text.split("\n")
+    relevant_chunks = []
+    current_chunk = []
+    for line in lines:
+        if re.search(r'(error|에러|오류|code|코드)\b', line, re.I) or '|' in line:
+            current_chunk.append(line)
+        else:
+            if len(current_chunk) > 3:
+                relevant_chunks.append("\n".join(current_chunk))
+            current_chunk = []
+    if current_chunk:
+        relevant_chunks.append("\n".join(current_chunk))
+        
+    combined_text = "\n\n---\n\n".join(relevant_chunks[:20])
+    if not combined_text.strip():
+        return 0
+
+    # 3. LLM 호출
+    llm = ChatOpenAI(model="gpt-4o", temperature=0)
+    prompt = f"""다음 마크다운 텍스트에서 '에러코드/코드'와 '에러내용/설명/조치' 매칭 테이블을 찾아서 JSON 배열로 추출해줘.
+테이블 형태가 절대적이지 않더라도 에러와 내용이 매칠된다면 추출할 것.
+
+응답은 마크다운 코드 블록 없이 순수 JSON 배열만 반환할 것.
+형식: [{{"error_code": "E0123", "error_content": "내용설명"}}]
+
+텍스트:
+{combined_text[:8000]}
+"""
+    try:
+        response = llm.invoke(prompt).content.strip()
+        if response.startswith("```json"):
+            response = response[7:]
+        if response.endswith("```"):
+            response = response[:-3]
+        response = response.strip()
+        
+        items = json.loads(response)
+        if not items or not isinstance(items, list):
+            return 0
+            
+        with _conn() as conn:
+            with conn.cursor() as cur:
+                insert_rows = []
+                for item in items:
+                    code = (item.get("error_code") or "").strip()
+                    content = (item.get("error_content") or "").strip()
+                    if code and content:
+                         insert_rows.append((category, code, content))
+                
+                if insert_rows:
+                     execute_values(
+                         cur,
+                         """
+                         INSERT INTO robot_error_manuals (category, error_code, error_content)
+                         VALUES %s
+                         """,
+                         insert_rows
+                     )
+            conn.commit()
+        return len(insert_rows)
+    except Exception as e:
+         print(f"[_extract_and_insert_errors_to_sql] Error: {e}")
+         return 0
+
 
 
 @contextmanager

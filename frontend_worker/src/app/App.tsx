@@ -88,6 +88,25 @@ export default function App() {
     const [csvSearch, setCsvSearch] = useState("");
     const [csvType, setCsvType] = useState("hyundai");
     const [isCsvKeyboardOpen, setIsCsvKeyboardOpen] = useState(false);
+    const [abandonedSession, setAbandonedSession] = useState<any>(null);
+
+    const checkAbandonedSession = useCallback(async (devId: string) => {
+        if (!devId) return;
+        try {
+            const res = await api.getRecentAbandoned(devId);
+            if (res && res.session_id) {
+                setAbandonedSession(res);
+            }
+        } catch (err) {
+            console.error("Failed to check abandoned session:", err);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (deviceId) {
+            checkAbandonedSession(deviceId);
+        }
+    }, [deviceId, checkAbandonedSession]);
 
     const fetchHistory = useCallback(async () => {
         try {
@@ -436,6 +455,41 @@ export default function App() {
             <Header lang={lang} onLangChange={setLang} onAdminActivate={() => setView("admin-login")} onHome={handleBackToMain} isOnline={isOnline} />
             {renderContent()}
             <DialogModal lang={lang} isOpen={showDialog} onClose={() => setShowDialog(false)} />
+
+            {/* Abandoned Nudge Modal */}
+            {abandonedSession && (
+                <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1100, padding: "20px" }}>
+                    <div style={{ backgroundColor: "#1c1c1e", width: "100%", maxWidth: "450px", borderRadius: "16px", border: "1px solid #2c2c2e", display: "flex", flexDirection: "column", padding: "24px", gap: "16px", boxShadow: "0 20px 50px rgba(0,0,0,0.6)" }}>
+                        <h3 style={{ fontSize: "20px", fontWeight: "900", color: "#ffffff", textAlign: "center" }}>💡 이전 작업 확인</h3>
+                        <p style={{ fontSize: "16px", color: "#e4e4e7", textAlign: "center", lineHeight: "1.6" }}>
+                            이전 에러 <b>[{abandonedSession.error_code}]</b> 조치가 정상적으로 완료되셨나요?
+                        </p>
+                        <div style={{ display: "flex", gap: "12px", marginTop: "12px" }}>
+                            <button 
+                                onClick={async () => {
+                                    try {
+                                        await api.resolveAbandoned(abandonedSession.session_id);
+                                        toast.success("상태가 '완료'로 업데이트 되었습니다.");
+                                        setAbandonedSession(null);
+                                        fetchHistory();
+                                    } catch (err) {
+                                        toast.error("업데이트 실패");
+                                    }
+                                }}
+                                style={{ flex: 1, backgroundColor: "#22c55e", color: "#ffffff", padding: "12px", borderRadius: "8px", fontWeight: "800", cursor: "pointer" }}
+                            >
+                                네, 해결했어요
+                            </button>
+                            <button 
+                                onClick={() => setAbandonedSession(null)}
+                                style={{ flex: 1, backgroundColor: "#3f3f46", color: "#ffffff", padding: "12px", borderRadius: "8px", fontWeight: "800", cursor: "pointer" }}
+                            >
+                                아니요 / 닫기
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Maintenance History Modal */}
             {isHistoryModalOpen && (

@@ -36,3 +36,33 @@ async def analyze_logs(req: AnalysisRequest):
         ],
         affected_components=["API Gateway", "Database Connector"]
     )
+
+class ManagerAskRequest(BaseModel):
+    question: str
+    language: str = "ko"
+
+@router.get('/briefing')
+async def get_briefing(language: str = "ko"):
+    """
+    관리자용 자동 브리핑을 생성합니다 (라인 가동률, 주요 에러 등).
+    """
+    from core.manager_core import generate_manager_briefing
+    try:
+        # manager_core에서 생성한 비동기 함수 호출
+        return await generate_manager_briefing(language=language)
+    except Exception as e:
+        logger.error(f"Error in generate_manager_briefing: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post('/ask')
+async def ask_manager(req: ManagerAskRequest):
+    """
+    관리자의 자연어 질문에 대해 분석하여 답변을 생성합니다.
+    """
+    from core.manager_core import answer_manager_question
+    try:
+        return await answer_manager_question(question=req.question, language=req.language)
+    except Exception as e:
+        logger.error(f"Error in answer_manager_question: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+

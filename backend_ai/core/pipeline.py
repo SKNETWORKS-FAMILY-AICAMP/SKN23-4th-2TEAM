@@ -76,9 +76,22 @@ def make_context_from_docs(docs: list[Document]) -> str:
 
     contexts = []
     for i, doc in enumerate(docs, 1):
+        metadata = getattr(doc, 'metadata', {}) or {}
+        source_file = metadata.get('source_file', '') or ''
+        brand = "기타 (미분류)"
+        
+        lower_source = source_file.lower()
+        if 'ur' in lower_source or 'e-series' in lower_source:
+             brand = "UR 로봇 (Universal Robots)"
+        elif 'hi6' in lower_source or 'hi5' in lower_source or 'hyundai' in lower_source or '로봇_setup' in lower_source:
+             brand = "현대 로봇 (Hyundai)"
+        elif 'welding' in lower_source or '용접' in lower_source:
+             brand = "용접기"
+
         contexts.append(
-            f'[문서 {i}]\n'
-            f'metadata: {doc.metadata}\n'
-            f'content:\n{doc.page_content[:1200]}'
+            f'[문서 {i}] (제조사/장비: {brand})\n'
+            f'출처: {source_file}\n'
+            f'내용:\n{doc.page_content[:1200]}'
         )
     return '\n\n'.join(contexts)
+

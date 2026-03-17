@@ -285,6 +285,30 @@ export class ApiClient {
         }
         return response.json();
     }
+
+    /**
+     * 최근 Abandoned 세션 조회
+     */
+    async getRecentAbandoned(deviceId: string): Promise<any> {
+        const response = await fetch(`${this.baseUrl}/consultations/recent-abandoned?device_id=${deviceId}`);
+        if (!response.ok) {
+            throw new Error(`Failed to get recent abandoned: ${response.status} ${response.statusText}`);
+        }
+        return response.json();
+    }
+
+    /**
+     * Abandoned 세션 완료 처리
+     */
+    async resolveAbandoned(sessionId: number): Promise<{ status: string }> {
+        const response = await fetch(`${this.baseUrl}/consultations/${sessionId}/resolve-abandoned`, {
+            method: "POST"
+        });
+        if (!response.ok) {
+            throw new Error(`Failed to resolve abandoned session: ${response.status} ${response.statusText}`);
+        }
+        return response.json();
+    }
 }
 
 export const api = new ApiClient();
