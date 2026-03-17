@@ -213,7 +213,125 @@ Step 4에서 LLM이 제시한 체크리스트형 질문(최대 5개)의 각 항�
 
 ---
 
-## 8) 추천 인덱스
+## 8) `users` — 사용자 및 관리자 마스터
+
+### 목적
+어플리케이션(어드민/작업자용) 사용자의 계정 및 권한 관리
+
+### 컬럼
+
+| 컬럼            | 타입             | 제약                                | 설명                                      |
+| --------------- | ---------------- | ----------------------------------- | ----------------------------------------- |
+| `id`            | `UUID`           | PK, DEFAULT `uuid_generate_v4()` | 고유 식별자                              |
+| `username`      | `VARCHAR`        | NOT NULL, UNIQUE                    | 로그인 아이디                            |
+| `password_hash` | `VARCHAR`        | NOT NULL                           | 해싱된 비밀번호                          |
+| `role`          | `VARCHAR`        | DEFAULT `'user'`                    | 역할 권한 (`admin`, `user` 등)         |
+| `name`          | `VARCHAR`        | NULL                                | 사용자 이름                              |
+| `created_at`    | `TIMESTAMPTZ`    | DEFAULT `NOW()`                    | 생성 일시                                |
+
+---
+
+## 9) `engineer_calls` — 엔지니어 호출 이력
+
+### 목적
+현장 작업자가 조치하기 어려운 장애 발생 시, 엔지니어를 가이드 호출한 내역
+
+### 컬럼
+
+| 컬럼          | 타입          | 제약                                | 설명                               |
+| ------------- | ------------- | ----------------------------------- | ---------------------------------- |
+| `call_id`     | `BIGSERIAL`   | PK                                  | 호출 사건 ID                        |
+| `session_id`  | `BIGINT`      | FK (`robot_error_sessions`)       | 연동 세션                           |
+| `device_id`   | `VARCHAR(50)` | NOT NULL                           | 호출 장치 ID                       |
+| `error_code`  | `VARCHAR`     | NULL                                | 발생 에러 코드                     |
+| `status`      | `VARCHAR`     | DEFAULT `'pending'`                 | 처리 상태 (`pending`, `resolved`) |
+| `created_at`  | `TIMESTAMPTZ` | DEFAULT `NOW()`                    | 생성 일시                          |
+| `updated_at`  | `TIMESTAMPTZ` | DEFAULT `NOW()`                    | 갱신 일시                          |
+
+---
+
+## 10) `jargon` — 기술 용어 사전
+
+### 목적
+분석 및 응답 생성 시 참고하기 위한 기술 용어의 매핑 사전
+
+### 컬럼
+
+| 컬럼       | 타입      | 설명                    |
+| ---------- | --------- | ----------------------- |
+| `id`       | `INTEGER` | 용어 사전 번호          |
+| `category` | `VARCHAR` | 용어 분류 (예: 제조사) |
+| `jargon`   | `VARCHAR` | 원문 약어/기술 용어     |
+| `standard` | `VARCHAR` | 표준 번역 내용          |
+
+---
+
+## 11) `chat_logs` — 대화 성과 지표 로그
+
+### 목적
+RAG 시스템 성능 고도화를 위해, 대화 건당 소요 시간 및 정확도 평가 점수 등을 기록
+
+### 주요 컬럼
+
+| 컬럼                       | 타입             | 설명                                           |
+| -------------------------- | ---------------- | ---------------------------------------------- |
+| `id`                       | `INTEGER`        | 로그 단건 ID                                   |
+| `user_id`                 | `UUID`           | 사용자 참조                                    |
+| `query` / `response`       | `TEXT`           | 유저 질문 / LLM 응답 내용                      |
+| `latency`                  | `NUMERIC`        | 응답 소요 시간                                 |
+| `reranker_score`           | `DOUBLE`         | 가중치 점수                                    |
+| `generation_score`         | `INTEGER`        | 생성 품질 점수 (어드민 대시보드 평가용)       |
+| `eval_reason`              | `TEXT`           | 점수 산출 근거                                 |
+| `generation_model`         | `VARCHAR`        | 사용 모델명 (`gpt-4o-mini` 등)               |
+
+---
+
+## 12) `admin_settings` — AI 설정값 관리
+
+### 목적
+어드민 패널에서 동적으로 제어하는 LLM 프롬프트 및 설정 스펙 저장
+
+### 컬럼
+
+| 컬럼                | 타입      | 설명                               |
+| ------------------- | --------- | ---------------------------------- |
+| `id`                | `INTEGER` | 설정 그룹 ID                       |
+| `evaluation_model` | `VARCHAR` | 평가에 사용될 모델명 (기본 `gpt-4o`) |
+| `generation_prompt` | `TEXT`    | 실시간 답변 생성 프롬프트 템플릿   |
+| `retrieval_prompt`  | `TEXT`    | 매뉴얼 조회용 프롬프트             |
+
+---
+
+## 13) `admin_pdf_ingest_registry` — PDF 수집 인덱스
+
+### 목적
+신규 매뉴얼(PDF 파일)을 업로드/청크화하여 Vector DB로 적재할 때의 형상/버전 관리
+
+### 컬럼
+
+| 컬럼              | 타입          | 설명                               |
+| ----------------- | ------------- | ---------------------------------- |
+| `collection_name` | `TEXT`        | 적재될 벡터 콜렉션명               |
+| `source_key`      | `TEXT`        | 원본 파일 키                       |
+| `chunk_hash`      | `TEXT`        | 콘텐츠 변경 확인용 해시            |
+| `file_name`       | `TEXT`        | 파일명                             |
+| `s3_pdf_key`      | `TEXT`        | S3 저장 경로                       |
+| `use_yn`          | `CHAR`        | 활성화 여부 (`Y` / `N`)           |
+
+---
+
+## ⭐️ 14) `langchain_pg_collection` & `embedding` — 백엔드 벡터 DB
+
+### 목적
+문서 기반 자연어 질의(RAG) 검색 최적화를 위한 랭체인 전용 내부 관리 테이블. (`retriever.py`에서 BM25 하이브리드 검색과 exact 조회 시 활용됨)
+
+-   **`langchain_pg_collection`**: 벡터 주소 집합체 (Collection 목록)
+-   **`langchain_pg_embedding`**: 텍스트 청크 및 **Embedding Vector 값** 실제 레코드 저장
+
+---
+
+## 15) 추천 인덱스
+
 
 - `robot_devices(line_name, line_num)`
 - `robot_devices(model_id)`

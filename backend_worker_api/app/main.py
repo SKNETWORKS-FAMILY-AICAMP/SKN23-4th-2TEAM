@@ -38,6 +38,32 @@ class AsciiJSONResponse(JSONResponse):
             separators=(",", ":"),
         ).encode("utf-8")
 
+import asyncio
+
+async def auto_abandon_sessions_loop():
+    logger.info("⏰ [Scheduler] Auto-Abandon Sessions Task started.")
+    from app.db import get_db_connection
+    while True:
+        try:
+            with get_db_connection() as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute(
+                        """
+                        UPDATE robot_error_sessions 
+                        SET final_status = 'abandoned', last_updated_at = NOW()
+                        WHERE final_status = 'ongoing' 
+                          AND last_updated_at < NOW() - INTERVAL '30 minutes'
+                        """
+                    )
+                    count = cursor.rowcount
+                    if count > 0:
+                        logger.info(f"⏰ [Scheduler] Abandoned {count} stale sessions.")
+                conn.commit()
+        except Exception as e:
+            logger.error(f"❌ [Scheduler] Error in auto-abandon task: {e}")
+        await asyncio.sleep(600)
+
+
 app = FastAPI(
     title='WELD-BOT Worker API',
     version='1.0.0',
@@ -46,14 +72,26 @@ app = FastAPI(
 )
 
 @app.on_event("startup")
-def startup_event():
+async def startup_event():
     logger.info("🧠 [Startup] Pre-heating AI models (Cross-Encoder / Reranker)...")
     try:
         from core.reranker import load_reranker_singleton
         load_reranker_singleton()
         logger.info("✅ [Startup] Reranker Cross-Encoder loaded successfully into memory.")
     except Exception as e:
-        logger.error(f"❌ [Startup] Failed to pre-heat AI models: {e}")
+        logger.error(f"❌ [Startup] Failed to pre-heat Reranker: {e}")
+
+    try:
+        from core.retriever import warm_up_bm25_cache
+        warm_up_bm25_cache()
+        logger.info("✅ [Startup] BM25 Index cache warmed up successfully.")
+    except Exception as e:
+        logger.error(f"❌ [Startup] Failed to warm up BM25 cache: {e}")
+
+    
+    # 백그라운드 태스크 등록
+    asyncio.create_task(auto_abandon_sessions_loop())
+    logger.info("⏰ [Startup] Auto-Timeout Task registered.")
 
 
 # CORS 설정 - Safari 연동을 위해 credentials와 wildcard 충돌 방지

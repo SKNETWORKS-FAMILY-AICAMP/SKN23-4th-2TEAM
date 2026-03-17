@@ -459,32 +459,47 @@ def _extract_manual_queries(plan: dict, collected_data: dict) -> list[str]:
     return deduped[:5]
 
 
+def _load_pipeline_utils():
+    """
+    RAG 파이프라인에서 제공하는 가공 함수 및 리트리버를 매니저 코어에서 동적 로딩합니다.
+    (경로 로딩 분리용)
+    """
+    from core.pipeline import make_context_from_docs
+    from core.retriever import get_hybrid_retriever, search_manual_exact, search_manual_exact_async
+    return make_context_from_docs, get_hybrid_retriever, search_manual_exact, search_manual_exact_async
+
+
+
 # Retrieve related manual context only when the plan or data suggests it.
-def retrieve_manager_manual_context(plan: dict, collected_data: dict) -> str:
+async def retrieve_manager_manual_context(plan: dict, collected_data: dict) -> str:
     queries = _extract_manual_queries(plan, collected_data)
     if not queries:
         return NO_MANUAL_CONTEXT
 
-    make_context_from_docs, get_hybrid_retriever, search_manual_exact = _load_pipeline_utils()
+    make_context_from_docs, get_hybrid_retriever, _, search_manual_exact_async = _load_pipeline_utils()
 
     docs = []
     seen = set()
     for query in queries:
         normalized_query = str(query or '').strip().upper()
         try:
-            exact_docs = search_manual_exact(normalized_query, k=2)
+            # 워커(비동기)용 API 호출과 구조 통일
+            exact_docs = await search_manual_exact_async(normalized_query, k=2)
             hybrid_retriever = get_hybrid_retriever(
                 query=normalized_query,
                 vector_weight=DEFAULT_VECTOR_WEIGHT,
                 bm25_weight=DEFAULT_BM25_WEIGHT,
                 k=5,
             )
+            # EnsembleRetriever 내부 Concurrency 교착 현상 우회용 sync invoke 적용
             hybrid_docs = hybrid_retriever.invoke(normalized_query)
             found_docs = [*exact_docs, *hybrid_docs]
         except Exception as exc:
-            return f"{MANUAL_LOOKUP_FAILED}: {exc}"
+            # 검색 실패 원인 bypass 하고 연계 탐색 진행
+            continue
 
         for doc in found_docs:
+
             metadata = getattr(doc, "metadata", {}) or {}
             signature = (
                 doc.page_content,
@@ -501,11 +516,12 @@ def retrieve_manager_manual_context(plan: dict, collected_data: dict) -> str:
 
 
 # Generate the final answer for a manager question.
-def answer_manager_question(question: str, language: str = "ko") -> dict:
+async def answer_manager_question(question: str, language: str = "ko") -> dict:
     plan = classify_manager_intent(question)
     normalized_language = (language or "ko").strip().lower()
 
     task = _get_plan_task(plan)
+
 
     if task == "casual_chat":
         answer_text = CASUAL_MANAGER_RESPONSES.get(normalized_language, CASUAL_MANAGER_RESPONSES["ko"])
@@ -519,8 +535,9 @@ def answer_manager_question(question: str, language: str = "ko") -> dict:
             "answer_text": answer_text,
         }
 
-    collected_data = collect_manager_data(plan)
+    collected_data = await collect_manager_data(plan)
     manager_data_context = build_manager_data_context(collected_data)
+
 
     if task == "error_count" and not (plan.get("filters") or {}).get("line_name"):
         answer_text = _build_today_error_count_answer(collected_data)
@@ -555,9 +572,10 @@ def answer_manager_question(question: str, language: str = "ko") -> dict:
         manual_context = NO_MANUAL_CONTEXT
         localized = _translate_text(answer_text, language)
     else:
-        manual_context = retrieve_manager_manual_context(plan, collected_data)
+        manual_context = await retrieve_manager_manual_context(plan, collected_data)
         llm = _build_chat_llm()
         prompt = MANAGER_ANSWER_PROMPT.format(
+
             question=question.strip(),
             query_plan=json.dumps(plan, ensure_ascii=False, indent=2),
             manager_data_context=manager_data_context,
@@ -584,11 +602,12 @@ def answer_manager_question(question: str, language: str = "ko") -> dict:
 
 
 # Generate an automatic manager briefing without a user question.
-def generate_manager_briefing(language: str = "ko") -> dict:
+async def generate_manager_briefing(language: str = "ko") -> dict:
     plan = build_default_manager_plan()
-    collected_data = collect_manager_data(plan)
+    collected_data = await collect_manager_data(plan)
     manager_data_context = build_manager_data_context(collected_data)
-    manual_context = retrieve_manager_manual_context(plan, collected_data)
+    manual_context = await retrieve_manager_manual_context(plan, collected_data)
+
 
     llm = _build_chat_llm()
     prompt = MANAGER_AUTO_BRIEFING_PROMPT.format(

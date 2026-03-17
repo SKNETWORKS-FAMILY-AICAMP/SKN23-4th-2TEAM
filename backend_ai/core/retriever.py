@@ -60,12 +60,13 @@ def _get_pg_settings() -> dict:
     return {
         "host": host,
         "port": port,
-        "database": _env_first("PGDATABASE", "PG_DB"),
+        "dbname": _env_first("PGDATABASE", "PG_DB"),
         "user": _env_first("PGUSER", "PG_USER"),
         "password": _env_first("PGPASSWORD", "PG_PASSWORD"),
         "sslmode": _env_first("PGSSLMODE", default="require"),
         "connect_timeout": int(_env_first("PGCONNECT_TIMEOUT", default="5")),
     }
+
 
 
 def _connect_postgres():
@@ -75,12 +76,30 @@ def _connect_postgres():
     return psycopg.connect(
         host=pg_settings["host"],
         port=pg_settings["port"],
-        dbname=pg_settings["database"],
+        dbname=pg_settings["dbname"], # Passing correct dictionary key for dbname
         user=pg_settings["user"],
         password=pg_settings["password"],
         sslmode=pg_settings["sslmode"],
         connect_timeout=pg_settings["connect_timeout"],
     )
+
+
+async def _aconnect_postgres():
+    import psycopg
+
+    pg_settings = _get_pg_settings()
+    # psycopg.AsyncConnection expects dbname
+    return await psycopg.AsyncConnection.connect(
+        host=pg_settings["host"],
+        port=pg_settings["port"],
+        dbname=pg_settings["dbname"], # Passing correct dictionary key for dbname
+        user=pg_settings["user"],
+        password=pg_settings["password"],
+        sslmode=pg_settings["sslmode"],
+        connect_timeout=pg_settings["connect_timeout"],
+    )
+
+
 
 
 class ExactMatchRetriever(BaseRetriever):
@@ -89,6 +108,10 @@ class ExactMatchRetriever(BaseRetriever):
 
     def _get_relevant_documents(self, query: str, *, run_manager=None) -> List[Document]:
         return search_manual_exact(query, collection_name=self.collection_name, k=self.k)
+
+    async def _aget_relevant_documents(self, query: str, *, run_manager=None) -> List[Document]:
+        return await search_manual_exact_async(query, collection_name=self.collection_name, k=self.k)
+
 
 
 def _save_bm25_cache(retriever: BM25Retriever) -> None:
@@ -182,20 +205,67 @@ def search_manual_exact(query: str, collection_name: str = COLLECTION_NAME, k: i
     """
     params.append(fetch_k)
 
-    with _connect_postgres() as conn:
+    conn = _connect_postgres()
+    try:
         with conn.cursor() as cur:
             cur.execute(sql, tuple(params))
             rows = cur.fetchall()
+    finally:
+        conn.close()
 
     docs = [Document(page_content=row[0] or "", metadata=row[1] or {}) for row in rows]
+
     
     if manufacturer:
         docs = [doc for doc in docs if _is_manufacturer_match(doc, manufacturer)]
         
     return docs[:k]
 
+async def search_manual_exact_async(query: str, collection_name: str = COLLECTION_NAME, k: int = 2, manufacturer: str | None = None) -> List[Document]:
+    normalized_query = (query or "").strip().upper()
+    fetch_k = k * 3 if manufacturer else k
+    
+    words = normalized_query.split()
+    if not words:
+        return []
+
+    conditions = []
+    params = [collection_name]
+    for word in words:
+        conditions.append(
+            "%s = ANY(regexp_split_to_array(regexp_replace(UPPER(e.document), '[^A-Z0-9]+', ' ', 'g'), '\\s+'))"
+        )
+        params.append(word)
+
+    sql = f"""
+        SELECT e.document, e.cmetadata
+        FROM public.langchain_pg_embedding AS e
+        JOIN public.langchain_pg_collection AS c
+          ON e.collection_id = c.uuid
+        WHERE c.name = %s
+          AND {" AND ".join(conditions)}
+        LIMIT %s
+    """
+    params.append(fetch_k)
+
+    conn = await _aconnect_postgres()
+    try:
+        async with conn.cursor() as cur:
+            await cur.execute(sql, tuple(params))
+            rows = await cur.fetchall()
+    finally:
+        await conn.close()
+
+    docs = [Document(page_content=row[0] or "", metadata=row[1] or {}) for row in rows]
+
+    
+    if manufacturer:
+        docs = [doc for doc in docs if _is_manufacturer_match(doc, manufacturer)]
+        
+    return docs[:k]
 
 def _fetch_all_documents_from_postgres(collection_name: str) -> List[Document]:
+
     sql = """
     SELECT e.document, e.cmetadata
     FROM langchain_pg_embedding AS e
@@ -206,12 +276,16 @@ def _fetch_all_documents_from_postgres(collection_name: str) -> List[Document]:
     """
 
     documents: List[Document] = []
-    with _connect_postgres() as conn:
+    conn = _connect_postgres()
+    try:
         with conn.cursor() as cur:
             cur.execute(sql, (collection_name,))
             for page_content, metadata in cur.fetchall():
                 documents.append(Document(page_content=page_content or "", metadata=metadata or {}))
+    finally:
+        conn.close()
     return documents
+
 
 
 def _load_or_create_bm25_retriever(collection_name: str = COLLECTION_NAME, force_refresh: bool = False):
@@ -237,6 +311,16 @@ def _load_or_create_bm25_retriever(collection_name: str = COLLECTION_NAME, force
     _save_bm25_cache(bm25_retriever)
     CACHED_BM25_RETRIEVER = bm25_retriever
     return CACHED_BM25_RETRIEVER
+
+
+def warm_up_bm25_cache(collection_name: str = COLLECTION_NAME):
+    """
+    서버 부동 시 BM25 인덱스를 메모리에 상주시켜서 초기 쿼리 속도를 높입니다.
+    """
+    print(f"[retriever] Warming up BM25 cache for {collection_name}...")
+    _load_or_create_bm25_retriever(collection_name)
+    print("[retriever] BM25 cache warm-up complete.")
+
 
 
 def get_hybrid_retriever(

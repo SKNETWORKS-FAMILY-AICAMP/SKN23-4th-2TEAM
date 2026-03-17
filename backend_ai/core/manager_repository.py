@@ -1,4 +1,5 @@
-﻿import os
+import os
+import asyncio
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -7,8 +8,6 @@ BASE_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = BASE_DIR.parents[1]
 load_dotenv(PROJECT_ROOT / '.env')
 
-
-# 여러 환경변수 후보 중 먼저 잡히는 값을 반환한다.
 def _env_first(*keys: str, default: str | None = None) -> str | None:
     for key in keys:
         value = os.getenv(key)
@@ -16,15 +15,11 @@ def _env_first(*keys: str, default: str | None = None) -> str | None:
             return value
     return default
 
-
-# 문자열 환경변수를 bool 값으로 변환한다.
 def _to_bool(value: str | None, default: bool = False) -> bool:
     if value is None:
         return default
     return value.strip().lower() in {'1', 'true', 'yes', 'on'}
 
-
-# PostgreSQL 접속 설정을 환경변수에서 읽어온다.
 def _get_pg_settings() -> dict:
     if _to_bool(os.getenv('SSH_TUNNEL_ENABLED'), default=False):
         host = _env_first('SSH_LOCAL_BIND_HOST', default='127.0.0.1')
@@ -36,53 +31,45 @@ def _get_pg_settings() -> dict:
     return {
         'host': host,
         'port': port,
-        'database': _env_first('PGDATABASE', 'PG_DB'),
+        'dbname': _env_first('PGDATABASE', 'PG_DB'),
         'user': _env_first('PGUSER', 'PG_USER'),
         'password': _env_first('PGPASSWORD', 'PG_PASSWORD'),
         'sslmode': _env_first('PGSSLMODE', default='require'),
         'connect_timeout': int(_env_first('PGCONNECT_TIMEOUT', default='5')),
     }
 
-
-# PostgreSQL 연결 객체를 생성한다.
-def _connect_postgres():
+# 비동기 커넥션 객체 생성
+async def _connect_postgres():
     import psycopg
-
     pg_settings = _get_pg_settings()
-    return psycopg.connect(
-        host=pg_settings['host'],
-        port=pg_settings['port'],
-        dbname=pg_settings['database'],
-        user=pg_settings['user'],
-        password=pg_settings['password'],
-        sslmode=pg_settings['sslmode'],
-        connect_timeout=pg_settings['connect_timeout'],
-    )
+    # 비동기 연결 (AsyncConnection) 사용
+    return await psycopg.AsyncConnection.connect(**pg_settings)
 
-
-# 여러 행 조회 결과를 dict 리스트로 반환한다.
-def _fetch_all(query: str, params: tuple | None = None) -> list[dict]:
+# 비동기 다중 행 조회
+async def _fetch_all(query: str, params: tuple | None = None) -> list[dict]:
     import psycopg.rows
+    conn = await _connect_postgres()
+    try:
+        async with conn.cursor(row_factory=psycopg.rows.dict_row) as cur:
+            await cur.execute(query, params or ())
+            rows = await cur.fetchall()
+            return [dict(row) for row in rows]
+    finally:
+        await conn.close()
 
-    with _connect_postgres() as conn:
-        with conn.cursor(row_factory=psycopg.rows.dict_row) as cur:
-            cur.execute(query, params or ())
-            return [dict(row) for row in cur.fetchall()]
-
-
-# 단일 행 조회 결과를 dict로 반환한다.
-def _fetch_one(query: str, params: tuple | None = None) -> dict:
+# 비동기 단일 행 조회
+async def _fetch_one(query: str, params: tuple | None = None) -> dict:
     import psycopg.rows
-
-    with _connect_postgres() as conn:
-        with conn.cursor(row_factory=psycopg.rows.dict_row) as cur:
-            cur.execute(query, params or ())
-            row = cur.fetchone()
+    conn = await _connect_postgres()
+    try:
+        async with conn.cursor(row_factory=psycopg.rows.dict_row) as cur:
+            await cur.execute(query, params or ())
+            row = await cur.fetchone()
             return dict(row) if row else {}
+    finally:
+        await conn.close()
 
-
-# 대시보드 요약 지표를 조회한다.
-def fetch_dashboard_summary() -> dict:
+async def fetch_dashboard_summary() -> dict:
     query = """
     WITH total_device_count AS (
         SELECT COUNT(*)::int AS total_devices
@@ -112,11 +99,9 @@ def fetch_dashboard_summary() -> dict:
     CROSS JOIN total_device_count AS d
     CROSS JOIN ongoing_device_count AS o
     """
-    return _fetch_one(query)
+    return await _fetch_one(query)
 
-
-# 최근 N일 라인별 에러 추이를 조회한다.
-def fetch_line_trends(days: int = 7, line_name: str | None = None, error_code: str | None = None) -> list[dict]:
+async def fetch_line_trends(days: int = 7, line_name: str | None = None, error_code: str | None = None) -> list[dict]:
     where_clauses = ["DATE(timezone('Asia/Seoul', l.occurred_at)) >= DATE(timezone('Asia/Seoul', CURRENT_TIMESTAMP)) - (%s::int - 1)"]
     params: list = [days]
     if line_name:
@@ -137,7 +122,7 @@ def fetch_line_trends(days: int = 7, line_name: str | None = None, error_code: s
     GROUP BY DATE(timezone('Asia/Seoul', l.occurred_at)), d.line_name
     ORDER BY occurred_at ASC, d.line_name ASC
     """
-    rows = _fetch_all(query, tuple(params))
+    rows = await _fetch_all(query, tuple(params))
     grouped: dict[str, dict] = {}
     for row in rows:
         date_key = str(row.get('occurred_at'))
@@ -145,9 +130,7 @@ def fetch_line_trends(days: int = 7, line_name: str | None = None, error_code: s
         payload[f"line_name_{row.get('line_name', '-')}"] = row.get('error_count', 0)
     return list(grouped.values())
 
-
-# 최근 에러 로그 목록을 조회한다.
-def fetch_recent_logs(limit: int = 5, line_name: str | None = None, error_code: str | None = None, final_status: str | None = None) -> list[dict]:
+async def fetch_recent_logs(limit: int = 5, line_name: str | None = None, error_code: str | None = None, final_status: str | None = None) -> list[dict]:
     where_clauses = ['1=1']
     params: list = []
     if line_name:
@@ -182,11 +165,9 @@ def fetch_recent_logs(limit: int = 5, line_name: str | None = None, error_code: 
     LIMIT %s
     """
     params.append(limit)
-    return _fetch_all(query, tuple(params))
+    return await _fetch_all(query, tuple(params))
 
-
-# 최근 N일 가장 많이 발생한 에러를 조회한다.
-def fetch_top_errors(limit: int = 5, days: int = 7, line_name: str | None = None) -> list[dict]:
+async def fetch_top_errors(limit: int = 5, days: int = 7, line_name: str | None = None) -> list[dict]:
     where_clauses = ["DATE(timezone('Asia/Seoul', l.occurred_at)) >= DATE(timezone('Asia/Seoul', CURRENT_TIMESTAMP)) - (%s::int - 1)"]
     params: list = [days]
     if line_name:
@@ -205,11 +186,9 @@ def fetch_top_errors(limit: int = 5, days: int = 7, line_name: str | None = None
     LIMIT %s
     """
     params.append(limit)
-    return _fetch_all(query, tuple(params))
+    return await _fetch_all(query, tuple(params))
 
-
-# 라인별 최신 장비 상태를 조회한다.
-def fetch_lines(line_name: str | None = None, final_status: str | None = None) -> list[dict]:
+async def fetch_lines(line_name: str | None = None, final_status: str | None = None) -> list[dict]:
     where_clauses = ['1=1']
     params: list = []
     if line_name:
@@ -244,11 +223,9 @@ def fetch_lines(line_name: str | None = None, final_status: str | None = None) -
     WHERE {' AND '.join(where_clauses)}
     ORDER BY d.line_name ASC, d.line_num ASC, d.device_id ASC
     """
-    return _fetch_all(query, tuple(params))
+    return await _fetch_all(query, tuple(params))
 
-
-# 날짜별 라인 에러 집계를 조회한다.
-def fetch_stats(days: int = 30, line_name: str | None = None, error_code: str | None = None) -> list[dict]:
+async def fetch_stats(days: int = 30, line_name: str | None = None, error_code: str | None = None) -> list[dict]:
     where_clauses = ["DATE(timezone('Asia/Seoul', l.occurred_at)) >= DATE(timezone('Asia/Seoul', CURRENT_TIMESTAMP)) - (%s::int - 1)"]
     params: list = [days]
     if line_name:
@@ -269,11 +246,10 @@ def fetch_stats(days: int = 30, line_name: str | None = None, error_code: str | 
     GROUP BY DATE(timezone('Asia/Seoul', l.occurred_at)), d.line_name
     ORDER BY occurred_at DESC, d.line_name ASC
     """
-    return _fetch_all(query, tuple(params))
+    return await _fetch_all(query, tuple(params))
 
-
-# 계획된 데이터셋 목록에 맞춰 조회 결과를 수집한다.
-def collect_manager_data(plan: dict) -> dict:
+# 가장 중요한 변경점: 여러 쿼리를 동시에 병렬(Parallel) 실행!
+async def collect_manager_data(plan: dict) -> dict:
     filters = dict(plan.get('filters') or {})
     datasets = list(plan.get('datasets') or [])
     line_name = filters.get('line_name')
@@ -282,17 +258,26 @@ def collect_manager_data(plan: dict) -> dict:
     days = int(filters.get('days') or 7)
     limit = int(filters.get('limit') or 5)
 
-    data: dict = {}
+    # 실행할 비동기 작업들을 모아둡니다.
+    tasks = {}
     if 'summary' in datasets:
-        data['summary'] = fetch_dashboard_summary()
+        tasks['summary'] = fetch_dashboard_summary()
     if 'line_trends' in datasets:
-        data['line_trends'] = fetch_line_trends(days=days, line_name=line_name, error_code=error_code)
+        tasks['line_trends'] = fetch_line_trends(days=days, line_name=line_name, error_code=error_code)
     if 'recent_logs' in datasets:
-        data['recent_logs'] = fetch_recent_logs(limit=limit, line_name=line_name, error_code=error_code, final_status=final_status)
+        tasks['recent_logs'] = fetch_recent_logs(limit=limit, line_name=line_name, error_code=error_code, final_status=final_status)
     if 'top_errors' in datasets:
-        data['top_errors'] = fetch_top_errors(limit=limit, days=days, line_name=line_name)
+        tasks['top_errors'] = fetch_top_errors(limit=limit, days=days, line_name=line_name)
     if 'lines' in datasets:
-        data['lines'] = fetch_lines(line_name=line_name, final_status=final_status)
+        tasks['lines'] = fetch_lines(line_name=line_name, final_status=final_status)
     if 'stats' in datasets:
-        data['stats'] = fetch_stats(days=days, line_name=line_name, error_code=error_code)
-    return data
+        tasks['stats'] = fetch_stats(days=days, line_name=line_name, error_code=error_code)
+
+    if not tasks:
+        return {}
+
+    # asyncio.gather를 사용해 모든 쿼리를 DB에 "동시에" 날립니다. (응답 속도 비약적 상승)
+    keys = list(tasks.keys())
+    results = await asyncio.gather(*tasks.values())
+    
+    return dict(zip(keys, results))

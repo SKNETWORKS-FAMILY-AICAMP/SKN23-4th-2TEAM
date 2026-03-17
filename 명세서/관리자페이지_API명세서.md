@@ -158,4 +158,58 @@
 
 
 
-처리 상태"를 나타낼 때는 robot_error_sessions의 final_status를 기준
+처리 상태"를 나타낼 때는 `robot_error_sessions`의 `final_status`를 기준으로 삼는 것을 권장합니다.
+
+---
+
+## 4. 관리자 AI 비서 (Admin AI Assistant)
+
+> [!NOTE]
+> 본 API는 **FastAPI 워커 서버 (Port 8001)** 에서 기동하며, Prefix `/api/v1`이 적용됩니다.
+
+### 📊 데일리 브리핑 조회
+- **Method** : `GET`
+- **Path** : `/api/v1/admin-ai/briefing`
+- **Description** : 
+  - 현재 날짜 기준 전체 라인 가동률, 주요 에러 빈도수 및 가이드 매뉴얼 매칭 결과를 종합한 데일리 정기 보고(브리핑) 내용을 반환합니다.
+- **Query Parameters** :
+  | 파라미터   | 타입     | 필수 여부 | 설명                                          |
+  | ---------- | -------- | --------- | --------------------------------------------- |
+  | `language` | `string` | 선택      | 응답 생성 언어 (`ko` 기본, `en` 등 지원) |
+
+- **Response Body** :
+  ```json
+  {
+    "plan": { "task": "overview", "filters": {} },
+    "collected_data": { "summary": { ... }, "top_errors": [ ... ] },
+    "manager_data_context": "조회된 통계 텍스트...",
+    "manual_context": "매뉴얼 검색 텍스트...",
+    "answer_text": "안녕하세요 관장자님. 금일 주요 라인들의 가동 상태는 양호하나..."
+  }
+  ```
+
+---
+
+### 💬 실시간 질의응답 (챗봇)
+- **Method** : `POST`
+- **Path** : `/api/v1/admin-ai/ask`
+- **Description** : 
+  - 관리자가 입력한 공장 설비/라인 질문을 의도 분석(Intent) 후 최적화 대응 답변을 반환합니다.
+- **Request Body** :
+  ```json
+  {
+    "question": "오늘 A라인에서 에러가 몇 개 발생했어?",
+    "language": "ko"
+  }
+  ```
+
+- **Response Body** :
+  ```json
+  {
+    "plan": { "task": "error_count", "filters": { "line_name": "A" } },
+    "collected_data": { "line_totals": { "A": 5 } },
+    "manager_data_context": "A라인 에러 5건 발생...",
+    "manual_context": "매뉴얼 해당 없음...",
+    "answer_text": "오늘 A라인의 에러 발생 건수는 총 5건입니다."
+  }
+  ```

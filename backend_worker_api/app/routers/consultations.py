@@ -802,6 +802,53 @@ def post_event(session_id: int, req: ConsultationEventRequest):
 
 
 
+@router.get('/recent-abandoned')
+def get_recent_abandoned(device_id: str):
+    """
+    특정 디바이스의 가장 최근에 abandoned 처리된 세션을 가져옵니다.
+    """
+    with get_db_connection() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(
+                """
+                SELECT s.session_id, s.device_id, s.language, s.final_status, s.last_updated_at,
+                       l.error_code
+                FROM robot_error_sessions s
+                LEFT JOIN robot_error_logs l ON s.error_log_id = l.error_log_id
+                WHERE s.device_id = %s AND s.final_status = 'abandoned'
+                ORDER BY s.last_updated_at DESC
+                LIMIT 1
+                """,
+                (device_id,)
+            )
+            row = cursor.fetchone()
+            if not row:
+                return {}
+            
+            # Timestamp conversion for safety
+            if row.get('last_updated_at'):
+                 row['last_updated_at'] = row['last_updated_at'].timestamp() * 1000
+                 
+            return row
+
+
+@router.post('/{session_id}/resolve-abandoned')
+def resolve_abandoned_session(session_id: int):
+    """
+    Abandoned 상태의 세션을 작업자가 Resolved로 처리합니다.
+    """
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "UPDATE robot_error_sessions SET final_status = 'resolved', last_updated_at = NOW() WHERE session_id = %s AND final_status = 'abandoned'",
+                (session_id,)
+            )
+            if cursor.rowcount == 0:
+                raise HTTPException(status_code=404, detail="Abandoned session not found or already processed")
+        conn.commit()
+    return {"status": "ok"}
+
+
 @router.get('/{session_id}', response_model=ConsultationStateResponse)
 def get_session(session_id: int):
     with get_db_connection() as conn:
