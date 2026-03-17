@@ -137,3 +137,54 @@ class RobotErrorChatHistory(models.Model):
     # ----------------------------
     def __str__(self):
         return f"세션 {self.session_id} - 단계 {self.step_no} ({self.actor})"
+
+# ============================
+# RobotErrorChecklistItem : 체크리스트 항목
+# ============================
+from django.core.validators import MinValueValidator, MaxValueValidator
+
+class RobotErrorChecklistItem(models.Model):
+    checklist_item_id = models.BigAutoField(primary_key=True)
+    session = models.ForeignKey(RobotErrorSession, on_delete=models.CASCADE, db_column='session_id')
+    item_order = models.SmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
+    is_presented = models.BooleanField(default=True)
+    is_checked = models.BooleanField(default=False)
+    item_content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'robot_error_checklist_items'
+        unique_together = (('session', 'item_order'),)
+
+    # ----------------------------
+    # 출력 예시 : 세션 1 - 체크리스트 항목 1 (O)
+    # ----------------------------
+    def __str__(self):
+        return f"세션 {self.session_id} - 체크리스트 항목 {self.item_order} ({'O' if self.is_checked else 'X'})"
+
+# ============================
+# EngineerCall : 엔지니어 호출 요청 관리
+# session : 호출이 발생한 상담 세션 (RobotErrorSession FK)
+# device : 호출 대상 장비 (RobotDevice FK)
+# status : 호출 상태 (pending, accepted, resolved, canceled)
+# created_at : 호출 요청 시각
+# updated_at : 상태 변경 시각
+# ============================
+class EngineerCall(models.Model):
+    call_id = models.BigAutoField(primary_key=True)
+    session = models.ForeignKey(RobotErrorSession, on_delete=models.CASCADE, db_column='session_id')
+    device = models.ForeignKey(RobotDevice, on_delete=models.CASCADE, db_column='device_id')
+    status = models.CharField(max_length=20, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'engineer_calls'
+
+    # ----------------------------
+    # 출력 예시 : 호출 1: ROBOT_07 (pending)
+    # ----------------------------
+    def __str__(self):
+        return f"호출 {self.call_id}: {self.device_id} ({self.status})"
+
