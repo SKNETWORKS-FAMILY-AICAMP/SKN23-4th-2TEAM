@@ -1,9 +1,11 @@
-// src/pages/Lines.jsx
+import { useState } from "react";
 import { mockdata } from "../mock/mockdata";
 import DeviceGrid from "../components/DeviceGrid";
 
 export default function Lines() {
   const lineOrder = { A: 1, B: 2, C: 3, D: 4 };
+
+  const [selectedLine, setSelectedLine] = useState("A"); // 👈 추가
 
   const toTimestamp = (d) =>
     Date.parse(`${d.date}T${String(d.hour).padStart(2, "0")}:00:00`);
@@ -14,7 +16,7 @@ export default function Lines() {
       const curr = acc[key];
       if (!curr || toTimestamp(d) > toTimestamp(curr)) acc[key] = d;
       return acc;
-    }, {}),
+    }, {})
   );
 
   const linesGrouped = latestDevices.reduce((acc, d) => {
@@ -28,26 +30,38 @@ export default function Lines() {
   });
 
   return (
-    <div className="flex flex-col gap-10 w-full">
-      {/* 라인 영역 */}
-      <div className="flex flex-col gap-10 w-full">
+    <div className="flex flex-col gap-6 w-full">
+
+      {/* 🔥 탭 영역 */}
+      <div className="flex gap-2">
         {Object.keys(lineOrder)
           .filter((line) => linesGrouped[line])
           .map((line) => (
-            <div
+            <button
               key={line}
-              className="bg-white rounded-2xl shadow-xl p-6 w-full flex flex-col gap-6"
+              onClick={() => setSelectedLine(line)}
+              className={`px-4 py-2 rounded-lg font-semibold border
+                ${
+                  selectedLine === line
+                    ? "bg-blue-500 text-white"
+                    : "bg-gray-100"
+                }`}
             >
-              {/* 라인 헤더 */}
-              <h2 className="text-2xl lg:text-3xl font-bold mb-4 border-b pb-2">
-                {line}라인
-              </h2>
-
-              {/* 카드 그리드 */}
-              <DeviceGrid data={linesGrouped[line]} />
-            </div>
+              {line}라인
+            </button>
           ))}
       </div>
+
+      {/* 🔥 선택된 라인만 표시 */}
+      {linesGrouped[selectedLine] && (
+        <div className="bg-white rounded-2xl shadow-xl p-6 w-full flex flex-col gap-6">
+          <h2 className="text-2xl lg:text-3xl font-bold border-b pb-2">
+            {selectedLine}라인
+          </h2>
+
+          <DeviceGrid data={linesGrouped[selectedLine]} />
+        </div>
+      )}
     </div>
   );
 }

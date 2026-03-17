@@ -139,13 +139,10 @@ class RobotErrorLogListView(APIView):
     #     return Response(serializer.data)
 
     def get(self, request):
-        qs = RobotErrorLog.objects.select_related('device')
-        # select_related: 로봇 모델 정보를 한 번에 가져옴
-        # prefetch_related: 세션과 채팅/체크리스트 내역을 미리 로드함
-        error_logs = RobotErrorLog.objects.select_related('device__model').prefetch_related('roboterrorsession_set__roboterrorchathistory_set', 'roboterrorsession_set__roboterrorchecklistitem_set').order_by('-occurred_at')
-        
-        serializer = RobotErrorLogSerializer(error_logs, many=True)
-        return Response(serializer.data)
+        qs = RobotErrorLog.objects.select_related('device__model').prefetch_related(
+            'roboterrorsession_set__roboterrorchathistory_set',
+            'roboterrorsession_set__roboterrorchecklistitem_set'
+        )
 
         # 필터
         line = request.GET.get('line')
@@ -168,7 +165,6 @@ class RobotErrorLogListView(APIView):
         if end:
             qs = qs.filter(occurred_at__date__lte=end)
 
-        # 정렬
         qs = qs.order_by('-occurred_at')
 
         # 페이지네이션
