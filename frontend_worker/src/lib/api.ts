@@ -35,6 +35,7 @@ export interface ConsultationResponse {
         response_type: "overall" | "checklist" | "diagnosis";
         message: string;
         checklist?: string[] | null;
+        has_unchecked_items?: boolean;
     };
     session_status: "ongoing" | "resolved" | "unresolved" | "abandoned";
 }

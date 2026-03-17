@@ -459,16 +459,26 @@ def _is_generic_final_solution_payload(payload: dict, language: str = 'ko') -> b
 def _generate_final_solution_payload(error_code: str, diagnosis_payload: dict, checklist_payload: dict) -> dict:
     checklist_entries = _normalize_checklist_entries(checklist_payload.get('checklist_items'), language='ko')
     summary = _serialize_checklist_results(checklist_entries, language='ko')
-    _ = FINAL_SOLUTION_PROMPT.format(
+    prompt = FINAL_SOLUTION_PROMPT.format(
         error_code=error_code,
-        cause_analysis=diagnosis_payload['cause_analysis'],
-        action_method='\n'.join(f'- {item}' for item in diagnosis_payload['action_method']),
-        urgency_text=diagnosis_payload['urgency_text'],
-        checklist_items=summary['checklist_results_text'],
-        checklist_results=summary['checklist_results_text'],
-        unchecked_items=summary['unchecked_items_text'],
-        checked_items=summary['checked_items_text'],
+        cause_analysis=diagnosis_payload.get('cause_analysis', ''),
+        action_method='\n'.join(f'- {item}' for item in diagnosis_payload.get('action_method', [])),
+        urgency_text=diagnosis_payload.get('urgency_text', '보통'),
+        checklist_items=summary.get('checklist_results_text', ''),
     )
+    
+    try:
+        from langchain_openai import ChatOpenAI
+        llm = ChatOpenAI(model='gpt-4o-mini', temperature=0.1)
+        response = llm.invoke(prompt)
+        import json
+        res = json.loads(response.content.strip())
+        # 필수 키 존재 검증
+        if 'final_summary' in res and 'handling_direction' in res and 'work_priority' in res:
+             return res
+    except Exception:
+        pass
+
     return _build_final_solution_fallback(error_code, diagnosis_payload, checklist_entries, language='ko')
 
 
@@ -649,7 +659,7 @@ def _get_manual_from_db_table(error_code: str) -> list:
                 # Direct match or Like match for safety
                 cur.execute(
                     """
-                    SELECT error_content FROM robot_error_manuals 
+                    SELECT error_content, category FROM robot_error_manuals 
                     WHERE TRIM(UPPER(error_code)) = %s 
                     LIMIT 1
                     """,
@@ -658,7 +668,7 @@ def _get_manual_from_db_table(error_code: str) -> list:
                 row = cur.fetchone()
                 if row:
                     from langchain_core.documents import Document
-                    return [Document(page_content=row[0], metadata={'source': 'robot_error_manuals'})]
+                    return [Document(page_content=row[0], metadata={'source': 'robot_error_manuals', 'category': row[1]})]
     except Exception:
         pass
     return []

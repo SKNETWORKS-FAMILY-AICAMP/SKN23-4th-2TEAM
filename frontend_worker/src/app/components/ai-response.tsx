@@ -12,11 +12,12 @@ interface AiResponseProps {
     aiMessage?: string;
     aiChecklist?: string[] | null;
     aiResponseType?: "overall" | "checklist" | "diagnosis" | "related" | "history" | null;
+    hasUncheckedItems?: boolean;
     onFollowUp: (text: string, isChecklistSubmit?: boolean, selectedItems?: string[]) => void;
     isDiagnosing?: boolean;
 }
 
-export function AiResponse({ lang, errorCode, isActive, mode, aiMessage, aiChecklist, aiResponseType, onFollowUp, isDiagnosing }: AiResponseProps) {
+export function AiResponse({ lang, errorCode, isActive, mode, aiMessage, aiChecklist, aiResponseType, onFollowUp, isDiagnosing, hasUncheckedItems }: AiResponseProps) {
     const [displayText, setDisplayText] = useState("");
     const [isStreaming, setIsStreaming] = useState(false);
     const [showChecklist, setShowChecklist] = useState(false);
@@ -129,7 +130,7 @@ export function AiResponse({ lang, errorCode, isActive, mode, aiMessage, aiCheck
                         <span style={{ fontSize: "20px", fontWeight: "900", color: "#f59e0b", letterSpacing: "1px" }}>
                             {lang === "KO" ? "원인 (CAUSE)" : lang === "EN" ? "CAUSE" : "SABAB"}
                         </span>
-                        <span style={{ fontSize: "30px", fontWeight: "900", color: "#f4f4f5", lineHeight: "1.3", letterSpacing: "-0.5px" }}>{cause}</span>
+                        <span style={{ fontSize: "30px", fontWeight: "900", color: "#f4f4f5", lineHeight: "1.3", letterSpacing: "-0.5px", whiteSpace: "pre-line" }}>{cause}</span>
                     </div>
 
                     {/* 조치 Card */}
@@ -137,7 +138,7 @@ export function AiResponse({ lang, errorCode, isActive, mode, aiMessage, aiCheck
                         <span style={{ fontSize: "20px", fontWeight: "900", color: "#10b981", letterSpacing: "1px" }}>
                             {lang === "KO" ? "조치 (ACTION)" : lang === "EN" ? "ACTION" : "HARAKATLAR"}
                         </span>
-                        <span style={{ fontSize: "30px", fontWeight: "900", color: "#f4f4f5", lineHeight: "1.3", letterSpacing: "-0.5px" }}>{action}</span>
+                        <span style={{ fontSize: "30px", fontWeight: "900", color: "#f4f4f5", lineHeight: "1.3", letterSpacing: "-0.5px", whiteSpace: "pre-line" }}>{action}</span>
                     </div>
 
                     {/* 긴급도 Card */}
@@ -145,7 +146,7 @@ export function AiResponse({ lang, errorCode, isActive, mode, aiMessage, aiCheck
                         <span style={{ fontSize: "20px", fontWeight: "900", color: "#3b82f6", letterSpacing: "1px" }}>
                             {lang === "KO" ? "긴급도 (URGENCY)" : lang === "EN" ? "URGENCY" : "SHOSHILINCHLIK"}
                         </span>
-                        <span style={{ fontSize: "30px", fontWeight: "900", color: "#f4f4f5", lineHeight: "1.3", letterSpacing: "-0.5px" }}>{urgency}</span>
+                        <span style={{ fontSize: "30px", fontWeight: "900", color: "#f4f4f5", lineHeight: "1.3", letterSpacing: "-0.5px", whiteSpace: "pre-line" }}>{urgency}</span>
                     </div>
 
                     {footer && (
@@ -344,6 +345,8 @@ export function AiResponse({ lang, errorCode, isActive, mode, aiMessage, aiCheck
                         if (showChecklist) {
                             setShowChecklist(false);
                             setSelectedOptions([]);
+                        } else if (hasUncheckedItems) {
+                            setShowChecklist(true);
                         } else {
                             onFollowUp("해결 완료 (O)");
                         }
@@ -352,7 +355,7 @@ export function AiResponse({ lang, errorCode, isActive, mode, aiMessage, aiCheck
                 >
                     <CheckCircle size={80} className="!text-white" style={{ color: "white", stroke: "white" }} strokeWidth={2} />
                     <span className="text-2xl font-black text-white" style={{ color: "white" }}>
-                        {showChecklist ? "돌아가기" : (lang === "KO" ? "조치 완료 (상담 종료)" : "Resolved (Finish)")}
+                        {showChecklist ? "돌아가기" : (hasUncheckedItems ? (lang === "KO" ? "미확인 체크리스트 마저 확인하기" : "Check Unchecked Items") : (lang === "KO" ? "조치 완료 (상담 종료)" : "Resolved (Finish)"))}
                     </span>
                 </button>
 

@@ -70,6 +70,7 @@ export default function App() {
     const [aiChecklist, setAiChecklist] = useState<string[] | null>(null);
     const [originalAiChecklist, setOriginalAiChecklist] = useState<string[] | null>(null);
     const [aiResponseType, setAiResponseType] = useState<"overall" | "checklist" | "diagnosis" | null>(null);
+    const [hasUncheckedItems, setHasUncheckedItems] = useState<boolean>(false);
     const [isOnline, setIsOnline] = useState(true);
 
     const [engineerCalls, setEngineerCalls] = useState<Array<{ code: string; timestamp: number; device: string }>>([]);
@@ -233,6 +234,7 @@ export default function App() {
                     setAiMessage(res.assistant.message);
                     setAiChecklist(res.assistant.checklist || null);
                     setAiResponseType(res.assistant.response_type);
+                    setHasUncheckedItems(!!res.assistant.has_unchecked_items);
                     setAiMode("diagnosis");
                     setAiKey(prev => prev + 1);
                     toast.success(lang === "KO" ? "진단 시작" : "Diagnosis started");
@@ -313,6 +315,7 @@ export default function App() {
                     setAiMessage(res.assistant.message);
                     setAiChecklist(res.assistant.checklist || null);
                     setAiResponseType(res.assistant.response_type);
+                    setHasUncheckedItems(!!res.assistant.has_unchecked_items);
                     setAiMode("diagnosis");
                     setAiActive(true);
                     setAiKey(prev => prev + 1);
@@ -396,6 +399,7 @@ export default function App() {
                     key={aiKey} lang={lang} errorCode={errorCode} isActive={aiActive}
                     mode={sessionStatus === "resolved" ? "diagnosis" : aiMode}
                     aiMessage={aiMessage} aiChecklist={aiChecklist} aiResponseType={aiResponseType}
+                    hasUncheckedItems={hasUncheckedItems}
                     onFollowUp={handleFollowUp}
                     isDiagnosing={isDiagnosing}
                 />

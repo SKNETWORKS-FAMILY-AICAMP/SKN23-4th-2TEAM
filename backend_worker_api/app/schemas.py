@@ -36,6 +36,7 @@ class AssistantPayload(BaseModel):
     response_type: ResponseType
     message: str
     checklist: Optional[List[Any]] = None
+    has_unchecked_items: Optional[bool] = None
 
 
 class ConsultationResponse(BaseModel):

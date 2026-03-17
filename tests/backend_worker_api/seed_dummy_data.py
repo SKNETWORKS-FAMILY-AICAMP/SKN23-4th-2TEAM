@@ -34,9 +34,14 @@ def seed_data():
                     device_id = random.choice(devices)
                     error_code = random.choice(error_codes)
                     
-                    # Random time during that day
-                    hour = random.randint(0, 23)
-                    minute = random.randint(0, 59)
+                    # Random time during that day (For today, don't go into the future)
+                    if i == 0:
+                        hour = random.randint(0, now.hour)
+                        max_minute = now.minute if hour == now.hour else 59
+                        minute = random.randint(0, max_minute)
+                    else:
+                        hour = random.randint(0, 23)
+                        minute = random.randint(0, 59)
                     second = random.randint(0, 59)
                     occurred_at = target_date.replace(hour=hour, minute=minute, second=second)
                     
