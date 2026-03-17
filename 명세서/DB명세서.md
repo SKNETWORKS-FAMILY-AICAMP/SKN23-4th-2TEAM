@@ -7,6 +7,7 @@
 - `robot_devices` (1) ↔ (N) `robot_error_sessions`
 - `robot_error_logs` (1) ↔ (N) `robot_error_sessions` (선택적, nullable FK)
 - `robot_error_sessions` (1) ↔ (N) `robot_error_chat_histories`
+- `robot_error_sessions` (1) ↔ (N) `robot_error_checklist_items`
 
 ---
 
@@ -179,9 +180,40 @@ O/X 버튼 기반 상호작용/LLM 응답 기록을 턴 단위 저장
 - `checklist` : 단계별 체크리스트 형태로 제시되는 후속 대응안
 - `diagnosis` : 추가 질문/진단을 통해 원인 추적을 돕는 단계
 
+## 7) `robot_error_checklist_items` — 체크리스트 항목
+
+### 목적
+
+Step 4에서 LLM이 제시한 체크리스트형 질문(최대 5개)의 각 항목 텍스트와 사용자 체크 상태를 저장한다.
+한 세션당 1~5개의 행이 생성된다.
+
+### 컬럼
+
+| 컬럼              | 타입            | 제약                                                         | 설명                                      |
+| ----------------- | --------------- | ------------------------------------------------------------ | ----------------------------------------- |
+| `checklist_item_id` | `BIGSERIAL`   | PK                                                           | 체크리스트 항목 ID                         |
+| `session_id`      | `BIGINT`        | NOT NULL, FK (`robot_error_sessions.session_id`) ON DELETE CASCADE | 소속 세션                                  |
+| `item_order`      | `SMALLINT`      | NOT NULL, CHECK (`item_order BETWEEN 1 AND 5`)               | 항목 순번 (최대 5개)                      |
+| `is_presented`    | `BOOLEAN`       | NOT NULL, DEFAULT TRUE                                        | 실제 화면에 제시되었는지                   |
+| `is_checked`      | `BOOLEAN`       | NOT NULL, DEFAULT FALSE                                       | 사용자가 체크했는지                        |
+| `item_content`    | `TEXT`          | NOT NULL                                                     | 항목 내용                                  |
+| `created_at`      | `TIMESTAMPTZ`   | NOT NULL, DEFAULT `NOW()`                                     | 생성 시각                                  |
+| `updated_at`      | `TIMESTAMPTZ`   | NOT NULL, DEFAULT `NOW()`                                     | 변경 시각                                  |
+
+### 제약/규칙
+
+- `(session_id, item_order)` 유니크로 한 세션 내 순번 중복 방지
+- `item_order` 값은 1~5로 제한
+- 세션 삭제 시 CASCADE로 연계 항목 삭제
+
+### 사용 예시
+
+- 5개 중 3개만 생성된 경우: `item_order = 1,2,3` 행만 저장
+- 체크된 항목만 `is_checked = TRUE`, 미체크 항목은 `FALSE`로 저장
+
 ---
 
-## 7) 추천 인덱스
+## 8) 추천 인덱스
 
 - `robot_devices(line_name, line_num)`
 - `robot_devices(model_id)`
@@ -193,6 +225,8 @@ O/X 버튼 기반 상호작용/LLM 응답 기록을 턴 단위 저장
 - `robot_error_chat_histories(session_id, step_no)`
 - `robot_error_chat_histories(session_id, response_type)`
 - `robot_error_chat_histories(session_id, request_id)` UNIQUE
+- `robot_error_checklist_items(session_id)`
+- `robot_error_checklist_items(session_id, item_order)` UNIQUE
 
 ## 부록) 생성 쿼리
 
@@ -251,6 +285,20 @@ CREATE TABLE IF NOT EXISTS robot_error_chat_histories (
     message TEXT NOT NULL,
     is_resolved BOOLEAN NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS robot_error_checklist_items (
+    checklist_item_id BIGSERIAL PRIMARY KEY,
+    session_id BIGINT NOT NULL REFERENCES robot_error_sessions(session_id) ON DELETE CASCADE,
+    item_order SMALLINT NOT NULL CHECK (item_order BETWEEN 1 AND 5),
+    is_presented BOOLEAN NOT NULL DEFAULT TRUE,
+    is_checked BOOLEAN NOT NULL DEFAULT FALSE,
+    item_content TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT uq_robot_error_checklist_session_item
+        UNIQUE (session_id, item_order)
 );
 
 -- 권장: 단계/역할 중복 기본 방지
@@ -349,6 +397,12 @@ ON robot_error_chat_histories (session_id, response_type);
 
 CREATE UNIQUE INDEX IF NOT EXISTS ux_robot_error_chat_histories_session_request
 ON robot_error_chat_histories (session_id, request_id);
+
+CREATE INDEX IF NOT EXISTS idx_robot_error_checklist_items_session
+ON robot_error_checklist_items (session_id);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_robot_error_checklist_items_session_order
+ON robot_error_checklist_items (session_id, item_order);
 
 COMMIT;
 
