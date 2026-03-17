@@ -181,8 +181,6 @@ def _normalize_checklist_entries(entries_value, language: str = 'ko', allow_empt
         if allow_empty:
             return []
         entries = [_build_checklist_entry(1, default_item)]
-    while len(entries) < 5:
-        entries.append(_build_checklist_entry(len(entries) + 1, default_item))
     normalized_entries = []
     for idx, entry in enumerate(entries[:5], start=1):
         normalized_entries.append({

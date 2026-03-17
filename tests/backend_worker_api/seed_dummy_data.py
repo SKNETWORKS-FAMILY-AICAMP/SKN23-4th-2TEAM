@@ -1,11 +1,12 @@
 import random
 from datetime import datetime, timedelta
 import pytz
+import uuid
 from app.db import get_db_connection
 from psycopg2.extras import RealDictCursor
 
 def seed_data():
-    error_codes = ["E0101", "E0123", "E0502", "E0999", "W1024", "R0888"]
+    error_codes = ["E30988", "E2771", "E23276", "E26103", "E2100"]
     status_options = ["resolved"] # As requested by user
     
     with get_db_connection() as conn:
@@ -60,9 +61,60 @@ def seed_data():
                         """
                         INSERT INTO robot_error_sessions (device_id, error_log_id, started_at, last_updated_at, final_status, language)
                         VALUES (%s, %s, %s, %s, %s, %s)
+                        RETURNING session_id
                         """,
                         (device_id, error_log_id, started_at, last_updated_at, "resolved", "ko")
                     )
+                    session_id = cursor.fetchone()['session_id']
+
+                    # Insert dummy checklist items
+                    static_pool = [
+                        '제어기 외부 및 내부 전원 연결 상태를 확인하십시오.',
+                        '관련 배선 및 커넥터 체결 상태를 확인하십시오.',
+                        '서보 앰프 상태 이상 여부를 점검하십시오.',
+                        'F1/F2 퓨즈 단선 여부를 확인하십시오.',
+                        '전원 입력부 이상 흔적과 전압 상태를 확인하십시오.'
+                    ]
+                    num_items = random.randint(1, 4)
+                    sampled = random.sample(static_pool, k=num_items)
+                    for c_idx, text in enumerate(sampled, start=1):
+                        cursor.execute(
+                            """
+                            INSERT INTO robot_error_checklist_items 
+                              (session_id, item_order, item_content, is_presented, is_checked, created_at, updated_at)
+                            VALUES (%s, %s, %s, true, %s, %s, %s)
+                            """,
+                            (session_id, c_idx, text, random.choice([True, False]), started_at, last_updated_at)
+                        )
+
+                    # 3. Insert Random Engineer Call Event (20% chance)
+                    if random.random() < 0.2:
+                        cursor.execute(
+                             """
+                             INSERT INTO robot_error_chat_histories 
+                               (session_id, step_no, actor, response_type, selected_choice, message, request_id, created_at)
+                             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                             """,
+                             (session_id, 3, 'user', None, None, '엔지니어 호출', str(uuid.uuid4()), started_at + timedelta(minutes=2))
+                        )
+                        cursor.execute(
+                             """
+                             INSERT INTO robot_error_chat_histories 
+                               (session_id, step_no, actor, response_type, selected_choice, message, request_id, created_at)
+                             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                             """,
+                             (session_id, 4, 'llm', 'overall', None, '엔지니어가 호출되었습니다. 잠시만 기다려 주십시오.', str(uuid.uuid4()), started_at + timedelta(minutes=3))
+                        )
+                        
+                        # 신규 전용 호출 테이블 동시 적재
+                        cursor.execute(
+                             """
+                             INSERT INTO engineer_calls 
+                               (session_id, device_id, error_code, status, created_at, updated_at)
+                             VALUES (%s, %s, %s, 'pending', %s, %s)
+                             """,
+                             (session_id, device_id, error_code, started_at + timedelta(minutes=2), started_at + timedelta(minutes=2))
+                        )
 
             conn.commit()
             print("Successfully seeded 10 days of dummy data.")
