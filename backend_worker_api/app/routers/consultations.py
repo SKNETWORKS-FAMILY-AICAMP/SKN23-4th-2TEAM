@@ -54,9 +54,9 @@ def list_recent_logs(device_id: str | None = None, line_name: str | None = None)
             query = """
                 SELECT
                     s.session_id,
-                    s.device_id,
-                    s.last_updated_at AS timestamp,
-                    s.final_status AS status,
+                    l.device_id,
+                    l.occurred_at AS timestamp,
+                    COALESCE(s.final_status, 'ongoing') AS status,
                     l.error_code AS code,
                     d.line_name,
                     (
@@ -64,15 +64,15 @@ def list_recent_logs(device_id: str | None = None, line_name: str | None = None)
                         WHERE h.session_id = s.session_id AND h.step_no = 1 AND h.actor = 'system' 
                         LIMIT 1
                     ) as fallback_message
-                FROM robot_error_sessions s
-                JOIN robot_devices d ON d.device_id = s.device_id
-                LEFT JOIN robot_error_logs l ON l.error_log_id = s.error_log_id
+                FROM robot_error_logs l
+                JOIN robot_devices d ON d.device_id = l.device_id
+                LEFT JOIN robot_error_sessions s ON s.error_log_id = l.error_log_id
             """
             where_clauses = []
             params = []
 
             if device_id:
-                where_clauses.append("s.device_id = %s")
+                where_clauses.append("l.device_id = %s")
                 params.append(device_id)
             if line_name:
                 where_clauses.append("d.line_name = %s")
@@ -82,7 +82,7 @@ def list_recent_logs(device_id: str | None = None, line_name: str | None = None)
                 query += " WHERE " + " AND ".join(where_clauses)
 
             query += """
-                ORDER BY s.last_updated_at DESC
+                ORDER BY l.occurred_at DESC
                 LIMIT 500
             """
             
@@ -163,10 +163,11 @@ def get_dashboard_stats():
             cursor.execute(
                 """
                 SELECT 
-                    COUNT(*) as total,
-                    COUNT(*) FILTER (WHERE final_status = 'resolved') as resolved
-                FROM robot_error_sessions
-                WHERE started_at >= CURRENT_DATE
+                    COUNT(l.error_log_id) as total,
+                    COUNT(l.error_log_id) FILTER (WHERE s.final_status = 'resolved') as resolved
+                FROM robot_error_logs l
+                LEFT JOIN robot_error_sessions s ON l.error_log_id = s.error_log_id
+                WHERE l.occurred_at >= CURRENT_DATE
                 """
             )
             today = cursor.fetchone()
@@ -187,9 +188,9 @@ def get_dashboard_stats():
                     SELECT CURRENT_DATE - i as day FROM generate_series(0, 9) i
                 ) days
                 LEFT JOIN (
-                    SELECT s.started_at, d.line_name
-                    FROM robot_error_sessions s
-                    JOIN robot_devices d ON d.device_id = s.device_id
+                    SELECT l.occurred_at as started_at, d.line_name
+                    FROM robot_error_logs l
+                    JOIN robot_devices d ON d.device_id = l.device_id
                 ) sessions ON DATE_TRUNC('day', sessions.started_at) = days.day
                 GROUP BY day
                 ORDER BY day ASC
@@ -282,14 +283,19 @@ def start_consultation(req: StartConsultationRequest):
                 )
             manufacturer = device_row['manufacturer']
 
-            # DB/매뉴얼 에러코드 유효성 검사 (필터링 방어막)
-            if not is_valid_error_code(req.error_code, manufacturer=manufacturer):
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"error_code '{req.error_code}' not found for brand '{manufacturer}'",
-                )
+            # DB/매뉴얼 에러코드 유효성 검사
+            manual_found = is_valid_error_code(req.error_code, manufacturer=manufacturer)
 
-            error_log_id = resolve_error_log_id(cursor, req.device_id, req.error_code)
+            # Always insert a new record for manual consultation reporting to update Today logs
+            cursor.execute(
+                """
+                INSERT INTO robot_error_logs (device_id, error_code, occurred_at)
+                VALUES (%s, %s, NOW())
+                RETURNING error_log_id
+                """,
+                (req.device_id, req.error_code),
+            )
+            error_log_id = cursor.fetchone()['error_log_id']
 
             cursor.execute(
                 """
@@ -312,35 +318,57 @@ def start_consultation(req: StartConsultationRequest):
                 (session_id, 1, f"{req.device_id}에서 {req.error_code} 에러가 보고되었습니다.", request_id),
             )
 
-            # Real AI Analysis
-            diagnosis = analyze_error_code(req.error_code, language=req.language.value, manufacturer=manufacturer)
-            
-            # Format message for initial response
-            urgency_icon = '🔴' if diagnosis['urgency_level'] in ['높음', 'high'] else '🟡' if diagnosis['urgency_level'] in ['보통', 'medium'] else '🟢'
-            if req.language.value == 'en':
-                assistant_message = (
-                    f"**[{req.error_code} Error Analysis]**\n"
-                    f"Cause: {diagnosis['cause_analysis']}\n"
-                    f"Action: {', '.join(diagnosis['action_method'])}\n"
-                    f"Urgency: {urgency_icon} {diagnosis['urgency_level']}\n\n"
-                    "Please review the checklist below for detailed inspection."
-                )
-            elif req.language.value == 'uz':
-                assistant_message = (
-                    f"**[{req.error_code} Xatolik tahlili]**\n"
-                    f"Sababi: {diagnosis['cause_analysis']}\n"
-                    f"Harakatlar: {', '.join(diagnosis['action_method'])}\n"
-                    f"Shoshilinchlik: {urgency_icon} {diagnosis['urgency_level']}\n\n"
-                    "Batafsil tekshirish uchun quyidagi nazorat ro'yxatini ko'rib chiqing."
-                )
+            if manual_found:
+                # Real AI Analysis
+                diagnosis = analyze_error_code(req.error_code, language=req.language.value, manufacturer=manufacturer)
+                
+                # Format message for initial response
+                urgency_icon = '🔴' if diagnosis['urgency_level'] in ['높음', 'high'] else '🟡' if diagnosis['urgency_level'] in ['보통', 'medium'] else '🟢'
+                if req.language.value == 'en':
+                    assistant_message = (
+                        f"**[{req.error_code} Error Analysis]**\n"
+                        f"Cause: {diagnosis['cause_analysis']}\n"
+                        f"Action: {', '.join(diagnosis['action_method'])}\n"
+                        f"Urgency: {urgency_icon} {diagnosis['urgency_level']}\n\n"
+                        "Please review the checklist below for detailed inspection."
+                    )
+                elif req.language.value == 'uz':
+                    assistant_message = (
+                        f"**[{req.error_code} Xatolik tahlili]**\n"
+                        f"Sababi: {diagnosis['cause_analysis']}\n"
+                        f"Harakatlar: {', '.join(diagnosis['action_method'])}\n"
+                        f"Shoshilinchlik: {urgency_icon} {diagnosis['urgency_level']}\n\n"
+                        "Batafsil tekshirish uchun quyidagi nazorat ro'yxatini ko'rib chiqing."
+                    )
+                else:
+                    assistant_message = (
+                        f"**[{req.error_code} 에러 분석 결과]**\n"
+                        f"원인: {diagnosis['cause_analysis']}\n"
+                        f"조치: {', '.join(diagnosis['action_method'])}\n"
+                        f"긴급도: {urgency_icon} {diagnosis['urgency_level']}\n\n"
+                        "상세 점검을 위해 하단의 상세 점검 버튼을 선택해 주세요."
+                    )
+                
+                # Generate checklist items (using our service logic)
+                followup = generate_followup_checklist(req.error_code, diagnosis_payload=diagnosis, language=req.language.value)
+                checklist = followup['checklist_items']
             else:
                 assistant_message = (
-                    f"**[{req.error_code} 에러 분석 결과]**\n"
-                    f"원인: {diagnosis['cause_analysis']}\n"
-                    f"조치: {', '.join(diagnosis['action_method'])}\n"
-                    f"긴급도: {urgency_icon} {diagnosis['urgency_level']}\n\n"
-                    "상세 점검을 위해 하단의 상세 점검 버튼을 선택해 주세요."
+                    f"**[{req.error_code} 에러 보고]**\n\n"
+                    f"해당 에러코드는 {manufacturer}의 시스템 매뉴얼 및 DB 문서에서 찾을 수 없습니다.\n"
+                    f"에러 일시와 발생 내역은 **오늘의 통계 및 로그에 성공적으로 기록 대기**되었습니다.\n\n"
+                    f"보다 정확한 대응을 위해 현장 장치 매뉴얼 또는 정비팀을 직접 참고해 주시기 바랍니다."
                 )
+                if req.language.value == 'en':
+                    assistant_message = (
+                        f"**[{req.error_code} Error Reported]**\n\n"
+                        f"This error code could not be found in the {manufacturer} manual database.\n"
+                        f"The event has been **logged successfully in the system records**.\n\n"
+                        f"Please refer to your physical machine guide or contact maintenance."
+                    )
+                elif req.language.value == 'uz':
+                     assistant_message = ( ... ) # Uzbekistan translation fallback later or none
+                checklist = []
 
             cursor.execute(
                 """
@@ -354,10 +382,6 @@ def start_consultation(req: StartConsultationRequest):
                 "UPDATE robot_error_sessions SET last_updated_at = NOW() WHERE session_id = %s",
                 (session_id,),
             )
-
-            # Generate checklist items (using our service logic)
-            followup = generate_followup_checklist(req.error_code, diagnosis_payload=diagnosis, language=req.language.value)
-            checklist = followup['checklist_items']
 
             return ConsultationResponse(
                 status='ok',
@@ -437,57 +461,111 @@ def post_event(session_id: int, req: ConsultationEventRequest):
                         )
 
                     if req.selected_choice == 'X':
-                        # Real AI Final Solution
-                        checklist_results = (req.payload or {}).get('checklist_results')
-                        solution = generate_final_solution(
-                            session_ctx['error_code'], 
-                            checklist_results=checklist_results,
-                            language=req.language.value
-                        )
-                    
-                        if sess_lang == 'en':
-                            assistant_message = (
-                                f"**[Final Assessment]**\n{solution['final_summary']}\n\n"
-                                f"**[Handling Direction]**\n- " + "\n- ".join(solution['handling_direction']) + "\n\n"
-                                f"**[Work Priority]**\n{solution['work_priority']}"
-                            )
-                        elif sess_lang == 'uz':
-                            assistant_message = (
-                                f"**[Yakuniy xulosa]**\n{solution['final_summary']}\n\n"
-                                f"**[Yo'nalishni boshqarish]**\n- " + "\n- ".join(solution['handling_direction']) + "\n\n"
-                                f"**[Ish ustuvorligi]**\n{solution['work_priority']}"
-                            )
-                        else:
-                            assistant_message = (
-                                f"**[최종 종합 판단]**\n{solution['final_summary']}\n\n"
-                                f"**[처리 방향]**\n- " + "\n- ".join(solution['handling_direction']) + "\n\n"
-                                f"**[작업 우선순위]**\n{solution['work_priority']}"
-                            )
-                    
+                        # 1. Fetch last response type
                         cursor.execute(
                             """
-                            INSERT INTO robot_error_chat_histories
-                              (session_id, step_no, actor, response_type, selected_choice, message, is_resolved, request_id)
-                            VALUES (%s, %s, 'llm', 'diagnosis', NULL, %s, NULL, %s)
+                            SELECT response_type 
+                            FROM robot_error_chat_histories 
+                            WHERE session_id = %s AND actor = 'llm' 
+                            ORDER BY step_no DESC 
+                            LIMIT 1
                             """,
-                            (session_id, req.step_no + 1, assistant_message, str(uuid.uuid4())),
+                            (session_id,)
                         )
-                        update_session_status(cursor, session_id, SessionStatus.ONGOING)
+                        last_resp = cursor.fetchone()
+                        last_type = last_resp['response_type'] if last_resp else 'overall'
 
-                        return ConsultationResponse(
-                            status='ok',
-                            session_id=session_id,
-                            step_no=req.step_no + 1,
-                            next_response_type=ResponseType.DIAGNOSIS,
-                            assistant=AssistantPayload(
-                                actor='llm',
-                                response_type=ResponseType.DIAGNOSIS,
-                                message=assistant_message,
-                                checklist=None,
-                            ),
-                            session_status=SessionStatus.ONGOING,
-                            request_id=request_id,
-                        )
+                        # 2. Stage 1 -> Stage 2 (Overall to Checklist)
+                        if last_type == 'overall':
+                            followup = generate_followup_checklist(
+                                session_ctx['error_code'], 
+                                language=req.language.value
+                            )
+                            checklist = followup['checklist_items']
+                            
+                            assistant_message = "상세 점검을 위해 아래 체크리스트를 확인하고 조치 결과를 제출해 주세요."
+                            if req.language.value == 'en':
+                                assistant_message = "Please review the checklist below and submit the results."
+                            elif req.language.value == 'uz':
+                                assistant_message = "Iltimos, quyidagi nazorat ro'yxatini ko'rib chiqing va natijalarni yuboring."
+
+                            cursor.execute(
+                                """
+                                INSERT INTO robot_error_chat_histories
+                                  (session_id, step_no, actor, response_type, selected_choice, message, is_resolved, request_id)
+                                VALUES (%s, %s, 'llm', 'checklist', NULL, %s, false, %s)
+                                """,
+                                (session_id, req.step_no + 1, assistant_message, str(uuid.uuid4())),
+                            )
+                            update_session_status(cursor, session_id, SessionStatus.ONGOING)
+
+                            return ConsultationResponse(
+                                status='ok',
+                                session_id=session_id,
+                                step_no=req.step_no + 1,
+                                next_response_type=ResponseType.CHECKLIST,
+                                assistant=AssistantPayload(
+                                    actor='llm',
+                                    response_type=ResponseType.CHECKLIST,
+                                    message=assistant_message,
+                                    checklist=checklist,
+                                ),
+                                session_status=SessionStatus.ONGOING,
+                                request_id=request_id,
+                            )
+
+                        # 3. Stage 2 -> Stage 3 (Checklist to Diagnosis)
+                        else:
+                            checklist_results = (req.payload or {}).get('checklist_results')
+                            solution = generate_final_solution(
+                                session_ctx['error_code'], 
+                                checklist_results=checklist_results,
+                                language=req.language.value
+                            )
+                        
+                            if sess_lang == 'en':
+                                assistant_message = (
+                                    f"**[Final Assessment]**\n{solution['final_summary']}\n\n"
+                                    f"**[Handling Direction]**\n- " + "\n- ".join(solution['handling_direction']) + "\n\n"
+                                    f"**[Work Priority]**\n{solution['work_priority']}"
+                                )
+                            elif sess_lang == 'uz':
+                                assistant_message = (
+                                    f"**[Yakuniy xulosa]**\n{solution['final_summary']}\n\n"
+                                    f"**[Yo'nalishni boshqarish]**\n- " + "\n- ".join(solution['handling_direction']) + "\n\n"
+                                    f"**[Ish ustuvorligi]**\n{solution['work_priority']}"
+                                )
+                            else:
+                                assistant_message = (
+                                    f"**[최종 종합 판단]**\n{solution['final_summary']}\n\n"
+                                    f"**[처리 방향]**\n- " + "\n- ".join(solution['handling_direction']) + "\n\n"
+                                    f"**[작업 우선순위]**\n{solution['work_priority']}"
+                                )
+                        
+                            cursor.execute(
+                                """
+                                INSERT INTO robot_error_chat_histories
+                                  (session_id, step_no, actor, response_type, selected_choice, message, is_resolved, request_id)
+                                VALUES (%s, %s, 'llm', 'diagnosis', NULL, %s, NULL, %s)
+                                """,
+                                (session_id, req.step_no + 1, assistant_message, str(uuid.uuid4())),
+                            )
+                            update_session_status(cursor, session_id, SessionStatus.ONGOING)
+
+                            return ConsultationResponse(
+                                status='ok',
+                                session_id=session_id,
+                                step_no=req.step_no + 1,
+                                next_response_type=ResponseType.DIAGNOSIS,
+                                assistant=AssistantPayload(
+                                    actor='llm',
+                                    response_type=ResponseType.DIAGNOSIS,
+                                    message=assistant_message,
+                                    checklist=None,
+                                ),
+                                session_status=SessionStatus.ONGOING,
+                                request_id=request_id,
+                            )
 
                     if is_call_event:
                         assistant_message = "엔지니어가 호출되었습니다. 잠시만 기다려 주십시오."
