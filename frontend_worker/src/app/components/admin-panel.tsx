@@ -239,12 +239,10 @@ export function AdminPanel({
     let lineMatch = true;
     if (filterLine !== "ALL") {
       const deviceStr = log.device || "";
-      // Match "Line A", "LINE A", "A라인", or even "A-1"
-      const normalizedDevice = deviceStr.toUpperCase();
-      const lineChar = filterLine.toUpperCase();
-      lineMatch = normalizedDevice.includes(`LINE ${lineChar}`) ||
-        normalizedDevice.includes(`${lineChar}라인`) ||
-        normalizedDevice.includes(`LINE${lineChar}`);
+      const parts = deviceStr.split(" - ");
+      const lineInfo = parts[0].toUpperCase().trim();
+      const lineChar = filterLine.toUpperCase().trim();
+      lineMatch = lineInfo.includes(lineChar) || lineInfo.replace(/\s+/g, "").includes(lineChar);
     }
 
     const logDateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
@@ -276,7 +274,7 @@ export function AdminPanel({
 
   return (
     <div
-      className="h-screen bg-black flex text-zinc-100 overflow-hidden"
+      className="h-full flex-1 bg-black flex text-zinc-100 overflow-hidden"
       style={{ fontFamily: "-apple-system, 'Helvetica Neue', Arial, sans-serif" }}
     >
       {/* ══════════════════════════════
@@ -284,28 +282,7 @@ export function AdminPanel({
       ══════════════════════════════ */}
       <div className="w-[220px] bg-[#0a0a0a] flex flex-col shrink-0 border-r border-neutral-800/60">
 
-        {/* Logo */}
-        <div
-          className="flex items-center gap-3 border-b border-neutral-800/60 shrink-0"
-          style={{ padding: "18px 20px", paddingLeft: 0 }}
-        >
-          <div className="w-11 h-11 bg-[#E82127] flex items-center justify-center shrink-0">
-            <TrendingUp size={22} color="white" strokeWidth={2.5} />
-          </div>
-          <span
-            style={{
-              fontSize: 18,
-              fontWeight: 900,
-              fontStyle: "italic",
-              letterSpacing: "-0.03em",
-              textTransform: "uppercase",
-              color: "#fff",
-              lineHeight: 1,
-            }}
-          >
-            WELD-BOT
-          </span>
-        </div>
+        {/* Logo removed */}
 
         {/* Nav */}
         <nav className="flex-1 py-2 overflow-y-auto">
@@ -368,7 +345,7 @@ export function AdminPanel({
       {/* ══════════════════════════════
           MAIN
       ══════════════════════════════ */}
-      <div className="flex-1 flex flex-col overflow-hidden h-full">
+      <div className="flex-1 flex flex-col overflow-hidden min-h-0">
 
 
         <main className="flex-1 overflow-hidden bg-black flex flex-col">
@@ -656,7 +633,7 @@ export function AdminPanel({
 
           {/* ══ STATS (CALLS) ══ */}
           {activeTab === "stats" && (
-            <div className="flex-1 flex flex-col overflow-hidden h-full">
+            <div className="flex-1 flex flex-col overflow-hidden min-h-0">
               <div className="border-b border-neutral-800/60 shrink-0" style={{ background: "#0d0d0f", padding: "16px 24px" }}>
                 <span style={{ fontSize: 14, fontWeight: 800, fontStyle: "italic", textTransform: "uppercase", color: "#fff", letterSpacing: "0.05em" }}>
                   {t.engineerCalls}
@@ -708,7 +685,7 @@ export function AdminPanel({
 
           {/* ══ HISTORY ══ */}
           {activeTab === "history" && (
-            <div className="flex-1 flex flex-col overflow-hidden h-full">
+            <div className="flex-1 flex flex-col overflow-hidden min-h-0">
               <div
                 className="border-b border-neutral-800/60 shrink-0"
                 style={{ background: "#0d0d0f", padding: "16px 24px" }}

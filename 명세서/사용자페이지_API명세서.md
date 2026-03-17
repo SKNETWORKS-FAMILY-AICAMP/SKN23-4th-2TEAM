@@ -1,343 +1,407 @@
-﻿# 사용자페이지 API 명세서
+﻿# 🗂️ WELD-BOT DB 설계 명세서 (연습용)
 
-버전: 2026-03-12 기준
-적용 대상: `SKN23-4th-2TEAM`
+## 1) 엔티티 관계
 
-이 문서는 사용자페이지(`frontend_worker`)와 백엔드(`frontend_worker ↔ FastAPI`)의 API를 정의한다.
-회원 계정 없이 `device_id` 기반 상담 흐름(비회원)을 기준으로 한다.
-백엔드 저장 구조는 `DB명세서.md`의 도메인 규칙을 기준으로 정의한다.
-
----
-
-## 1. 용어 정의
-
-- `session`: 한 번의 에러 상담 시작 단위 (`robot_error_sessions`)
-- `event`: 사용자/LLM 메시지 이벤트 (`robot_error_chat_histories`)
-- `response_type` (DB 기준)
-  - `overall`: 초기 대응 가이드
-  - `checklist`: 체크리스트형 응답
-  - `diagnosis`: 추가 진단형 응답
-- `actor`
-  - `user`: 사용자 입력 이벤트
-  - `llm`: LLM 응답 이벤트
-  - `system`: 시스템 이벤트(타임아웃, 강제종료 등)
-- `selected_choice`: 사용자 선택 (`O`, `X`)
-- `request_id`: 클라이언트 생성 이벤트 고유키(멱등성 키)
+- `robot_models` (1) ↔ (N) `robot_devices`
+- `robot_devices` (1) ↔ (N) `robot_error_logs`
+- `robot_devices` (1) ↔ (N) `robot_error_sessions`
+- `robot_error_logs` (1) ↔ (N) `robot_error_sessions` (선택적, nullable FK)
+- `robot_error_sessions` (1) ↔ (N) `robot_error_chat_histories`
+- `robot_error_sessions` (1) ↔ (N) `robot_error_checklist_items`
 
 ---
 
-## 2. DB 정합 기본 규칙
+## 2) `robot_models` — 모델 마스터
 
-- `language`는 DB 규칙에 맞춰 `ko`, `en` 사용
-- `actor`는 DB 규칙에 맞춰 `user`/`llm`/`system` 사용
-- `response_type`은 DB 규칙에 맞춰 `overall`/`checklist`/`diagnosis` 사용
-- `robot_error_chat_histories`에 `request_id`를 저장해 중복 요청을 차단
-- `request_id` 중복은 동일 `session_id` 내에서 1회만 허용(권장)
-- `error_code`는 `start` 요청에서만 사용(세션/에러 로그 확정용), 이벤트(`events`) 요청에는 필수로 포함하지 않음
-- `robot_error_chat_histories`에는 `error_code`, `line`을 저장하지 않음. 해당 값은 `session_id` 기준으로 `robot_error_sessions`/`robot_error_logs`/`robot_devices`에서 유도
+### 목적
 
----
+제조사/모델 단위 기준 정보(매뉴얼 태그 포함) 관리
 
-## 3. 공통 헤더
+### 컬럼
 
-| 항목                | 타입               | 필수 | 설명 |
-| ------------------- | ------------------ | ---- | ---- |
-| `Content-Type`      | `application/json` | O    | |
-| `X-Client-Version` | `string`           | X    | 프론트 앱 버전 |
-| `Authorization`     | `Bearer <token>`   | X    | 추후 인증 연동 시 사용 |
+| 컬럼             | 타입             | 제약     | 설명                  |
+| ---------------- | ---------------- | -------- | --------------------- |
+| `model_id`     | `BIGSERIAL`    | PK       | 모델 고유 ID          |
+| `manufacturer` | `VARCHAR(100)` | NOT NULL | 제조사명              |
+| `model_name`   | `VARCHAR(100)` | NOT NULL | 모델명                |
+| `manual_tag`   | `VARCHAR(120)` | NOT NULL | 모델 대응 매뉴얼 태그 |
 
----
+### 제약/규칙
 
-## 4. 엔드포인트
+- `(manufacturer, model_name)` 중복 불가 (복합 유니크)
 
-### 4.1 상담 시작
+### 비고
 
-`POST /api/v1/consultations/start`
-
-최초 에러 입력으로 세션을 생성한다.
-시작 시점의 맥락은 DB 제약과 충돌하지 않도록 `robot_error_chat_histories`에 바로 `user` 이벤트를 남기지 않으며,
-선택적으로 다음 중 하나로만 기록한다.
-
-- 권장: `actor='system'`, `response_type=null`, `selected_choice=null`의 시스템 시작 이벤트 1건
-- 대안: 시작 이벤트를 저장하지 않고(채팅 이력 미생성) 바로 `llm` 응답만 기록
-
-#### Request Body
-
-```json
-{
-  "request_id": "req-uuid-001",
-  "language": "ko",
-  "device_id": "ROBOT_07",
-  "error_code": "E0123"
-}
-```
-
-- `error_code`로 에러 로그가 없으면 세션은 `error_log_id` null로 시작 가능
-- `request_id`는 시작 이벤트 저장 시 `robot_error_chat_histories`의 멱등성 키로 사용
-
-#### Response Body
-
-```json
-{
-  "status": "ok",
-  "session_id": 1,
-  "step_no": 1,
-  "next_response_type": "overall",
-  "assistant": {
-    "actor": "llm",
-    "response_type": "overall",
-    "message": "E0123에 대한 초동 점검 가이드를 시작합니다.",
-    "checklist": null
-  },
-  "session_status": "ongoing"
-}
-```
-
-#### 에러
-
-- `400` 필수값 누락 (`language`, `device_id`, `error_code`)
-- `404` 존재하지 않는 `device_id`
-- `409` 동일 `request_id` 중복
-- `500` LLM 처리 실패
+- 모델 하나당 매뉴얼 하나(혹은 기본 매뉴얼군) 대응 전략에 맞는 구조
 
 ---
 
-### 4.2 상담 진행(사용자 입력)
+## 3) `robot_devices` — 로봇(장비) 마스터
 
-`POST /api/v1/consultations/{session_id}/events`
+### 목적
 
-사용자 이벤트 또는 시스템/LLM 후속 응답을 처리한다.  
-`session_id` 단위로 컨텍스트가 확정되어 있으므로 이벤트 요청에는 `device_id`, `error_code`를 포함하지 않는다.
+공장 내 개별 장비(일련번호 단위) 관리
 
-#### Request Body (사용자 입력)
+### 컬럼
 
-```json
-{
-  "request_id": "req-uuid-002",
-  "actor": "user",
-  "step_no": 2,
-  "language": "ko",
-  "response_type": null,
-  "selected_choice": "X",
-  "message": "미해결",
-  "payload": {
-    "selected_checklist": ["메인 PCB 상태 확인", "케이블 단자 점검"],
-    "action": "back_or_diagnosis"
-  }
-}
-```
+| 컬럼          | 타입            | 제약                              | 설명                 |
+| ------------- | --------------- | --------------------------------- | -------------------- |
+| `device_id` | `VARCHAR(50)` | PK                                | 장비 일련번호        |
+| `line_name` | `VARCHAR(20)` | NOT NULL                          | 라인명 (예: A, B, C) |
+| `line_num`  | `INTEGER`     | NOT NULL,`CHECK(line_num >= 1)` | 라인 내 번호         |
+| `model_id`  | `BIGINT`      | FK (`robot_models.model_id`)    | 장비 모델 참조       |
 
-#### Request Body (LLM 응답)
+### 제약/규칙
 
-```json
-{
-  "request_id": "req-uuid-003",
-  "actor": "llm",
-  "step_no": 3,
-  "language": "ko",
-  "response_type": "checklist",
-  "selected_choice": null,
-  "message": "아래 항목을 확인해 주세요.",
-  "payload": {
-    "checklist": ["메인 PCB 발광 다이오드 상태", "토치 흔들림 시 아크 상태"]
-  }
-}
-```
+- `(line_name, line_num)` 유니크(같은 라인에서 번호 중복 방지)
 
-#### Response Body
+### 비고
 
-```json
-{
-  "status": "ok",
-  "session_id": 1,
-  "step_no": 3,
-  "next_response_type": "checklist",
-  "assistant": {
-    "actor": "llm",
-    "response_type": "checklist",
-    "message": "아래 항목을 확인해 주세요.",
-    "checklist": [
-      "메인 PCB 발광 다이오드 상태",
-      "토치 흔들림 시 아크 상태",
-      "케이블 커넥터 체결"
-    ]
-  },
-  "session_status": "ongoing"
-}
-```
-
-### 응답 처리 규칙
-
-- 사용자 `selected_choice`
-  - `O`: 세션을 `resolved`로 전환
-  - `X`: 상담 지속(`ongoing`)
-  - `null`: 선택 없음
-
-- 사용자 종료(뒤로가기)
-  - 별도 `event_type` 대신 시스템 이벤트에서 처리 가능
-  - `actor: system`, `response_type: null`, `message: "user_back"` 또는 `is_resolved: false`
-
-### 성능/정합 최적화 적용 포인트
-
-- `start`에서만 `error_code` 수신 → 세션/로그 생성
-- 이후 `events`는 `session_id`와 `step_no`, `actor`, `selected_choice`, `response_type`, `request_id`만 상태 반영
-- 이벤트 중복은 `request_id`로 즉시 차단해 동일 요청 재전송 비용 및 중복 상태 전이를 방지
-- `line`은 응답 조립 시 `robot_devices` 조인으로 계산해 반환(요청 바디에서 제거)
+- `line_num`은 숫자형 저장 후 화면에서 정렬/필터링이 쉬움
 
 ---
 
-### 4.3 상담 상태 조회
+## 4) `robot_error_logs` — 에러 발생 이력
 
-`GET /api/v1/consultations/{session_id}`
+### 목적
 
-현재 세션 상태 조회.
+에러 발생 시각/장비/코드 단위의 원천 로그 저장
 
-#### Response Body
+### 컬럼
 
-```json
-{
-  "session_id": 1,
-  "status": "ongoing",
-  "language": "ko",
-  "device_id": "ROBOT_07",
-  "line": "A",
-  "error_code": "E0123",
-  "latest_response_type": "checklist",
-  "step_no": 3,
-  "updated_at": "2026-03-12T05:12:44.123Z"
-}
+| 컬럼             | 타입            | 제약                                       | 설명              |
+| ---------------- | --------------- | ------------------------------------------ | ----------------- |
+| `error_log_id` | `BIGSERIAL`   | PK                                         | 에러 로그 단건 ID |
+| `device_id`    | `VARCHAR(50)` | NOT NULL, FK (`robot_devices.device_id`) | 발생 장비         |
+| `error_code`   | `VARCHAR(50)` | NOT NULL                                   | 에러 코드         |
+| `occurred_at`  | `TIMESTAMPTZ` | NOT NULL, DEFAULT `NOW()`                | 발생 시각         |
+
+### 비고
+
+- `error_message` 없이도 에러코드 기반 추적/통계에 충분
+- 후속 분석에서 `에러코드 분포`, `장비별 발생률`, `시간대 분석`에 사용
+
+---
+
+## 5) `robot_error_sessions` — 상담 세션
+
+### 목적
+
+장비/에러 로그 단위의 사용자-LLM 상호작용 전체 단위를 관리
+
+### 컬럼
+
+| 컬럼                | 타입            | 제약                                                                                                     | 설명                                 |
+| ------------------- | --------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| `session_id`      | `BIGSERIAL`   | PK                                                                                                       | 세션 ID                              |
+| `device_id`       | `VARCHAR(50)` | NOT NULL, FK                                                                                             | 대상 장비                            |
+| `error_log_id`    | `BIGINT`      | NULL, FK (`robot_error_logs.error_log_id`)                                                             | 대응 원천 로그                       |
+| `language`        | `VARCHAR(10)` | NOT NULL, CHECK (language IN ('ko','en','ja'))                                                           | 응답 생성 언어 코드 (`ko`, `en`) |
+| `started_at`      | `TIMESTAMPTZ` | NOT NULL, DEFAULT `NOW()`                                                                              | 세션 시작 시각                       |
+| `last_updated_at` | `TIMESTAMPTZ` | NOT NULL, DEFAULT `NOW()`                                                                              | 마지막 갱신 시각                     |
+| `final_status`    | `VARCHAR(20)` | NOT NULL, DEFAULT `'ongoing'`, CHECK (final_status IN ('ongoing','resolved','unresolved','abandoned')) | 세션 상태                            |
+
+### final_status 허용값 (권장)
+
+- `ongoing` : 진행 중
+- `resolved` : 사용자 `O` 눌러 해결 완료
+- `unresolved` : 사용자 `X` 계속 진행했으나 미해결 종료
+- `abandoned` : 중간 이탈/강제 종료
+
+### 제약/규칙
+
+- `device_id`는 세션의 대상 장비를 나타내며 필수값이다.
+- `error_log_id`는 `NULL` 가능하다.
+  - `error_log_id IS NULL`이면, 세션은 `device_id` 기반 생성 가능
+  - `error_log_id IS NOT NULL`이면, `robot_error_logs.device_id`와 `robot_error_sessions.device_id` 일치 필요
+- 정합성 강제(권장): 일치하지 않으면 세션 생성/수정 차단 트리거를 둔다.
+
+```sql
+-- robot_error_sessions: error_log_id와 device_id 일치 검증(권장)
+CREATE OR REPLACE FUNCTION trgfn_validate_session_device_match()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.error_log_id IS NOT NULL THEN
+    IF NOT EXISTS (
+      SELECT 1
+      FROM robot_error_logs l
+      WHERE l.error_log_id = NEW.error_log_id
+        AND l.device_id = NEW.device_id
+    ) THEN
+      RAISE EXCEPTION 'device_id must match robot_error_logs.device_id';
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_session_device_match
+BEFORE INSERT OR UPDATE OF device_id, error_log_id
+ON robot_error_sessions
+FOR EACH ROW
+EXECUTE FUNCTION trgfn_validate_session_device_match();
 ```
 
 ---
 
-### 4.4 상담 대화 이력 조회
+## 6) `robot_error_chat_histories` — 채팅 이력
 
-`GET /api/v1/consultations/{session_id}/history`
+### 목적
 
-세션 전체 이벤트 조회.
+O/X 버튼 기반 상호작용/LLM 응답 기록을 턴 단위 저장
 
-#### Response Body
+### 컬럼
 
-```json
-{
-  "session_id": 1,
-  "count": 3,
-  "events": [
-    {
-      "event_no": 1,
-      "actor": "system",
-      "response_type": null,
-      "selected_choice": null,
-      "message": "ROBOT_07에서 E0123 발생 (상담 시작)",
-      "created_at": "2026-03-12T05:11:10.120Z"
-    },
-    {
-      "event_no": 2,
-      "actor": "llm",
-      "response_type": "overall",
-      "selected_choice": null,
-      "message": "안전 점검 우선 조치 가이드",
-      "created_at": "2026-03-12T05:11:11.230Z"
-    },
-    {
-      "event_no": 3,
-      "actor": "user",
-      "response_type": null,
-      "selected_choice": "X",
-      "message": "미해결",
-      "created_at": "2026-03-12T05:11:40.900Z"
-    }
-  ]
-}
+| 컬럼                | 타입            | 제약                                                                    | 설명                                                                                                    |
+| ------------------- | --------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `chat_id`         | `BIGSERIAL`   | PK                                                                      | 이력 ID                                                                                                 |
+| `session_id`      | `BIGINT`      | NOT NULL, FK (`robot_error_sessions.session_id`)                      | 소속 세션                                                                                               |
+| `step_no`         | `INTEGER`     | NOT NULL                                                                | 단계 번호                                                                                               |
+| `actor`           | `VARCHAR(20)` | NOT NULL, CHECK (actor IN ('user','llm','system'))                      | `user` / `llm` / `system`                                                                         |
+| `response_type`   | `VARCHAR(30)` | NULL,`CHECK (response_type IN ('overall', 'checklist', 'diagnosis'))` | LLM 응답 유형 (`overall`: 전체 대처 제안, `checklist`: 체크리스트형 대처, `diagnosis`: 추가 진단) |
+| `selected_choice` | `VARCHAR(1)`  | NULL, CHECK (selected_choice IN ('O','X'))                              | 사용자 선택값                                                                                           |
+| `request_id`     | `UUID`        | NOT NULL                                                                | 클라이언트 멱등성 키(중복 요청 방지)                                                                     |
+| `message`         | `TEXT`        | NOT NULL                                                                | LLM 메시지 또는 시스템 안내                                                                             |
+| `is_resolved`     | `BOOLEAN`     | NULL                                                                    | 해당 단계의 해결 판단                                                                                   |
+| `created_at`      | `TIMESTAMPTZ` | NOT NULL, DEFAULT `NOW()`                                             | 기록 시각                                                                                               |
+
+### 제약/규칙
+
+- `actor='user'` 단계에서만 `selected_choice` 사용 권장 (`O`,`X`)
+- `actor='llm'` 단계에서 `response_type`은 필수 권장, `actor!='llm'`에서는 NULL 허용
+- `actor`/`response_type`/`selected_choice`의 조건부 규칙은 CHECK로 완전 강제 불가하므로, 운영이 중요하면 트리거 검증을 고려
+- (권장) `(session_id, step_no, actor)` 유니크로 동시 충돌 방지
+- `request_id`는 `session_id` + `request_id` 유니크로 중복 요청 1회 처리
+- 조회 최적화: `(session_id, created_at)` 인덱스 권장
+
+### response_type 분류 예시
+
+- `overall` : 에러 발생 직후 제시하는 전체적인 대응 가이드
+- `checklist` : 단계별 체크리스트 형태로 제시되는 후속 대응안
+- `diagnosis` : 추가 질문/진단을 통해 원인 추적을 돕는 단계
+
+## 7) `robot_error_checklist_items` — 체크리스트 항목
+
+### 목적
+
+Step 4에서 LLM이 제시한 체크리스트형 질문(최대 5개)의 각 항목 텍스트와 사용자 체크 상태를 저장한다.
+한 세션당 1~5개의 행이 생성된다.
+
+### 컬럼
+
+| 컬럼              | 타입            | 제약                                                         | 설명                                      |
+| ----------------- | --------------- | ------------------------------------------------------------ | ----------------------------------------- |
+| `checklist_item_id` | `BIGSERIAL`   | PK                                                           | 체크리스트 항목 ID                         |
+| `session_id`      | `BIGINT`        | NOT NULL, FK (`robot_error_sessions.session_id`) ON DELETE CASCADE | 소속 세션                                  |
+| `item_order`      | `SMALLINT`      | NOT NULL, CHECK (`item_order BETWEEN 1 AND 5`)               | 항목 순번 (최대 5개)                      |
+| `is_presented`    | `BOOLEAN`       | NOT NULL, DEFAULT TRUE                                        | 실제 화면에 제시되었는지                   |
+| `is_checked`      | `BOOLEAN`       | NOT NULL, DEFAULT FALSE                                       | 사용자가 체크했는지                        |
+| `item_content`    | `TEXT`          | NOT NULL                                                     | 항목 내용                                  |
+| `created_at`      | `TIMESTAMPTZ`   | NOT NULL, DEFAULT `NOW()`                                     | 생성 시각                                  |
+| `updated_at`      | `TIMESTAMPTZ`   | NOT NULL, DEFAULT `NOW()`                                     | 변경 시각                                  |
+
+### 제약/규칙
+
+- `(session_id, item_order)` 유니크로 한 세션 내 순번 중복 방지
+- `item_order` 값은 1~5로 제한
+- 세션 삭제 시 CASCADE로 연계 항목 삭제
+
+### 사용 예시
+
+- 5개 중 3개만 생성된 경우: `item_order = 1,2,3` 행만 저장
+- 체크된 항목만 `is_checked = TRUE`, 미체크 항목은 `FALSE`로 저장
+
+---
+
+## 8) 추천 인덱스
+
+- `robot_devices(line_name, line_num)`
+- `robot_devices(model_id)`
+- `robot_error_logs(device_id, occurred_at)`
+- `robot_error_logs(error_code)`
+- `robot_error_sessions(device_id, final_status, last_updated_at DESC)`
+- `robot_error_sessions(error_log_id)`
+- `robot_error_chat_histories(session_id, created_at DESC)`
+- `robot_error_chat_histories(session_id, step_no)`
+- `robot_error_chat_histories(session_id, response_type)`
+- `robot_error_chat_histories(session_id, request_id)` UNIQUE
+- `robot_error_checklist_items(session_id)`
+- `robot_error_checklist_items(session_id, item_order)` UNIQUE
+
+## 부록) 생성 쿼리
+
 ```
+-- WELD-BOT DB 스키마 (PostgreSQL)
 
----
+BEGIN;
 
-## 5. 타입 정의
+CREATE TABLE IF NOT EXISTS robot_models (
+    model_id BIGSERIAL PRIMARY KEY,
+    manufacturer VARCHAR(100) NOT NULL,
+    model_name VARCHAR(100) NOT NULL,
+    manual_tag VARCHAR(120) NOT NULL,
+    CONSTRAINT uq_robot_models_manufacturer_model_name
+        UNIQUE (manufacturer, model_name)
+);
 
-### 5.1 공통 요청 스키마
+CREATE TABLE IF NOT EXISTS robot_devices (
+    device_id VARCHAR(50) PRIMARY KEY,
+    line_name VARCHAR(20) NOT NULL,
+    line_num INTEGER NOT NULL CHECK (line_num >= 1),
+    model_id BIGINT NOT NULL REFERENCES robot_models(model_id),
+    CONSTRAINT uq_robot_devices_line_name_line_num UNIQUE (line_name, line_num)
+);
 
-```ts
-interface ConsultationEventRequest {
-  request_id: string; // 재전송 중복 방지 키(UUID 권장)
-  actor: "user" | "llm" | "system";
-  step_no: number;
-  language: "ko" | "en";
-  response_type?: "overall" | "checklist" | "diagnosis" | null;
-  selected_choice?: "O" | "X" | null;
-  message: string;
-  is_resolved?: boolean | null;
-  payload?: ConsultationEventPayload;
-  created_at?: string;
-}
+CREATE TABLE IF NOT EXISTS robot_error_logs (
+    error_log_id BIGSERIAL PRIMARY KEY,
+    device_id VARCHAR(50) NOT NULL REFERENCES robot_devices(device_id),
+    error_code VARCHAR(50) NOT NULL,
+    occurred_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 
-interface StartConsultationRequest {
-  request_id: string;
-  language: "ko" | "en";
-  device_id: string;
-  error_code: string;
-}
+CREATE TABLE IF NOT EXISTS robot_error_sessions (
+    session_id BIGSERIAL PRIMARY KEY,
+    device_id VARCHAR(50) NOT NULL REFERENCES robot_devices(device_id),
+    error_log_id BIGINT NULL REFERENCES robot_error_logs(error_log_id),
+    language VARCHAR(10) NOT NULL
+        CHECK (language IN ('ko', 'en')),
+    started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    last_updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    final_status VARCHAR(20) NOT NULL DEFAULT 'ongoing'
+        CHECK (final_status IN ('ongoing', 'resolved', 'unresolved', 'abandoned'))
+);
 
-interface ConsultationResponse {
-  status: "ok" | "error";
-  session_id: number;
-  step_no: number;
-  next_response_type: "overall" | "checklist" | "diagnosis";
-  assistant: {
-    actor: "llm";
-    response_type: "overall" | "checklist" | "diagnosis";
-    message: string;
-    checklist?: string[] | null;
-  };
-  session_status: "ongoing" | "resolved" | "unresolved" | "abandoned";
-}
+CREATE TABLE IF NOT EXISTS robot_error_chat_histories (
+    chat_id BIGSERIAL PRIMARY KEY,
+    session_id BIGINT NOT NULL REFERENCES robot_error_sessions(session_id),
+    step_no INTEGER NOT NULL,
+    actor VARCHAR(20) NOT NULL
+        CHECK (actor IN ('user', 'llm', 'system')),
+    response_type VARCHAR(30) NULL
+        CHECK (response_type IN ('overall', 'checklist', 'diagnosis')),
+    selected_choice VARCHAR(1) NULL
+        CHECK (selected_choice IN ('O', 'X')),
+    request_id UUID NOT NULL,
+    message TEXT NOT NULL,
+    is_resolved BOOLEAN NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 
-type ConsultationEventPayload = Record<string, unknown>;
-```
+CREATE TABLE IF NOT EXISTS robot_error_checklist_items (
+    checklist_item_id BIGSERIAL PRIMARY KEY,
+    session_id BIGINT NOT NULL REFERENCES robot_error_sessions(session_id) ON DELETE CASCADE,
+    item_order SMALLINT NOT NULL CHECK (item_order BETWEEN 1 AND 5),
+    is_presented BOOLEAN NOT NULL DEFAULT TRUE,
+    is_checked BOOLEAN NOT NULL DEFAULT FALSE,
+    item_content TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
----
+    CONSTRAINT uq_robot_error_checklist_session_item
+        UNIQUE (session_id, item_order)
+);
 
-## 6. DB 연계 매핑(명세 반영)
+-- 권장: 단계/역할 중복 기본 방지
+CREATE UNIQUE INDEX IF NOT EXISTS uq_robot_error_chat_histories_step
+ON robot_error_chat_histories (session_id, step_no, actor);
 
-- `robot_error_sessions`
-  - `device_id`, `error_log_id`(선택), `language`, `final_status` 저장
-  - 시작 시 `final_status='ongoing'`, 최종 상태 갱신 시 `resolved/unresolved/abandoned`
-  - 시작 이벤트를 저장할 경우 `robot_error_chat_histories`에 `actor='system'`으로 한 건 기록 권장 (`response_type=null`, `selected_choice=null`)
-- `robot_error_logs`
-  - `device_id`, `error_code`, `occurred_at` 저장
-- `robot_error_chat_histories`
-  - `session_id`, `step_no`, `actor`, `response_type`, `selected_choice`, `message`, `is_resolved`, `request_id` 저장
-  - `device_id`, `error_code`, `line`은 세션/장비 기준 조인으로 유도하므로 chat_histories에 중복 저장하지 않음
-  - `response_type`은 DB enum(`overall|checklist|diagnosis`)만 사용
-  - `request_id`는 `UUID`, 세션 내 중복 불가(유니크 권장)
+-- 세션-로그/장치 정합성 강제: error_log_id가 있으면 logs.device_id와 일치해야 함
+CREATE OR REPLACE FUNCTION trgfn_validate_session_device_match()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.error_log_id IS NOT NULL THEN
+        IF NOT EXISTS (
+            SELECT 1
+            FROM robot_error_logs l
+            WHERE l.error_log_id = NEW.error_log_id
+              AND l.device_id = NEW.device_id
+        ) THEN
+            RAISE EXCEPTION 'device_id must match robot_error_logs.device_id when error_log_id is provided';
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
----
+DROP TRIGGER IF EXISTS trg_session_device_match ON robot_error_sessions;
+CREATE TRIGGER trg_session_device_match
+BEFORE INSERT OR UPDATE OF device_id, error_log_id
+ON robot_error_sessions
+FOR EACH ROW
+EXECUTE FUNCTION trgfn_validate_session_device_match();
 
-## 7. 오류 코드
+-- 채팅 규칙 강제(조건부 규칙)
+CREATE OR REPLACE FUNCTION trgfn_validate_chat_rules()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.actor = 'llm' THEN
+        IF NEW.response_type IS NULL THEN
+            RAISE EXCEPTION 'response_type is required when actor = llm';
+        END IF;
+        IF NEW.selected_choice IS NOT NULL THEN
+            RAISE EXCEPTION 'selected_choice must be NULL when actor = llm';
+        END IF;
+    ELSIF NEW.actor = 'user' THEN
+        IF NEW.selected_choice IS NULL THEN
+            RAISE EXCEPTION 'selected_choice is required when actor = user';
+        END IF;
+        IF NEW.response_type IS NOT NULL THEN
+            RAISE EXCEPTION 'response_type must be NULL when actor = user';
+        END IF;
+    ELSE
+        IF NEW.selected_choice IS NOT NULL THEN
+            RAISE EXCEPTION 'selected_choice must be NULL when actor = system';
+        END IF;
+        IF NEW.response_type IS NOT NULL THEN
+            RAISE EXCEPTION 'response_type must be NULL when actor = system';
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
-- `400` 유효성 오류
-  - 필수값 누락, `actor/response_type/language` 값 불일치
-- `404` 존재하지 않는 `device_id`
-- `409` 동일 `request_id` 중복
-- `500` LLM 처리 오류
+DROP TRIGGER IF EXISTS trg_chat_histories_rules ON robot_error_chat_histories;
+CREATE TRIGGER trg_chat_histories_rules
+BEFORE INSERT OR UPDATE
+ON robot_error_chat_histories
+FOR EACH ROW
+EXECUTE FUNCTION trgfn_validate_chat_rules();
 
----
+-- 추천 인덱스
+CREATE INDEX IF NOT EXISTS idx_robot_devices_line_line_num
+ON robot_devices (line_name, line_num);
 
-## 8. 예시 플로우
+CREATE INDEX IF NOT EXISTS idx_robot_devices_model_id
+ON robot_devices (model_id);
 
-1. `POST /start` (`request_id`, `ko`, `device_id`, `error_code`)
-2. 응답: `session_id`, `next_response_type=overall`, `assistant` 메시지
-3. 사용자가 `X` 전송 (`actor=user`, `selected_choice=X`)
-4. 서버가 후속 `checklist` 또는 `diagnosis` 응답
-5. 사용자가 `O` 전송 시 `session_status=resolved`
-6. 사용자가 뒤로가기 시 `system` 이벤트로 `session_status=abandoned`
+CREATE INDEX IF NOT EXISTS idx_robot_error_logs_device_occurred
+ON robot_error_logs (device_id, occurred_at);
 
----
+CREATE INDEX IF NOT EXISTS idx_robot_error_logs_error_code
+ON robot_error_logs (error_code);
 
-## 9. 보안/운영 권고
+CREATE INDEX IF NOT EXISTS idx_robot_error_sessions_device_status_updated
+ON robot_error_sessions (device_id, final_status, last_updated_at DESC);
 
-- `request_id` 중복 방지를 위한 `robot_error_chat_histories(session_id, request_id)` 유니크 제약 권장
-- 이벤트 순서(`step_no`)를 매 이벤트 증가
-- `device_id`는 서버에서 조회 확인 후 사용
-- `language`는 저장 전 소문자(`ko|en`) 정규화
-- `response_type`은 프론트에서 보내도 서버에서 재검증(화이트리스트)
+CREATE INDEX IF NOT EXISTS idx_robot_error_sessions_error_log_id
+ON robot_error_sessions (error_log_id);
+
+CREATE INDEX IF NOT EXISTS idx_robot_error_chat_histories_session_created
+ON robot_error_chat_histories (session_id, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_robot_error_chat_histories_session_step
+ON robot_error_chat_histories (session_id, step_no);
+
+CREATE INDEX IF NOT EXISTS idx_robot_error_chat_histories_session_response_type
+ON robot_error_chat_histories (session_id, response_type);
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_robot_error_chat_histories_session_request
+ON robot_error_chat_histories (session_id, request_id);
+
+CREATE INDEX IF NOT EXISTS idx_robot_error_checklist_items_session
+ON robot_error_checklist_items (session_id);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_robot_error_checklist_items_session_order
+ON robot_error_checklist_items (session_id, item_order);
+
+COMMIT;

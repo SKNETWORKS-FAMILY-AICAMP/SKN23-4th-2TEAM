@@ -76,6 +76,8 @@ export function AiResponse({ lang, errorCode, isActive, mode, aiMessage, aiCheck
                 // Only automatically show checklist if backend provided it
                 if (aiResponseType === "checklist" && aiChecklist && aiChecklist.length > 0) {
                     setShowChecklist(true);
+                } else if (aiResponseType === "diagnosis") {
+                    setShowChecklist(false);
                 }
             }
         }, 12);
@@ -198,57 +200,55 @@ export function AiResponse({ lang, errorCode, isActive, mode, aiMessage, aiCheck
 
                     {/* 텍스트 내용: px-4 추가로 벽에서 더 띄움 */}
                     <div className="whitespace-pre-wrap px-4">
-                        {!showChecklist ? (
-                            isDiagnosing ? (
-                                <div className="flex flex-col items-center justify-center py-12 text-center gap-6">
-                                    <motion.div
-                                        animate={{ rotate: 360 }}
-                                        transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
-                                        className="text-[#E82127]"
-                                    >
-                                        <Loader2 size={64} className="animate-pulse" />
-                                    </motion.div>
+                        {isDiagnosing ? (
+                            <div className="flex flex-col items-center justify-center py-12 text-center gap-6">
+                                <motion.div
+                                    animate={{ rotate: 360 }}
+                                    transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+                                    className="text-[#E82127]"
+                                >
+                                    <Loader2 size={64} className="animate-pulse" />
+                                </motion.div>
 
-                                    <h3 className="text-4xl font-black text-white italic tracking-tighter uppercase mb-2">
-                                        <span className="text-[#E82127]">ANALYZING:</span> {lang === "KO" ? "진단 분석 중..." : "Analyzing Diagnosis..."}
-                                    </h3>
+                                <h3 className="text-4xl font-black text-white italic tracking-tighter uppercase mb-2">
+                                    <span className="text-[#E82127]">ANALYZING:</span> {lang === "KO" ? "진단 분석 중..." : "Analyzing Diagnosis..."}
+                                </h3>
 
-                                    <p className="text-zinc-400 text-xl tracking-tight mb-8">
-                                        {lang === "KO" ? "관련 매뉴얼 및 에러 이력을 가동 중입니다." : "Searching related manuals and error histories."}
-                                    </p>
+                                <p className="text-zinc-400 text-xl tracking-tight mb-8">
+                                    {lang === "KO" ? "관련 매뉴얼 및 에러 이력을 가동 중입니다." : "Searching related manuals and error histories."}
+                                </p>
 
-                                    <motion.div
-                                        key={currentTipIndex}
-                                        initial={{ opacity: 0, y: 15 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: -15 }}
-                                        transition={{ duration: 0.3 }}
-                                        className="w-full max-w-2xl bg-zinc-900 border border-zinc-800 p-8 rounded-none flex items-start gap-4 text-left shadow-2xl relative"
-                                    >
-                                        <div className="absolute left-0 top-0 bottom-0 w-2 bg-[#E82127]" />
-                                        <AlertTriangle size={36} className="text-amber-500 mt-1 flex-shrink-0" />
-                                        <div className="flex-1">
-                                            <div className="text-xs font-black text-amber-500 tracking-widest uppercase mb-1">
-                                                {lang === "KO" ? "안전 가이드 (TIPS)" : "SAFETY TIPS"}
-                                            </div>
-                                            <p className="text-2xl text-zinc-100 font-bold leading-snug tracking-tight">
-                                                {tips[currentTipIndex]}
-                                            </p>
+                                <motion.div
+                                    key={currentTipIndex}
+                                    initial={{ opacity: 0, y: 15 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -15 }}
+                                    transition={{ duration: 0.3 }}
+                                    className="w-full max-w-2xl bg-zinc-900 border border-zinc-800 p-8 rounded-none flex items-start gap-4 text-left shadow-2xl relative"
+                                >
+                                    <div className="absolute left-0 top-0 bottom-0 w-2 bg-[#E82127]" />
+                                    <AlertTriangle size={36} className="text-amber-500 mt-1 flex-shrink-0" />
+                                    <div className="flex-1">
+                                        <div className="text-xs font-black text-amber-500 tracking-widest uppercase mb-1">
+                                            {lang === "KO" ? "안전 가이드 (TIPS)" : "SAFETY TIPS"}
                                         </div>
-                                    </motion.div>
-                                </div>
-                            ) : (
-                                <>
-                                    {renderParsedText(displayText)}
-                                    {isStreaming && (
-                                        <motion.span
-                                            className="inline-block w-1.5 h-10 !bg-[#E82127] ml-2 align-middle"
-                                            animate={{ opacity: [1, 0] }}
-                                            transition={{ duration: 0.5, repeat: Infinity }}
-                                        />
-                                    )}
-                                </>
-                            )
+                                        <p className="text-2xl text-zinc-100 font-bold leading-snug tracking-tight">
+                                            {tips[currentTipIndex]}
+                                        </p>
+                                    </div>
+                                </motion.div>
+                            </div>
+                        ) : !showChecklist ? (
+                            <>
+                                {renderParsedText(displayText)}
+                                {isStreaming && (
+                                    <motion.span
+                                        className="inline-block w-1.5 h-10 !bg-[#E82127] ml-2 align-middle"
+                                        animate={{ opacity: [1, 0] }}
+                                        transition={{ duration: 0.5, repeat: Infinity }}
+                                    />
+                                )}
+                            </>
                         ) : (
                             <div className="flex flex-col gap-6 py-4">
                                 <h3 className="text-5xl font-black text-white mb-12 tracking-tighter uppercase italic">
@@ -337,7 +337,7 @@ export function AiResponse({ lang, errorCode, isActive, mode, aiMessage, aiCheck
             </div>
 
             {/* 3. 하단 O/X 대형 버튼 */}
-            <div className={`grid grid-cols-2 gap-12 shrink-0 pb-6 transition-opacity duration-500 ${isStreaming ? "opacity-30 pointer-events-none" : "opacity-100"}`}>
+            <div className={`grid ${aiResponseType === "diagnosis" && !showChecklist ? "grid-cols-1" : "grid-cols-2"} gap-12 shrink-0 pb-6 transition-opacity duration-500 ${isStreaming ? "opacity-30 pointer-events-none" : "opacity-100"}`}>
                 <button
                     className="!bg-green-600 hover:!bg-green-500 !border !border-white/10 !rounded-3xl h-48 flex flex-col items-center justify-center gap-3 !shadow-[0_20px_60px_rgba(22,163,74,0.3)] transition-all active:scale-95 focus:!outline-none focus:!shadow-none"
                     onClick={() => {
@@ -356,30 +356,32 @@ export function AiResponse({ lang, errorCode, isActive, mode, aiMessage, aiCheck
                     </span>
                 </button>
 
-                <button
-                    className="!bg-red-600 hover:!bg-red-500 !border !border-white/10 !rounded-3xl h-48 flex flex-col items-center justify-center gap-3 !shadow-[0_20px_60px_rgba(220,38,38,0.3)] transition-all active:scale-95 focus:!outline-none focus:!shadow-none"
-                    onClick={() => {
-                        if (showChecklist) {
-                            const results = (aiChecklist || []).map((item: any, idx: number) => {
-                                return {
-                                    question: item.item || item,
-                                    is_ok: selectedOptions.includes(`${idx}`)
-                                };
-                            });
-                            onFollowUp("체크리스트 점검 완료", true, results as any);
-                            setShowChecklist(false);
-                            setSelectedOptions([]);
-                        } else {
-                            setShowChecklist(true);
-                        }
-                    }}
-                    disabled={isStreaming}
-                >
-                    {!showChecklist && <XCircle size={80} className="!text-white" style={{ color: "white", stroke: "white" }} strokeWidth={2} />}
-                    <span className={`font-black text-white text-center ${showChecklist ? "text-[30px] px-4 leading-tight" : "text-2xl"}`} style={{ color: "white" }}>
-                        {showChecklist ? "점검 결과 및 최종 판단 요청" : (lang === "KO" ? "미해결 (상세 점검)" : "Unresolved (Checklist)")}
-                    </span>
-                </button>
+                {(aiResponseType !== "diagnosis" || showChecklist) && (
+                    <button
+                        className="!bg-red-600 hover:!bg-red-500 !border !border-white/10 !rounded-3xl h-48 flex flex-col items-center justify-center gap-3 !shadow-[0_20px_60px_rgba(220,38,38,0.3)] transition-all active:scale-95 focus:!outline-none focus:!shadow-none"
+                        onClick={() => {
+                            if (showChecklist) {
+                                const results = (aiChecklist || []).map((item: any, idx: number) => {
+                                    return {
+                                        question: item.item || item,
+                                        is_ok: selectedOptions.includes(`${idx}`)
+                                    };
+                                });
+                                onFollowUp("체크리스트 점검 완료", true, results as any);
+                                setShowChecklist(false);
+                                setSelectedOptions([]);
+                            } else {
+                                setShowChecklist(true);
+                            }
+                        }}
+                        disabled={isStreaming}
+                    >
+                        {!showChecklist && <XCircle size={80} className="!text-white" style={{ color: "white", stroke: "white" }} strokeWidth={2} />}
+                        <span className={`font-black text-white text-center ${showChecklist ? "text-[30px] px-4 leading-tight" : "text-2xl"}`} style={{ color: "white" }}>
+                            {showChecklist ? "점검 결과 및 최종 판단 요청" : (lang === "KO" ? "미해결 (상세 점검)" : "Unresolved (Checklist)")}
+                        </span>
+                    </button>
+                )}
             </div>
         </motion.div>
     );
