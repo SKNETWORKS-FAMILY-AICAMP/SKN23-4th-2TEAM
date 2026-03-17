@@ -332,6 +332,17 @@ def start_consultation(req: StartConsultationRequest):
                         "상세 점검을 위해 하단의 상세 점검 버튼을 선택해 주세요."
                     )
                 
+                # PREPEND NOTICE IF WELDING ERROR 
+                is_welding = any('welding' in str(doc.get('metadata', {}).get('category', '')).lower() or 'welding' in str(doc.get('metadata', {}).get('source_file', '')).lower() for doc in diagnosis.get('documents', []))
+                
+                if is_welding:
+                    notice = "⚠️ **[안내] 이 코드는 로봇 에러가 아닌 '용접기' 전용 에러 코드입니다.**\n\n"
+                    if req.language.value == 'en':
+                        notice = "⚠️ **[Notice] This code is a 'Welder' specific error, not a Robot error.**\n\n"
+                    elif req.language.value == 'uz':
+                        notice = "⚠️ **[Eslatma] Bu kod Robot xatosi emas, balki 'Payvandlash mashinasi' xatosi.**\n\n"
+                    assistant_message = notice + assistant_message
+
                 # Generate checklist items (using our service logic)
                 followup = generate_followup_checklist(req.error_code, diagnosis_payload=diagnosis, language=req.language.value)
                 checklist = followup['checklist_items']
@@ -545,6 +556,7 @@ def post_event(session_id: int, req: ConsultationEventRequest):
                                 checklist_results=checklist_results,
                                 language=req.language.value
                             )
+                            has_unchecked = any(isinstance(item, dict) and item.get('status') == 'unchecked' for item in solution.get('checklist_items', []))
                         
                             if sess_lang == 'en':
                                 assistant_message = (
@@ -584,7 +596,8 @@ def post_event(session_id: int, req: ConsultationEventRequest):
                                     actor='llm',
                                     response_type=ResponseType.DIAGNOSIS,
                                     message=assistant_message,
-                                    checklist=None,
+                                    checklist=[item['item'] for item in solution.get('checklist_items', []) if isinstance(item, dict) and item.get('status') == 'unchecked'],
+                                    has_unchecked_items=has_unchecked
                                 ),
                                 session_status=SessionStatus.ONGOING,
                                 request_id=request_id,

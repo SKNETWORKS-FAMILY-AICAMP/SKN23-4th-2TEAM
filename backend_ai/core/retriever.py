@@ -142,9 +142,11 @@ def _is_manufacturer_match(doc: Document, manufacturer: str | None) -> bool:
     source_file = str(metadata.get('source_file') or '').upper()
     
     if manufacturer == '현대로보틱스':
-        # Hyundai manuals typically start with those prefixes or contains "현대", "Hi5", "Hi6"
+        # 숫자 접두사(예: "2. ")가 있을 경우 제거하고 검사
+        import re
+        clean_file = re.sub(r'^\d+[\.\s_]*', '', source_file)
         prefixes = ('HI', 'HH', 'HX', 'HS', 'HP', 'HR', 'YS', 'UA')
-        return source_file.startswith(prefixes) or '현대' in source_file
+        return clean_file.startswith(prefixes) or '현대' in source_file
         
     # Standard manual / universal scripts
     if 'UNIVERSAL' in manufacturer.upper() or 'UR' in manufacturer.upper():
@@ -157,24 +159,32 @@ def search_manual_exact(query: str, collection_name: str = COLLECTION_NAME, k: i
     # INCREASING K to account for post-filtering losses
     fetch_k = k * 3 if manufacturer else k
     
-    sql = """
+    words = normalized_query.split()
+    if not words:
+        return []
+
+    conditions = []
+    params = [collection_name]
+    for word in words:
+        conditions.append(
+            "%s = ANY(regexp_split_to_array(regexp_replace(UPPER(e.document), '[^A-Z0-9]+', ' ', 'g'), '\\s+'))"
+        )
+        params.append(word)
+
+    sql = f"""
         SELECT e.document, e.cmetadata
         FROM public.langchain_pg_embedding AS e
         JOIN public.langchain_pg_collection AS c
           ON e.collection_id = c.uuid
         WHERE c.name = %s
-          AND %s = ANY(
-            regexp_split_to_array(
-              regexp_replace(UPPER(e.document), '[^A-Z0-9]+', ' ', 'g'),
-              '\\s+'
-            )
-          )
+          AND {" AND ".join(conditions)}
         LIMIT %s
     """
+    params.append(fetch_k)
 
     with _connect_postgres() as conn:
         with conn.cursor() as cur:
-            cur.execute(sql, (collection_name, normalized_query, fetch_k))
+            cur.execute(sql, tuple(params))
             rows = cur.fetchall()
 
     docs = [Document(page_content=row[0] or "", metadata=row[1] or {}) for row in rows]
