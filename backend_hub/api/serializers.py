@@ -82,18 +82,18 @@ class RobotDeviceSerializer(serializers.ModelSerializer):
 #         return chat.message if chat else None
 
 class RobotErrorLogSerializer(serializers.ModelSerializer):
-    line = serializers.ReadOnlyField(source='device.line_name')
-    device = serializers.ReadOnlyField(source='device.device_name')
+    # line = serializers.ReadOnlyField(source='device.line_name')
+    # device = serializers.ReadOnlyField(source='device.device_name')
 
-    class Meta:
-        model = RobotErrorLog
-        fields = [
-            'error_log_id',
-            'line',
-            'device',
-            'error_code',
-            'occurred_at'
-        ]
+    # class Meta:
+    #     model = RobotErrorLog
+    #     fields = [
+    #         'error_log_id',
+    #         'line',
+    #         'device',
+    #         'error_code',
+    #         'occurred_at'
+    #     ]
     line_name = serializers.ReadOnlyField(source='device.line_name')
     # 1. 브랜드명
     manufacturer = serializers.ReadOnlyField(source='device.model.manufacturer')
