@@ -14,7 +14,40 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+load_dotenv(dotenv_path=PROJECT_ROOT / ".env")
 load_dotenv()
+
+
+def _env_first(*keys: str, default: str | None = None) -> str | None:
+    for key in keys:
+        value = os.getenv(key)
+        if value is not None and str(value).strip():
+            return str(value).strip()
+    return default
+
+
+def _to_bool(value: str | None, default: bool = False) -> bool:
+    if value is None:
+        return default
+    return str(value).strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _db_config() -> dict:
+    if _to_bool(os.getenv("SSH_TUNNEL_ENABLED"), default=False):
+        host = _env_first("SSH_LOCAL_BIND_HOST", default="127.0.0.1")
+        port = _env_first("SSH_LOCAL_BIND_PORT", default="15432")
+    else:
+        host = _env_first("DB_HOST", _env_first("PGHOST", "localhost"))
+        port = _env_first("DB_PORT", _env_first("PGPORT", "5432"))
+
+    return {
+        "HOST": host,
+        "PORT": port,
+        "NAME": _env_first("PGDATABASE", "postgres"),
+        "USER": _env_first("PGUSER", "postgres"),
+        "PASSWORD": _env_first("PGPASSWORD", ""),
+    }
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -24,9 +57,8 @@ FRONTEND_DIST_DIR = BASE_DIR.parent / 'frontend_admin' / 'dist'
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-# SECRET_KEY = 'django-insecure-!!73b3nm+lt8cjds759y)(^v6(rm0&#6lp7kbo=*$%5kwc$_+w'
 
-SECRET_KEY = os.environ.get('SECRET_KEY')
+SECRET_KEY = _env_first("SECRET_KEY", "DJANGO_SECRET_KEY", default="django-insecure-local-dev-key")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -84,11 +116,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('PGDATABASE'),
-        'USER': os.getenv('PGUSER'),
-        'PASSWORD': os.getenv('PGPASSWORD'),
-        'HOST': os.getenv('PGHOST'),
-        'PORT': os.getenv('PGPORT'),
+        **_db_config(),
     }
 }
 

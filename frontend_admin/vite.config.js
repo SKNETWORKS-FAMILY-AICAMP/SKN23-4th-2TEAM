@@ -11,6 +11,10 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     proxy: {
+      '/api/admin': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
       '/api/v1/dashboard': {
         target: 'http://localhost:8000',
         changeOrigin: true,
