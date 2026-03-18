@@ -133,11 +133,6 @@ class RobotErrorLogListView(APIView):
     전체 오류 로그 목록용 view(사이드바 - Logs)
     path : /api/admin/logs
     """
-    # def get(self, request):
-    #     error_logs = RobotErrorLog.objects.all()
-    #     serializer = RobotErrorLogSerializer(error_logs, many=True)
-    #     return Response(serializer.data)
-
     def get(self, request):
         qs = RobotErrorLog.objects.select_related('device__model').prefetch_related(
             'roboterrorsession_set__roboterrorchathistory_set',

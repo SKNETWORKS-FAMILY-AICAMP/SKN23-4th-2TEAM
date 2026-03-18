@@ -127,7 +127,7 @@
 }
 ```
 
-## 3. 로그 (Logs)
+### 3. 로그 (Logs)
 - Method : GET
 - Path : /api/admin/logs
 - Description : 
@@ -135,27 +135,34 @@
 - Response Body
 ```json
 {
-  "logs": [
+  "total": 1,
+  "results": [
     {
-      "error_log_id": 1,                    <!-- 에러 로그 단건 ID -->
-      "occurred_at": "2026-03-06T10:00:00", <!-- 에러 발생 시각 -->
-      "line_name": "A",                     <!-- 라인명 -->
-      "device_id": "ROBOT_07",              <!-- 에러 발생 장비 ID -->
-      "error_code": "E0123",                <!-- 에러 코드 -->
-      "final_status": "resolved"            <!-- 세션 상태 -->
-    },
-    {
-      "error_log_id": 2,
-      "occurred_at": "2026-03-06T10:00:00", 
-      "line_name": "B",
-      "device_id": "ROBOT_08",
-      "error_code": "E0124",
-      "final_status": "ongoing"
+      "error_log_id": 1,
+      "occurred_at": "2026-03-06T10:00:00", <!-- 시간 -->
+      "line_name": "A",                     <!-- 라인 -->
+      "device": "ROBOT_07",                 <!-- 장비 -->
+      "manufacturer": "현대로보틱스",       <!-- 브랜드명 -->
+      "error_code": "E123",                 <!-- 코드 -->
+      "final_status": "ongoing",            <!-- 상태 (가장 최근 세션 기준) -->
+      "sessions": [                         <!-- 에러내용 (세션별 묶음) -->
+        {
+          "session_id": 1215,
+          "started_at": "2026-03-06T10:00:05",
+          "initial_diagnosis": "에러 원인 분석, 조치 방법 등",
+          "checklist_items": [
+            { "item_content": "센서 케이블 연결 상태 확인", "is_checked": true },
+            { "item_content": "전원 리셋 수행", "is_checked": false }
+          ],
+          "final_diagnosis": "최종 종합 판단 및 후속 작업 안내"
+        }
+      ]
     }
   ]
 }
 ```
 
+---
 
 
 처리 상태"를 나타낼 때는 `robot_error_sessions`의 `final_status`를 기준으로 삼는 것을 권장합니다.

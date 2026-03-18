@@ -59,87 +59,62 @@ class RobotDeviceSerializer(serializers.ModelSerializer):
             return session.final_status
         return "resolved"
 
-
-# ============================
-# RobotErrorLog : 전체 오류 로그 목록용
-# ============================
-# class RobotErrorLogSerializer(serializers.ModelSerializer):
-#     line_name = serializers.ReadOnlyField(source='device.line_name')
-#     manufacturer = serializers.ReadOnlyField(source='device.model.manufacturer')
-#     last_message = serializers.SerializerMethodField()
-
-#     class Meta:
-#         model = RobotErrorLog
-#         fields = ['error_log_id', 'device', 'error_code', 'occurred_at', 'line_name', 'manufacturer', 'last_message']
-
-#     def get_last_message(self, obj):
-#         # 해당 에러 로그와 연결된 세션 찾기
-#         session = RobotErrorSession.objects.filter(error_log=obj).order_by('-started_at').first()
-#         if not session:
-#             return None
-#         # 세션의 마지막 LLM 메시지 가져오기
-#         chat = RobotErrorChatHistory.objects.filter(session=session, actor='llm').order_by('-created_at').first()
-#         return chat.message if chat else None
-
-class RobotErrorLogSerializer(serializers.ModelSerializer):
-    # line = serializers.ReadOnlyField(source='device.line_name')
-    # device = serializers.ReadOnlyField(source='device.device_name')
-
-    # class Meta:
-    #     model = RobotErrorLog
-    #     fields = [
-    #         'error_log_id',
-    #         'line',
-    #         'device',
-    #         'error_code',
-    #         'occurred_at'
-    #     ]
-    line_name = serializers.ReadOnlyField(source='device.line_name')
-    # 1. 브랜드명
-    manufacturer = serializers.ReadOnlyField(source='device.model.manufacturer')
-    
-    # 2. 마지막 에러 내용 (AI 메시지)
-    last_message = serializers.SerializerMethodField()
-    
-    # 3. 체크리스트 해결 여부 요약
-    checklist_status = serializers.SerializerMethodField()
-
-    class Meta:
-        model = RobotErrorLog
-        fields = ['error_log_id', 'device', 'error_code', 'occurred_at', 'line_name', 'manufacturer', 'last_message', 'checklist_status']
-
-    def get_last_message(self, obj):
-        session = obj.roboterrorsession_set.order_by('-started_at').first()
-        if session:
-            chat = session.roboterrorchathistory_set.filter(actor='llm').order_by('-created_at').first()
-            return chat.message if chat else None
-        return None
-
-    def get_checklist_status(self, obj):
-        session = obj.roboterrorsession_set.order_by('-started_at').first()
-        if session:
-            items = session.roboterrorchecklistitem_set.all()
-            total = items.count()
-            checked = items.filter(is_checked=True).count()
-            return f"{checked}/{total} 완료" if total > 0 else "항목 없음"
-        return "세션 없음"
-
-
 # ============================
 # RobotErrorSession : 오류 세션 내부 관리용
 # ============================
 class RobotErrorSessionSerializer(serializers.ModelSerializer):
-
+    # 초기 진단
+    initial_diagnosis = serializers.SerializerMethodField()
+    # 체크리스트
+    checklist_items = serializers.SerializerMethodField()
+    # 최종 진단
+    final_diagnosis = serializers.SerializerMethodField()
     class Meta:
         model = RobotErrorSession
+        fields = ['session_id', 'started_at', 'initial_diagnosis', 'checklist_items', 'final_diagnosis']
+    def get_initial_diagnosis(self, obj):
+        chat = obj.roboterrorchathistory_set.filter(response_type='overall').first()
+        return chat.message if chat else None
+
+    def get_checklist_items(self, obj):
+        return obj.roboterrorchecklistitem_set.all().order_by('item_order').values('checklist_item_id', 'item_content', 'is_checked')
+    
+    def get_final_diagnosis(self, obj):
+        chat = obj.roboterrorchathistory_set.filter(response_type='diagnosis').order_by('-step_no').first()
+        return chat.message if chat else None
+
+# ============================
+# RobotErrorLog : 전체 오류 로그 목록용
+# ============================
+class RobotErrorLogSerializer(serializers.ModelSerializer):
+    line_name = serializers.ReadOnlyField(source='device.line_name')
+
+    # 브랜드명
+    manufacturer = serializers.ReadOnlyField(source='device.model.manufacturer')
+
+    # 상태
+    final_status = serializers.SerializerMethodField()
+
+    # 에러내용 (세션별로 묶인 데이터 전체)
+    sessions = RobotErrorSessionSerializer(source='roboterrorsession_set', many=True)
+
+    class Meta:
+        model = RobotErrorLog
         fields = [
-            'session_id', 
-            'device', 
-            'error_log', 
-            'started_at',
-            'last_updated_at',
-            'final_status',
+            'error_log_id', 
+            'occurred_at',   # 시간
+            'line_name',     # 라인
+            'device',        # 장비
+            'manufacturer',  # 브랜드명
+            'error_code',    # 코드
+            'final_status',  # 상태
+            'sessions'       # 에러내용 (클릭 시 보여줄 상세 데이터)
         ]
+
+    def get_final_status(self, obj):
+        # 해당 로그에 연결된 가장 최신 세션의 상태를 가져옵니다.
+        latest_session = obj.roboterrorsession_set.order_by('-started_at').first()
+        return latest_session.final_status if latest_session else "resolved"
 
 # ============================
 # RobotErrorChatHistory : 상세 채팅 내역용
