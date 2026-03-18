@@ -5,7 +5,7 @@ cd "$SCRIPT_DIR"
 
 PUBLIC_IP=""
 if [ -f "$SCRIPT_DIR/.env" ]; then
-    PUBLIC_IP="$(awk -F '=' '/^PUBLIC_HOST_IP[[:space:]]*=/{gsub(/^[[:space:]]*|[[:space:]]*$/, "", $2); gsub(/^["'\'' ]+|["'\'' ]+$/, "", $2); print $2; exit}' "$SCRIPT_DIR/.env")"
+    PUBLIC_IP="$(sed -n 's/^PUBLIC_HOST_IP[[:space:]]*=[[:space:]]*//p' "$SCRIPT_DIR/.env" | sed -n '1p' | tr -d '\"'\''\r' | tr -d '[:space:]' )"
 fi
 
 if [ -z "${PUBLIC_IP}" ]; then
@@ -24,6 +24,8 @@ if [ -z "${PUBLIC_IP}" ]; then
 elif printf '%s' "${PUBLIC_IP}" | grep -Eq '^(127\\.|10\\.|172\\.1[6-9]\\.|172\\.2[0-9]\\.|172\\.3[0-1]\\.|192\\.168\\.)'; then
     PUBLIC_IP="your-ec2-public-ip (private IP detected)"
 fi
+
+echo "[INFO] PUBLIC_HOST_IP loaded from .env: ${PUBLIC_IP}"
 
 cleanup() {
     echo "🛑 Stopping all services..."
