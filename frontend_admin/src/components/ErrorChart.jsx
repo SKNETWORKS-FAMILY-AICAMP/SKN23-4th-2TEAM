@@ -20,7 +20,8 @@ function ErrorChart({ data }) {
   });
 
   const baseData = last7Days.reduce((acc, date) => {
-    acc[date] = { time: date, a: 0, b: 0, c: 0, d: 0 };
+    const displayDate = date.slice(5).replace("-", "/"); // "MM/DD" format
+    acc[date] = { time: displayDate, dateStr: date, a: 0, b: 0, c: 0, d: 0 };
     return acc;
   }, {});
 
@@ -57,38 +58,37 @@ function ErrorChart({ data }) {
           <button
             key={line.id}
             onClick={() => setSelectedLine(line.id)}
-            className={`px-4 py-1 rounded-full font-semibold transition ${
-              selectedLine === line.id
-                ? "bg-blue-500 text-white shadow-md"
-                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-            }`}
+            className={`px-4 py-1 rounded-full font-semibold transition ${selectedLine === line.id
+              ? "bg-blue-500 text-white shadow-md"
+              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+              }`}
           >
             {line.label}
           </button>
         ))}
       </div>
 
-      <div className="flex-1 min-h-[250px]">
+      <div className="flex-1 min-h-[250px] mt-2">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData}>
-            <XAxis dataKey="time" />
-            <YAxis />
-            <Tooltip />
+            <XAxis dataKey="time" interval={0} tick={{ fontSize: 13, fontWeight: 500 }} tickMargin={12} padding={{ left: 20, right: 20 }} />
+            <YAxis tick={{ fontSize: 13 }} width={30} />
+            <Tooltip contentStyle={{ borderRadius: "8px", border: "none", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)" }} />
 
             {(selectedLine === "all" || selectedLine === "a") && (
-              <Line type="monotone" dataKey="a" stroke="#ef4444" strokeWidth={2} />
+              <Line type="monotone" dataKey="a" stroke="#ef4444" strokeWidth={2.5} activeDot={{ r: 6 }} dot={{ r: 3 }} />
             )}
 
             {(selectedLine === "all" || selectedLine === "b") && (
-              <Line type="monotone" dataKey="b" stroke="#3b82f6" strokeWidth={2} />
+              <Line type="monotone" dataKey="b" stroke="#3b82f6" strokeWidth={2.5} activeDot={{ r: 6 }} dot={{ r: 3 }} />
             )}
 
             {(selectedLine === "all" || selectedLine === "c") && (
-              <Line type="monotone" dataKey="c" stroke="#f59e0b" strokeWidth={2} />
+              <Line type="monotone" dataKey="c" stroke="#f59e0b" strokeWidth={2.5} activeDot={{ r: 6 }} dot={{ r: 3 }} />
             )}
 
             {(selectedLine === "all" || selectedLine === "d") && (
-              <Line type="monotone" dataKey="d" stroke="#22c55e" strokeWidth={2} />
+              <Line type="monotone" dataKey="d" stroke="#22c55e" strokeWidth={2.5} activeDot={{ r: 6 }} dot={{ r: 3 }} />
             )}
 
           </LineChart>

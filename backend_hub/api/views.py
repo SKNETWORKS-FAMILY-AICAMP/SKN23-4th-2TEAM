@@ -27,27 +27,21 @@ class DashboardSummaryView(APIView):
             # 처리 완료(정상) 수 (final_status가 resolved인 것)
             resolved_count = RobotErrorSession.objects.filter(started_at__date=today, final_status='resolved').count()
             
-            # 처리중인 수 (final_status가 ongoing인 것)
-            ongoing_count = RobotErrorSession.objects.filter(started_at__date=today, final_status='ongoing').count()
+            # 미해결 수 (진행 중, 중단, 실패 등 resolved가 아닌 모든 건수)
+            unresolved_count = total_errors - resolved_count
     
-            # 설비 가동률 계산
-            # 실제 에러 발생 중인 로봇 대수
-            error_devices_count = RobotErrorSession.objects.filter(final_status='ongoing').values('device_id').distinct().count()
-            # 전체 로봇 대수
-            total_devices = RobotDevice.objects.count()
-            
-            if total_devices > 0:
-                # 가동률 = (전체 로봇 - 에러 난 로봇 대수) / 전체 로봇 * 100
-                op_rate = ((total_devices - error_devices_count) / total_devices) * 100
+            # 에러 해결률 계산
+            if total_errors > 0:
+                resolution_rate = (resolved_count / total_errors) * 100
             else:
-                op_rate = 0.0
+                resolution_rate = 0.0
 
             # 명세서 양식에 맞춰서 응답
             return Response({
                 "total_errors": total_errors,
                 "resolved_count": resolved_count,
-                "ongoing_count": ongoing_count,
-                "total_devices": round(op_rate, 1)
+                "unresolved_count": unresolved_count,
+                "resolution_rate": round(resolution_rate, 1)
             })
 
 # 라인별 에러 발생 그래프
@@ -94,7 +88,7 @@ class DashboardRecentErrorLogsView(APIView):
 
             results.append({
                 'occurred_at' : log.occurred_at.strftime('%Y-%m-%d %H:%M'),
-                'device_info' : f"[라인 {log.device.line_name}-{log.device.line_num}] {log.device.model.model_id} ({log.error_code})",
+                'device_info' : f"[라인 {log.device.line_name}-{log.device.line_num}] {log.device.device_id} ({log.error_code})",
                 'final_status' : display_status
             })
 
@@ -146,7 +140,7 @@ class RobotErrorLogListView(APIView):
 
         device = request.GET.get('device')
         if device:
-            qs = qs.filter(device__device_name__icontains=device)
+            qs = qs.filter(device__device_id__icontains=device)
 
         code = request.GET.get('code')
         if code:

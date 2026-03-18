@@ -126,7 +126,6 @@ function AdminChatBot() {
       {/* Header */}
       <div className="bg-slate-800 text-white p-3 flex justify-between items-center">
         <div className="flex items-center space-x-2">
-          <span className="text-xl">🤖</span>
           <h3 className="font-semibold text-sm">관리자 AI 비서</h3>
         </div>
         <button

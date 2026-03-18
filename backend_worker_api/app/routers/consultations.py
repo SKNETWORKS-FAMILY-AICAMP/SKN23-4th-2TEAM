@@ -144,13 +144,18 @@ def list_engineer_calls():
 @router.post('/engineer-calls/{call_id}/resolve')
 def resolve_engineer_call(call_id: int):
     with get_db_connection() as conn:
-        with conn.cursor() as cursor:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
-                "UPDATE engineer_calls SET status = 'resolved', updated_at = NOW() WHERE call_id = %s",
+                "UPDATE engineer_calls SET status = 'resolved', updated_at = NOW() WHERE call_id = %s RETURNING session_id",
                 (call_id,)
             )
-            if cursor.rowcount == 0:
+            row = cursor.fetchone()
+            if not row:
                 raise HTTPException(status_code=404, detail="Call not found")
+            cursor.execute(
+                "UPDATE robot_error_sessions SET final_status = 'resolved', last_updated_at = NOW() WHERE session_id = %s",
+                (row['session_id'],)
+            )
         conn.commit()
     return {"status": "ok"}
 
@@ -159,6 +164,14 @@ def resolve_engineer_call(call_id: int):
 def resolve_all_engineer_calls():
     with get_db_connection() as conn:
         with conn.cursor() as cursor:
+            cursor.execute(
+                """
+                UPDATE robot_error_sessions 
+                SET final_status = 'resolved', last_updated_at = NOW() 
+                FROM engineer_calls 
+                WHERE robot_error_sessions.session_id = engineer_calls.session_id AND engineer_calls.status = 'pending'
+                """
+            )
             cursor.execute(
                 "UPDATE engineer_calls SET status = 'resolved', updated_at = NOW() WHERE status = 'pending'"
             )
@@ -169,13 +182,18 @@ def resolve_all_engineer_calls():
 @router.post('/engineer-calls/{call_id}/unresolve')
 def unresolve_engineer_call(call_id: int):
     with get_db_connection() as conn:
-        with conn.cursor() as cursor:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
-                "UPDATE engineer_calls SET status = 'pending', updated_at = NOW() WHERE call_id = %s",
+                "UPDATE engineer_calls SET status = 'pending', updated_at = NOW() WHERE call_id = %s RETURNING session_id",
                 (call_id,)
             )
-            if cursor.rowcount == 0:
+            row = cursor.fetchone()
+            if not row:
                 raise HTTPException(status_code=404, detail="Call not found")
+            cursor.execute(
+                "UPDATE robot_error_sessions SET final_status = 'ongoing', last_updated_at = NOW() WHERE session_id = %s",
+                (row['session_id'],)
+            )
         conn.commit()
     return {"status": "ok"}
 

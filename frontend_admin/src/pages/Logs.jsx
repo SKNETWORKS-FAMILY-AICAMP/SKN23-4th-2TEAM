@@ -50,18 +50,31 @@ export default function Logs() {
     fetch(`${API.errorLogs}?${params}`)
       .then(res => res.json())
       .then(data => {
-        const mapped = (data.results || []).map((log) => ({
-          id: log.error_log_id,
-          line: log.line_name || "-",                      // Serializer에서 제공
-          device: log.device?.device_name || log.device || "-", // 객체 안 device_name
-          errorCode: log.error_code || "-",
-          status: log.error_code ? "error" : "normal",
-          date: log.occurred_at?.split("T")[0] || "",
-          time: log.occurred_at?.split("T")[1]?.slice(0, 5) || "",
-          manufacturer: log.manufacturer || "-",
-          lastMessage: log.last_message || "-",
-          checklistStatus: log.checklist_status || "-",
-        }));
+        const mapped = (data.results || []).map((log) => {
+          const sessions = log.sessions || [];
+          const latestSession = sessions[0] || {};
+          
+          let checklistText = "";
+          if (latestSession.checklist_items && latestSession.checklist_items.length > 0) {
+            checklistText = latestSession.checklist_items.map(i => `[${i.is_checked ? 'O' : 'X'}] ${i.item_content}`).join('\n');
+          }
+
+          return {
+            id: log.error_log_id,
+            line: log.line_name || "-",                      
+            device: log.device?.device_name || log.device || "-", 
+            errorCode: log.error_code || "-",
+            language: log.language || "KO",
+            status: log.final_status || "미해결",
+            date: log.occurred_at?.split("T")[0] || "",
+            time: log.occurred_at?.split("T")[1]?.slice(0, 5) || "",
+            resolvedAt: log.resolved_at || "-",
+            manufacturer: log.manufacturer || "-",
+            initialResponse: latestSession.initial_diagnosis || "",
+            checklistResponse: checklistText || "",
+            finalResponse: latestSession.final_diagnosis || "",
+          };
+        });
 
         console.log("🔹 맵핑 후 로그:", mapped); // map 후 데이터 확인
         setLogs(mapped);

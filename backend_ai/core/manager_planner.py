@@ -156,16 +156,19 @@ def classify_manager_intent(question: str) -> dict:
             datasets=["recent_logs", "lines", "stats"],
         )
 
+    time_scope = "today" if has_today else ("yesterday" if has_yesterday else "recent")
+    inferred_days = 1 if has_today else (2 if has_yesterday else 7)
+
     # 5. 라인별 리스크 및 탑 에러 조회
-    if has_risk or has_top:
-        task_name = "line_risk" if has_risk else "top_error"
+    if has_risk or has_top or "요약" in normalized:
+        task_name = "line_risk" if has_risk else ("top_error" if has_top else "overview")
         return _build_plan(
             task_name,
             raw_question,
             line_name=line_name,
             error_code=None,
-            time_scope="recent",
-            days=7,
+            time_scope=time_scope,
+            days=inferred_days,
             datasets=["summary", "recent_logs", "top_errors", "lines", "stats"],
         )
 
@@ -176,8 +179,8 @@ def classify_manager_intent(question: str) -> dict:
             raw_question,
             line_name=line_name,
             error_code=None,
-            time_scope="recent",
-            days=7,
+            time_scope=time_scope,
+            days=inferred_days,
             datasets=["recent_logs", "lines", "stats"],
         )
 
@@ -187,8 +190,8 @@ def classify_manager_intent(question: str) -> dict:
         raw_question,
         line_name=line_name,
         error_code=error_code,
-        time_scope="recent",
-        days=7,
+        time_scope=time_scope,
+        days=inferred_days,
         datasets=["summary", "recent_logs", "top_errors", "lines", "stats"],
     )
 

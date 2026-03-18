@@ -69,8 +69,8 @@ async def _fetch_one(query: str, params: tuple | None = None) -> dict:
     finally:
         await conn.close()
 
-async def fetch_dashboard_summary() -> dict:
-    query = """
+async def fetch_dashboard_summary(days: int = 7) -> dict:
+    query = f"""
     WITH total_device_count AS (
         SELECT COUNT(*)::int AS total_devices
         FROM robot_devices
@@ -86,6 +86,7 @@ async def fetch_dashboard_summary() -> dict:
             COUNT(*) FILTER (WHERE final_status = 'resolved')::int AS resolved_count,
             COUNT(*) FILTER (WHERE final_status = 'ongoing')::int AS ongoing_count
         FROM robot_error_sessions
+        WHERE DATE(timezone('Asia/Seoul', started_at)) >= DATE(timezone('Asia/Seoul', CURRENT_TIMESTAMP)) - ({days}::int - 1)
     )
     SELECT
         s.total_errors,
@@ -261,7 +262,7 @@ async def collect_manager_data(plan: dict) -> dict:
     # 실행할 비동기 작업들을 모아둡니다.
     tasks = {}
     if 'summary' in datasets:
-        tasks['summary'] = fetch_dashboard_summary()
+        tasks['summary'] = fetch_dashboard_summary(days=days)
     if 'line_trends' in datasets:
         tasks['line_trends'] = fetch_line_trends(days=days, line_name=line_name, error_code=error_code)
     if 'recent_logs' in datasets:
