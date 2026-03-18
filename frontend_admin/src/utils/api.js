@@ -9,5 +9,5 @@ export const API = {
   lines: `${BASE_URL}/lines/`,
   logs: `${BASE_URL}/logs/`,
   stats: `${BASE_URL}/stats/`,
-  errorLogs: `${BASE_URL}/logs/`
+  errorLogs: `${BASE_URL}/logs/` 
 };
