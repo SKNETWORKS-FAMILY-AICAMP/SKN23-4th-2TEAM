@@ -3,6 +3,17 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
+PUBLIC_IP=""
+if command -v curl >/dev/null 2>&1; then
+    PUBLIC_IP="$(curl -s --max-time 3 http://169.254.169.254/latest/meta-data/public-ipv4 || true)"
+    if [ -z "${PUBLIC_IP}" ] || [ "${PUBLIC_IP}" = "Not found" ]; then
+        PUBLIC_IP="$(curl -s --max-time 3 ifconfig.me || true)"
+    fi
+fi
+if [ -z "${PUBLIC_IP}" ]; then
+    PUBLIC_IP="your-ec2-public-ip"
+fi
+
 cleanup() {
     echo "🛑 Stopping all services..."
     for pid in "$TUNNEL_PID" "$DJANGO_PID" "$FASTAPI_PID" "$ADMIN_PID" "$WORKER_PID"; do
@@ -77,22 +88,22 @@ print('-> AI Cache Pre-heat Complete.')
 "
 
 echo "[3/6] 🚀 Starting Django Backend Hub (Port 8000)..."
-(cd backend_hub && poetry run python manage.py runserver 8000) &
+(cd backend_hub && poetry run python manage.py runserver 0.0.0.0:8000) &
 DJANGO_PID=$!
 sleep 4
 
 echo "[4/6] 🚀 Starting FastAPI Worker API (Port 8001)..."
-(cd backend_worker_api && poetry run uvicorn app.main:app --port 8001 --reload) &
+(cd backend_worker_api && poetry run uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload) &
 FASTAPI_PID=$!
 sleep 4
 
 echo "[5/6] 🚀 Starting Admin Dashboard (Vite)..."
-(cd frontend_admin && npm run dev) &
+(cd frontend_admin && npm run dev -- --host 0.0.0.0 --port 5173) &
 ADMIN_PID=$!
 sleep 3
 
 echo "[6/6] 🚀 Starting Worker Dashboard (Vite)..."
-(cd frontend_worker && npm run dev -- --host) &
+(cd frontend_worker && npm run dev -- --host 0.0.0.0 --port 5174) &
 WORKER_PID=$!
 
 echo "====================================================="
@@ -102,10 +113,10 @@ if [ -n "${TUNNEL_PID}" ]; then
 else
     echo " - SSH Tunnel: skipped"
 fi
-echo " - Django Hub: http://localhost:8000"
-echo " - FastAPI   : http://localhost:8001"
-echo " - Admin UI  : (See terminal output for port)"
-echo " - Worker UI : (See terminal output for port)"
+echo " - Django Hub: http://${PUBLIC_IP}:8000"
+echo " - FastAPI   : http://${PUBLIC_IP}:8001"
+echo " - Admin UI  : http://${PUBLIC_IP}:5173"
+echo " - Worker UI : http://${PUBLIC_IP}:5174"
 echo "====================================================="
 echo "Press [CTRL+C] to stop all services..."
 
