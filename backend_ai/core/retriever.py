@@ -54,8 +54,8 @@ def _get_pg_settings() -> dict:
         host = _env_first('SSH_LOCAL_BIND_HOST', default='127.0.0.1')
         port = int(_env_first('SSH_LOCAL_BIND_PORT', default='15432'))
     else:
-        host = _env_first('PGHOST', default='localhost')
-        port = int(_env_first('PGPORT', default='5432'))
+        host = _env_first("DB_HOST", _env_first('PGHOST', default='localhost'))
+        port = int(_env_first("DB_PORT", _env_first('PGPORT', default='5432')))
 
     return {
         "host": host,

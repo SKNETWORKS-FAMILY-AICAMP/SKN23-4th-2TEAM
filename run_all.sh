@@ -1,5 +1,8 @@
 #!/bin/bash
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
 echo "====================================================="
 echo "        SKN23-4th-2TEAM Unified Start Script         "
 echo "====================================================="
@@ -66,7 +69,11 @@ WORKER_PID=$!
 
 echo "====================================================="
 echo " ✅ All services started successfully!"
-echo " - SSH Tunnel: 127.0.0.1:15432"
+if [ -n "${TUNNEL_PID}" ]; then
+    echo " - SSH Tunnel: 127.0.0.1:15432"
+else
+    echo " - SSH Tunnel: skipped"
+fi
 echo " - Django Hub: http://localhost:8000"
 echo " - FastAPI   : http://localhost:8001"
 echo " - Admin UI  : (See terminal output for port)"
@@ -75,5 +82,9 @@ echo "====================================================="
 echo "Press [CTRL+C] to stop all services..."
 
 # Wait for all background processes
-trap "echo '🛑 Stopping all services...'; kill $TUNNEL_PID $DJANGO_PID $FASTAPI_PID $ADMIN_PID $WORKER_PID; exit" SIGINT SIGTERM
+if [ -n "${TUNNEL_PID}" ]; then
+    trap "echo '🛑 Stopping all services...'; kill $TUNNEL_PID $DJANGO_PID $FASTAPI_PID $ADMIN_PID $WORKER_PID; exit" SIGINT SIGTERM
+else
+    trap "echo '🛑 Stopping all services...'; kill $DJANGO_PID $FASTAPI_PID $ADMIN_PID $WORKER_PID; exit" SIGINT SIGTERM
+fi
 wait
