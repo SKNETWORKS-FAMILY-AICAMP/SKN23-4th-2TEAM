@@ -3,9 +3,42 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
-PUBLIC_IP=""
-if [ -f "$SCRIPT_DIR/.env" ]; then
-    PUBLIC_IP="$(sed -n 's/^PUBLIC_HOST_IP[[:space:]]*=[[:space:]]*//p' "$SCRIPT_DIR/.env" | sed -n '1p' | tr -d '\"'\''\r' | tr -d '[:space:]' )"
+read_env_var() {
+    local key="$1"
+    local line
+    local found=""
+    if [ -f "$SCRIPT_DIR/.env" ]; then
+        while IFS= read -r line; do
+            line="$(printf '%s' "$line" | sed 's/[[:space:]]*$//')"
+            case "$line" in
+                ''|"#"*) continue ;;
+            esac
+            if [[ "$line" == \#* ]]; then
+                continue
+            fi
+            if [[ "$line" == *"="* ]]; then
+                local k="${line%%=*}"
+                local v="${line#*=}"
+                k="$(printf '%s' "$k" | tr -d '[:space:]')"
+                if [ "$k" = "$key" ]; then
+                    v="$(printf '%s' "${v%%#*}" | tr -d '\r')"
+                    v="$(printf '%s' "$v" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')"
+                    v="${v%\"}"
+                    v="${v#\"}"
+                    v="${v%\'}"
+                    v="${v#\'}"
+                    found="$v"
+                    break
+                fi
+            fi
+        done < "$SCRIPT_DIR/.env"
+    fi
+    echo "$found"
+}
+
+PUBLIC_IP="$(read_env_var PUBLIC_HOST_IP)"
+if [ -z "${PUBLIC_IP}" ]; then
+    PUBLIC_IP="${PUBLIC_HOST_IP:-}"
 fi
 
 if [ -z "${PUBLIC_IP}" ]; then
