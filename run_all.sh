@@ -3,6 +3,34 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
+cleanup() {
+    echo "🛑 Stopping all services..."
+    for pid in "$TUNNEL_PID" "$DJANGO_PID" "$FASTAPI_PID" "$ADMIN_PID" "$WORKER_PID"; do
+        if [ -n "${pid}" ] && kill -0 "${pid}" 2>/dev/null; then
+            kill "${pid}" 2>/dev/null || true
+            sleep 1
+            kill -9 "${pid}" 2>/dev/null || true
+        fi
+    done
+
+    for port in 15432 8000 8001 5173 5174; do
+        pids=$(lsof -ti tcp:${port} 2>/dev/null || true)
+        if [ -n "${pids}" ]; then
+            echo " -> kill any process on TCP ${port}: ${pids}"
+            echo "${pids}" | xargs -r kill -9
+        fi
+    done
+
+    pkill -f "run_tunnel.py" 2>/dev/null || true
+    pkill -f "manage.py runserver 8000" 2>/dev/null || true
+    pkill -f "uvicorn app.main:app --port 8001" 2>/dev/null || true
+    pkill -f "vite" 2>/dev/null || true
+
+    exit 0
+}
+
+trap cleanup SIGINT SIGTERM
+
 echo "====================================================="
 echo "        SKN23-4th-2TEAM Unified Start Script         "
 echo "====================================================="
@@ -82,9 +110,4 @@ echo "====================================================="
 echo "Press [CTRL+C] to stop all services..."
 
 # Wait for all background processes
-if [ -n "${TUNNEL_PID}" ]; then
-    trap "echo '🛑 Stopping all services...'; kill $TUNNEL_PID $DJANGO_PID $FASTAPI_PID $ADMIN_PID $WORKER_PID; exit" SIGINT SIGTERM
-else
-    trap "echo '🛑 Stopping all services...'; kill $DJANGO_PID $FASTAPI_PID $ADMIN_PID $WORKER_PID; exit" SIGINT SIGTERM
-fi
 wait
