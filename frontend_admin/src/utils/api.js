@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:8000/api/admin";
+const BASE_URL = "/api/admin";
 
 export const API = {
   dashboardSummary: `${BASE_URL}/dashboard/summary/`,

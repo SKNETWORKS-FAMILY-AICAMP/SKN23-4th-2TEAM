@@ -44,12 +44,13 @@ def validate_config():
     """
     required_vars = [
         "OPENAI_API_KEY",
-        "PGHOST",
         "PGUSER",
         "PGPASSWORD",
         "PGDATABASE",
         "TAVILY_API_KEY",
     ]
+    if not (os.getenv("PGHOST") or os.getenv("DB_HOST")):
+        required_vars.append("DB_HOST (or PGHOST)")
     missing_vars = [var for var in required_vars if not os.getenv(var)]
 
     if missing_vars:
