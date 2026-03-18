@@ -58,8 +58,12 @@ if [ -z "${PUBLIC_IP}" ]; then
     PUBLIC_IP="your-ec2-public-ip"
     PUBLIC_IP_SOURCE="final_fallback"
 elif printf '%s' "${PUBLIC_IP}" | grep -Eq '^(127\\.|10\\.|172\\.1[6-9]\\.|172\\.2[0-9]\\.|172\\.3[0-1]\\.|192\\.168\\.)'; then
-    PUBLIC_IP="your-ec2-public-ip (private IP detected)"
-    PUBLIC_IP_SOURCE="private_ip_detected"
+    echo "[WARN] PUBLIC_HOST_IP looks like private IP (${PUBLIC_IP})."
+    echo "       If you want public IP here, set PUBLIC_HOST_IP explicitly in .env"
+fi
+
+if [ -n "${PUBLIC_IP}" ]; then
+    export PUBLIC_HOST_IP="${PUBLIC_IP}"
 fi
 
 echo "[INFO] PUBLIC_HOST_IP loaded (${PUBLIC_IP_SOURCE}): ${PUBLIC_IP}"
