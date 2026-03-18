@@ -11,12 +11,11 @@ export default function LogFilters({ filters, setFilters }) {
   const [line, setLine] = useState(filters.line);
   const [device, setDevice] = useState(filters.device);
   const [code, setCode] = useState(filters.code);
-  const [status, setStatus] = useState(filters.status || "");
   const [startDate, setStartDate] = useState(filters.startDate || todayStr);
   const [endDate, setEndDate] = useState(filters.endDate || todayStr);
 
   const applyFilters = () => {
-    setFilters({ line, device, code, status, startDate, endDate });
+    setFilters({ line, device, code, startDate, endDate });
   };
 
   const handleKeyPress = (e) => {
@@ -35,6 +34,8 @@ export default function LogFilters({ filters, setFilters }) {
         <option value="all">전체</option>
         <option value="A">A라인</option>
         <option value="B">B라인</option>
+        <option value="C">C라인</option>
+        <option value="D">D라인</option>
       </select>
 
       {/* 장비명 검색 */}
@@ -56,17 +57,6 @@ export default function LogFilters({ filters, setFilters }) {
         onKeyPress={handleKeyPress}
         className="border px-2 py-1 rounded"
       />
-
-      {/* 상태 선택 */}
-      <select
-        value={status}
-        onChange={(e) => setStatus(e.target.value)}
-        className="border px-2 py-1 rounded"
-      >
-        <option value="">모두</option>
-        <option value="error">오류</option>
-        <option value="normal">정상</option>
-      </select>
 
       {/* 날짜 검색 */}
       <div className="flex items-center gap-1">
