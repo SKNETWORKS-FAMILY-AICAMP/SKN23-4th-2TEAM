@@ -205,11 +205,13 @@ export function AdminPanel({
   const [filterDate, setFilterDate] = useState("");
   const [filterHour, setFilterHour] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [statsCurrentPage, setStatsCurrentPage] = useState(1);
 
   // RESET PAGE ON FILTER CHANGE
   const handleFilterChange = (setter: (v: any) => void, value: any) => {
     setter(value);
     setCurrentPage(1);
+    setStatsCurrentPage(1);
   };
   const ROWS_PER_PAGE = 10;
 
@@ -262,6 +264,33 @@ export function AdminPanel({
   const paginatedHistory = filteredHistory.slice(
     (currentPage - 1) * ROWS_PER_PAGE,
     currentPage * ROWS_PER_PAGE,
+  );
+
+  const filteredCalls = engineerCalls.filter((call) => {
+    const date = new Date(call.timestamp);
+    let lineMatch = true;
+    if (filterLine !== "ALL") {
+      const deviceStr = call.device || "";
+      const parts = deviceStr.split(" - ");
+      const lineInfo = parts[0].toUpperCase().trim();
+      const lineChar = filterLine.toUpperCase().trim();
+      lineMatch = lineInfo.includes(lineChar) || lineInfo.replace(/\s+/g, "").includes(lineChar);
+    }
+    const logDateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    const isRobot = call.device?.toUpperCase().includes('ROBOT');
+    const diagType = isRobot ? 'robot' : 'welder';
+
+    return (
+      (!filterDate || logDateStr === filterDate) &&
+      (!filterHour || date.getHours().toString() === filterHour) &&
+      (filterType === "ALL" || diagType === filterType) &&
+      lineMatch
+    );
+  });
+
+  const paginatedCalls = filteredCalls.slice(
+    (statsCurrentPage - 1) * ROWS_PER_PAGE,
+    statsCurrentPage * ROWS_PER_PAGE
   );
 
   const t = ADMIN_T[lang] || ADMIN_T.KO;
@@ -638,19 +667,131 @@ export function AdminPanel({
           {/* ══ STATS (CALLS) ══ */}
           {activeTab === "stats" && (
             <div className="flex-1 flex flex-col overflow-hidden min-h-0">
-              <div className="flex items-center justify-between border-b border-neutral-800/60 shrink-0" style={{ background: "#0d0d0f", padding: "16px 24px" }}>
-                <span style={{ fontSize: 14, fontWeight: 800, fontStyle: "italic", textTransform: "uppercase", color: "#fff", letterSpacing: "0.05em" }}>
-                  {t.engineerCalls}
-                </span>
-                {engineerCalls.some(c => c.status !== "resolved") && (
-                  <button 
-                    onClick={onResolveAllCalls} 
-                    style={{ padding: "6px 14px", background: "#dc2626", color: "#fff", border: "none", borderRadius: "4px", fontSize: 12, fontWeight: 900, cursor: "pointer", fontStyle: "italic" }}
-                  >
-                    {lang === "KO" ? "전체 완료" : "Resolve All"}
-                  </button>
-                )}
+              {/* Search Filters for Stats */}
+              <div
+                className="border-b border-neutral-800/60 shrink-0"
+                style={{ background: "#0d0d0f", padding: "16px 24px" }}
+              >
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center justify-between">
+                    <span style={{ fontSize: 14, fontWeight: 800, fontStyle: "italic", textTransform: "uppercase", color: "#fff", letterSpacing: "0.05em" }}>
+                      {t.engineerCalls} - {t.searchFilter}
+                    </span>
+                    {engineerCalls.some(c => c.status !== "resolved") && (
+                      <button 
+                        onClick={onResolveAllCalls} 
+                        style={{ padding: "6px 14px", background: "#dc2626", color: "#fff", border: "none", borderRadius: "4px", fontSize: 12, fontWeight: 900, cursor: "pointer", fontStyle: "italic" }}
+                      >
+                        {lang === "KO" ? "전체 완료" : "Resolve All"}
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap items-end gap-4">
+                    {/* Device Type */}
+                    <div className="flex flex-col gap-2">
+                      <label style={{ fontSize: 10, fontWeight: 700, color: "#525252", textTransform: "uppercase" }}>{t.type}</label>
+                      <select
+                        value={filterType}
+                        onChange={(e) => handleFilterChange(setFilterType, e.target.value as any)}
+                        style={{
+                          background: "#1a1a1a",
+                          border: "1px solid #333",
+                          color: "#fff",
+                          fontSize: 13,
+                          padding: "0 12px",
+                          height: 42,
+                          minWidth: 120,
+                          outline: "none",
+                          borderRadius: "4px",
+                          boxSizing: "border-box"
+                        }}
+                      >
+                        <option value="ALL">{t.allTypes}</option>
+                        <option value="robot">ROBOT</option>
+                        <option value="welder">WELDER</option>
+                      </select>
+                    </div>
+
+                    {/* Line Select */}
+                    <div className="flex flex-col gap-2">
+                      <label style={{ fontSize: 10, fontWeight: 700, color: "#525252", textTransform: "uppercase" }}>{t.lineFilter}</label>
+                      <select
+                        value={filterLine}
+                        onChange={(e) => handleFilterChange(setFilterLine, e.target.value as any)}
+                        style={{
+                          background: "#1a1a1a",
+                          border: "1px solid #333",
+                          color: "#fff",
+                          fontSize: 13,
+                          padding: "0 12px",
+                          height: 42,
+                          minWidth: 120,
+                          outline: "none",
+                          borderRadius: "4px",
+                          boxSizing: "border-box"
+                        }}
+                      >
+                        <option value="ALL">{t.allLines}</option>
+                        {["A", "B", "C", "D"].map(l => <option key={l} value={l}>LINE {l}</option>)}
+                      </select>
+                    </div>
+
+                    {/* Date Picker */}
+                    <div className="flex flex-col gap-2">
+                      <label style={{ fontSize: 10, fontWeight: 700, color: "#525252", textTransform: "uppercase" }}>{t.searchDate}</label>
+                      <input
+                        type="date"
+                        value={filterDate}
+                        onChange={(e) => handleFilterChange(setFilterDate, e.target.value)}
+                        style={{
+                          background: "#1a1a1a",
+                          border: "1px solid #333",
+                          color: "#fff",
+                          fontSize: 13,
+                          padding: "0 12px",
+                          height: 42,
+                          outline: "none",
+                          borderRadius: "4px",
+                          boxSizing: "border-box",
+                          colorScheme: "dark"
+                        }}
+                      />
+                    </div>
+
+                    {/* Reset Button */}
+                    <button
+                      onClick={() => {
+                        setFilterType("ALL");
+                        setFilterLine("ALL");
+                        setFilterDate("");
+                        setFilterHour("");
+                        setStatsCurrentPage(1);
+                        setCurrentPage(1);
+                      }}
+                      style={{
+                        padding: "0 20px",
+                        background: "#1a1a1a",
+                        color: "#ef4444",
+                        fontSize: 12,
+                        fontWeight: 900,
+                        textTransform: "uppercase",
+                        border: "1px solid rgba(239, 68, 68, 0.4)",
+                        borderRadius: "4px",
+                        cursor: "pointer",
+                        height: 42,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        boxSizing: "border-box"
+                      }}
+                    >
+                      {t.resetFilter}
+                    </button>
+                  </div>
+                </div>
               </div>
+
               <div className="flex-1 overflow-y-auto" style={{ background: "#000" }}>
                 <table className="w-full table-fixed">
                   <thead>
@@ -661,10 +802,10 @@ export function AdminPanel({
                     </tr>
                   </thead>
                   <tbody>
-                    {engineerCalls.map((call, i) => (
+                    {paginatedCalls.map((call, i) => (
                       <tr key={i} style={{ height: 60, borderBottom: "1px solid rgba(38,38,38,0.3)" }}>
                         <td style={{ padding: "0 24px", fontFamily: "monospace", fontSize: 13, color: "#e5e5e5" }}>
-                          {formatDate(call.timestamp)}
+                          {formatFullDate(call.timestamp)}
                         </td>
                         <td style={{ padding: "0 24px", fontSize: 13, fontWeight: 600, color: "#e5e5e5" }}>
                           {(() => {
@@ -706,7 +847,7 @@ export function AdminPanel({
                         </td>
                       </tr>
                     ))}
-                    {engineerCalls.length === 0 && (
+                    {filteredCalls.length === 0 && (
                       <tr>
                         <td colSpan={4} style={{ textAlign: "center", padding: 40, color: "#737373", fontSize: 13 }}>
                           {t.noCalls}
@@ -715,6 +856,57 @@ export function AdminPanel({
                     )}
                   </tbody>
                 </table>
+              </div>
+
+              {/* PAGINATION FOOTER */}
+              <div
+                className="shrink-0 border-t border-neutral-800/60"
+                style={{ background: "#0a0a0a", padding: "12px 24px" }}
+              >
+                <div className="flex items-center justify-between">
+                  <span style={{ fontSize: 12, color: "#737373", fontWeight: 600 }}>
+                    Page <span style={{ color: "#fff" }}>{statsCurrentPage}</span> of {Math.max(1, Math.ceil(filteredCalls.length / ROWS_PER_PAGE))}
+                    <span style={{ marginLeft: 8, fontSize: 11 }}>({filteredCalls.length} Total Logs)</span>
+                  </span>
+                  <div className="flex gap-4">
+                    <button
+                      disabled={statsCurrentPage === 1}
+                      onClick={() => setStatsCurrentPage(p => Math.max(1, p - 1))}
+                      style={{
+                        padding: "10px 24px",
+                        background: "#1a1a1a",
+                        color: statsCurrentPage === 1 ? "#404040" : "#fff",
+                        fontSize: 13,
+                        fontWeight: 800,
+                        border: "1px solid #333",
+                        borderRadius: "6px",
+                        cursor: statsCurrentPage === 1 ? "default" : "pointer",
+                        minWidth: 100,
+                        transition: "all 0.2s ease"
+                      }}
+                    >
+                      이전
+                    </button>
+                    <button
+                      disabled={statsCurrentPage >= Math.ceil(filteredCalls.length / ROWS_PER_PAGE)}
+                      onClick={() => setStatsCurrentPage(p => p + 1)}
+                      style={{
+                        padding: "10px 24px",
+                        background: "#1a1a1a",
+                        color: statsCurrentPage >= Math.ceil(filteredCalls.length / ROWS_PER_PAGE) ? "#404040" : "#fff",
+                        fontSize: 13,
+                        fontWeight: 800,
+                        border: "1px solid #333",
+                        borderRadius: "6px",
+                        cursor: statsCurrentPage >= Math.ceil(filteredCalls.length / ROWS_PER_PAGE) ? "default" : "pointer",
+                        minWidth: 100,
+                        transition: "all 0.2s ease"
+                      }}
+                    >
+                      다음
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           )}

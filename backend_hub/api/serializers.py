@@ -95,6 +95,12 @@ class RobotErrorLogSerializer(serializers.ModelSerializer):
     # 상태
     final_status = serializers.SerializerMethodField()
 
+    # 해결완료시간
+    resolved_at = serializers.SerializerMethodField()
+
+    # 언어
+    language = serializers.SerializerMethodField()
+
     # 에러내용 (세션별로 묶인 데이터 전체)
     sessions = RobotErrorSessionSerializer(source='roboterrorsession_set', many=True)
 
@@ -103,10 +109,12 @@ class RobotErrorLogSerializer(serializers.ModelSerializer):
         fields = [
             'error_log_id', 
             'occurred_at',   # 시간
+            'resolved_at',   # 해결완료시간
             'line_name',     # 라인
             'device',        # 장비
             'manufacturer',  # 브랜드명
             'error_code',    # 코드
+            'language',      # 언어
             'final_status',  # 상태
             'sessions'       # 에러내용 (클릭 시 보여줄 상세 데이터)
         ]
@@ -114,7 +122,22 @@ class RobotErrorLogSerializer(serializers.ModelSerializer):
     def get_final_status(self, obj):
         # 해당 로그에 연결된 가장 최신 세션의 상태를 가져옵니다.
         latest_session = obj.roboterrorsession_set.order_by('-started_at').first()
-        return latest_session.final_status if latest_session else "resolved"
+        if latest_session:
+            return "해결" if latest_session.final_status == "resolved" else "미해결"
+        return "해결"
+
+    def get_resolved_at(self, obj):
+        latest_session = obj.roboterrorsession_set.order_by('-started_at').first()
+        if latest_session and latest_session.final_status == "resolved":
+            return latest_session.last_updated_at.strftime('%Y-%m-%d %H:%M')
+        return "-"
+
+    def get_language(self, obj):
+        latest_session = obj.roboterrorsession_set.order_by('-started_at').first()
+        if latest_session:
+            lang_map = {'ko': 'KO', 'en': 'EN', 'uz': 'UZ'}
+            return lang_map.get(latest_session.language, latest_session.language.upper())
+        return "KO"
 
 # ============================
 # RobotErrorChatHistory : 상세 채팅 내역용

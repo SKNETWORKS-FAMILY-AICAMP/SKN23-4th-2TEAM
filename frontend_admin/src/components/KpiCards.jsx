@@ -6,14 +6,14 @@ function KpiCards({ summary, onErrorClick, onProcessingClick, onDoneClick }) {
     total_errors: summary.logs?.filter(l => l.date === today && l.type === 'error')?.length ?? 0,
     resolved_count: summary.logs?.filter(l => l.date === today && l.type === 'resolved')?.length ?? 0,
     ongoing_count: summary.logs?.filter(l => l.date === today && l.type === 'ongoing')?.length ?? 0,
-    total_devices: summary.total_devices ?? 0,
+    resolution_rate: summary.resolution_rate ?? 0,
   };
 
   const cards = [
     { title: "총 에러", value: summary.total_errors ?? 0, color: "text-red-500", click: onErrorClick, unit: "건" },
     { title: "정상", value: summary.resolved_count ?? 0, color: "text-green-500", click: onDoneClick, unit: "건" },
-    { title: "처리중", value: summary.ongoing_count ?? 0, color: "text-yellow-500", click: onProcessingClick, unit: "건" },
-    { title: "설비 가동률", value: summary.total_devices + "%", color: "text-blue-500" },
+    { title: "미해결", value: summary.unresolved_count ?? 0, color: "text-orange-500", click: onProcessingClick, unit: "건" },
+    { title: "에러 해결률", value: summary.resolution_rate + "%", color: "text-blue-500" },
   ];
 
   return (
