@@ -4,14 +4,25 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
 PUBLIC_IP=""
-if command -v curl >/dev/null 2>&1; then
+if [ -f "$SCRIPT_DIR/.env" ]; then
+    PUBLIC_IP="$(awk -F '=' '/^PUBLIC_HOST_IP[[:space:]]*=/{gsub(/^[[:space:]]*|[[:space:]]*$/, "", $2); gsub(/^["'\'' ]+|["'\'' ]+$/, "", $2); print $2; exit}' "$SCRIPT_DIR/.env")"
+fi
+
+if [ -z "${PUBLIC_IP}" ]; then
+    PUBLIC_IP="${PUBLIC_HOST_IP:-}"
+fi
+
+if [ -z "${PUBLIC_IP}" ] && command -v curl >/dev/null 2>&1; then
     PUBLIC_IP="$(curl -s --max-time 3 http://169.254.169.254/latest/meta-data/public-ipv4 || true)"
-    if [ -z "${PUBLIC_IP}" ] || [ "${PUBLIC_IP}" = "Not found" ]; then
+    if [ -z "${PUBLIC_IP}" ] || [ "${PUBLIC_IP}" = "Not found" ] ; then
         PUBLIC_IP="$(curl -s --max-time 3 ifconfig.me || true)"
     fi
 fi
+
 if [ -z "${PUBLIC_IP}" ]; then
     PUBLIC_IP="your-ec2-public-ip"
+elif printf '%s' "${PUBLIC_IP}" | grep -Eq '^(127\\.|10\\.|172\\.1[6-9]\\.|172\\.2[0-9]\\.|172\\.3[0-1]\\.|192\\.168\\.)'; then
+    PUBLIC_IP="your-ec2-public-ip (private IP detected)"
 fi
 
 cleanup() {
