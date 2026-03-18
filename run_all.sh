@@ -6,59 +6,63 @@ cd "$SCRIPT_DIR"
 read_env_var() {
     local key="$1"
     local line
-    local found=""
-    if [ -f "$SCRIPT_DIR/.env" ]; then
-        while IFS= read -r line; do
-            line="$(printf '%s' "$line" | sed 's/[[:space:]]*$//')"
-            case "$line" in
-                ''|"#"*) continue ;;
-            esac
-            if [[ "$line" == \#* ]]; then
-                continue
-            fi
-            if [[ "$line" == *"="* ]]; then
-                local k="${line%%=*}"
-                local v="${line#*=}"
-                k="$(printf '%s' "$k" | tr -d '[:space:]')"
-                if [ "$k" = "$key" ]; then
-                    v="$(printf '%s' "${v%%#*}" | tr -d '\r')"
-                    v="$(printf '%s' "$v" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')"
-                    v="${v%\"}"
-                    v="${v#\"}"
-                    v="${v%\'}"
-                    v="${v#\'}"
-                    found="$v"
-                    break
-                fi
-            fi
-        done < "$SCRIPT_DIR/.env"
+    if [ ! -f "$SCRIPT_DIR/.env" ]; then
+        return 1
     fi
-    echo "$found"
+
+    while IFS= read -r line || [ -n "$line" ]; do
+        # strip Windows CR + trailing spaces
+        line="$(printf '%s' "$line" | tr -d '\r' | sed 's/[[:space:]]*$//')"
+        # skip blank / comment lines
+        [ -z "$line" ] && continue
+        case "$line" in
+            '#'* ) continue ;;
+        esac
+
+        # remove inline comments
+        line="${line%%#*}"
+        [ -z "$line" ] && continue
+
+        # trim spaces around key and equals sign
+        if printf '%s\n' "$line" | grep -Eq "^[[:space:]]*${key}[[:space:]]*="; then
+            local value="${line#*=}"
+            value="$(printf '%s' "$value" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')"
+            value="${value%\"}"
+            value="${value#\"}"
+            value="${value%\'}"
+            value="${value#\'}"
+            [ -n "$value" ] && { echo "$value"; return 0; }
+        fi
+    done < "$SCRIPT_DIR/.env"
+
+    return 1
 }
 
-PUBLIC_IP="$(read_env_var PUBLIC_HOST_IP)"
+PUBLIC_IP="$(read_env_var PUBLIC_HOST_IP || true)"
+PUBLIC_IP_SOURCE="envfile"
 if [ -z "${PUBLIC_IP}" ]; then
     PUBLIC_IP="${PUBLIC_HOST_IP:-}"
-fi
-
-if [ -z "${PUBLIC_IP}" ]; then
-    PUBLIC_IP="${PUBLIC_HOST_IP:-}"
+    PUBLIC_IP_SOURCE="process_env"
 fi
 
 if [ -z "${PUBLIC_IP}" ] && command -v curl >/dev/null 2>&1; then
+    PUBLIC_IP_SOURCE="instance_meta"
     PUBLIC_IP="$(curl -s --max-time 3 http://169.254.169.254/latest/meta-data/public-ipv4 || true)"
     if [ -z "${PUBLIC_IP}" ] || [ "${PUBLIC_IP}" = "Not found" ] ; then
+        PUBLIC_IP_SOURCE="external_fallback"
         PUBLIC_IP="$(curl -s --max-time 3 ifconfig.me || true)"
     fi
 fi
 
 if [ -z "${PUBLIC_IP}" ]; then
     PUBLIC_IP="your-ec2-public-ip"
+    PUBLIC_IP_SOURCE="final_fallback"
 elif printf '%s' "${PUBLIC_IP}" | grep -Eq '^(127\\.|10\\.|172\\.1[6-9]\\.|172\\.2[0-9]\\.|172\\.3[0-1]\\.|192\\.168\\.)'; then
     PUBLIC_IP="your-ec2-public-ip (private IP detected)"
+    PUBLIC_IP_SOURCE="private_ip_detected"
 fi
 
-echo "[INFO] PUBLIC_HOST_IP loaded from .env: ${PUBLIC_IP}"
+echo "[INFO] PUBLIC_HOST_IP loaded (${PUBLIC_IP_SOURCE}): ${PUBLIC_IP}"
 
 cleanup() {
     echo "🛑 Stopping all services..."
