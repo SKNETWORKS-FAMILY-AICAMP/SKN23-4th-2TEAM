@@ -80,7 +80,7 @@ class RobotErrorSessionSerializer(serializers.ModelSerializer):
         return obj.roboterrorchecklistitem_set.all().order_by('item_order').values('checklist_item_id', 'item_content', 'is_checked')
     
     def get_final_diagnosis(self, obj):
-        chat = obj.roboterrorchathistory_set.filter(response_type='diagnosis').first()
+        chat = obj.roboterrorchathistory_set.filter(response_type='diagnosis').order_by('-step_no').first()
         return chat.message if chat else None
 
 # ============================

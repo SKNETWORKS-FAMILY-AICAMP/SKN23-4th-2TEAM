@@ -119,18 +119,43 @@ from api.models import RobotErrorLog
 from api.serializers import RobotErrorLogSerializer
 import json
 
-# 1. [:10]을 지워서 전체 데이터를 가져옵니다.
-# order_by('-occurred_at')은 최신순 정렬이라 그대로 두는 게 보기 편해요!
-logs = RobotErrorLog.objects.all().order_by('-occurred_at')[:5]
-
-# 2. 시리얼라이저 변환
+# 1. 시리얼라이저 변환 (중첩 데이터 포함)
+logs = RobotErrorLog.objects.all().order_by('-occurred_at')[:20]
 serializer = RobotErrorLogSerializer(logs, many=True)
 
-# 3. 결과 확인
-print(f"\n총 {len(serializer.data)}건의 로그를 시리얼라이저로 변환했습니다.")
+# 2. 결과 확인
+print(f"\n[중첩 시리얼라이저 데이터 검증 - 최신 {len(serializer.data)}건]")
+print("=" * 100)
 
-print(f"\n{'발생 시간':<18} | {'장비 ID':<12} | {'제조사':<10} | {'에러':<10} | {'체크리스트':<10} | {'메시지'}")
-print("-" * 110)
 for data in serializer.data:
-    msg = (data['last_message'][:30] + '...') if data['last_message'] and len(data['last_message']) > 30 else (data['last_message'] or "-")
-    print(f"{data['occurred_at']:<18} | {data['device']:<12} | {data['manufacturer']:<10} | {data['error_code']:<10} | {data['checklist_status']:<10} | {msg}")
+    print(f"로그 ID: {data['error_log_id']} | 시간: {data['occurred_at']} | 장비: {data['device']}")
+    print(f"라인: {data['line_name']} | 브랜드: {data['manufacturer']} | 코드: {data['error_code']} | 상태: {data['final_status']}")
+    
+    # 세션 데이터 출력 (에러내용 묶음)
+    sessions = data.get('sessions', [])
+    
+    for i, session in enumerate(sessions, 1):
+        init_diag = str(session['initial_diagnosis'])[:40] + "..." if session['initial_diagnosis'] and len(session['initial_diagnosis']) > 40 else (session['initial_diagnosis'] or "-")
+        final_diag = str(session['final_diagnosis'])[:40] + "..." if session['final_diagnosis'] and len(session['final_diagnosis']) > 40 else (session['final_diagnosis'] or "-")
+        
+        print(f"  ▶ 세션 #{i} (ID: {session['session_id']} | 시작: {session['started_at']})")
+        print(f"     - 초기 진단: {init_diag}")
+        
+        # --- 체크리스트 전체 출력 부분 ---
+        items = session.get('checklist_items', [])
+        # 'v' 표시가 있는(체크된) 항목만 필터링해서 보여주기
+        checked_items = [item for item in items if item['is_checked']]
+        
+        print(f"     - 체크리스트 (총 {len(items)}개 중 {len(checked_items)}개 체크됨):")
+        
+        if not checked_items:
+            print("       (체크된 항목이 없습니다.)")
+        else:
+            for item in checked_items:
+                # 이미 체크된 것들만 가져왔으므로 마크는 무조건 [V]
+                print(f"       [V] {item['item_content']}")
+        # -----------------------------
+        
+        print(f"     - 최종 진단: {final_diag}")
+
+    print("-" * 100)

@@ -135,7 +135,8 @@
 - Response Body
 ```json
 {
-  "logs": [
+  "total": 1,
+  "results": [
     {
       "error_log_id": 1,
       "occurred_at": "2026-03-06T10:00:00", <!-- 시간 -->
