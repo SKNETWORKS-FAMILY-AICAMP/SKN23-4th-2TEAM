@@ -2,6 +2,7 @@
 chcp 65001 >nul 2>&1
 title SKN23-4th-2TEAM Unified Start
 echo =====================================================
+cd /d "%~dp0"
 echo         SKN23-4th-2TEAM Unified Start Script
 echo =====================================================
 
@@ -43,7 +44,7 @@ IF EXIST "frontend_admin\node_modules\.vite" rd /s /q "frontend_admin\node_modul
 IF EXIST "frontend_worker\node_modules\.vite" rd /s /q "frontend_worker\node_modules\.vite" >nul 2>&1
 timeout /t 1 /nobreak >nul
 
-:: ─── [2/6] SSH 터널 시작 ──────────────────────────────────────
+:: ─── [2/6] SSH 터널 시작 (run_tunnel.py에서 SSH_TUNNEL_ENABLED 판단) ──────
 echo [2/6] Starting SSH Tunnel (Background)...
 start "SSH Tunnel" cmd /c "poetry run python run_tunnel.py"
 timeout /t 6 /nobreak >nul
@@ -76,7 +77,7 @@ start "Worker Dashboard" cmd /k "cd /d "%~dp0frontend_worker" && npm run dev -- 
 
 echo =====================================================
 echo  All services started successfully!
-echo  - SSH Tunnel: 127.0.0.1:15432
+echo  - SSH Tunnel: 127.0.0.1:15432 (or skipped by run_tunnel.py if disabled)
 echo  - Django Hub: http://localhost:8000
 echo  - FastAPI   : http://localhost:8001
 echo  - Admin UI  : (See Admin Dashboard window)

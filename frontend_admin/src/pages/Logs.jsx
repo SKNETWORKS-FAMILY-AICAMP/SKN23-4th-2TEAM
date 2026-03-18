@@ -19,7 +19,6 @@ export default function Logs() {
     code: "",
     startDate: "",
     endDate: "",
-    status: location.state?.status || "",
   });
 
   const toggleSelect = (id) => {

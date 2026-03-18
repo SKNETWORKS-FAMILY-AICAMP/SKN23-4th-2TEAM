@@ -22,6 +22,30 @@ UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
 
 
+def _env_first(*keys: str, default: str | None = None) -> str | None:
+    for key in keys:
+        value = os.getenv(key)
+        if value and value.strip():
+            return value.strip()
+    return default
+
+
+def _to_bool(value: str | None, default: bool = False) -> bool:
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _get_db_connection_info() -> tuple[str, str]:
+    if _to_bool(os.getenv("SSH_TUNNEL_ENABLED"), default=False):
+        host = _env_first("SSH_LOCAL_BIND_HOST", default="127.0.0.1")
+        port = _env_first("SSH_LOCAL_BIND_PORT", default="15432")
+    else:
+        host = _env_first("DB_HOST", _env_first("PGHOST", "127.0.0.1"))
+        port = _env_first("DB_PORT", _env_first("PGPORT", "5432"))
+    return host, port
+
+
 # -----------------------
 # RAG FUNCTIONS
 # -----------------------
@@ -39,10 +63,12 @@ def commit_to_vector_db(markdown, metadata):
     from langchain_openai import OpenAIEmbeddings
     from langchain_postgres import PGVector
     import os
-    
+
+    db_host, db_port = _get_db_connection_info()
+
     CONNECTION_STRING = (
         f"postgresql+psycopg://{os.getenv('PGUSER')}:{os.getenv('PGPASSWORD')}"
-        f"@127.0.0.1:15432/{os.getenv('PGDATABASE')}?sslmode=require"
+        f"@{db_host}:{db_port}/{os.getenv('PGDATABASE')}?sslmode=require"
     )
     
     chunks = chunk_text(markdown)

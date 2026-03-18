@@ -6,6 +6,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
+def _to_bool(value: str | None) -> bool:
+    if value is None:
+        return False
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
 def env_first(*keys: str):
     for key in keys:
         v = os.getenv(key)
@@ -14,6 +21,10 @@ def env_first(*keys: str):
     return None
 
 def main():
+    if not _to_bool(os.getenv("SSH_TUNNEL_ENABLED")):
+        print("ℹ️ SSH_TUNNEL_ENABLED is not enabled. Skipping SSH tunnel startup.")
+        return
+
     print("🚀 SSH Tunnel background process starting...")
     ssh_host = env_first("SSH_HOST", "BASTION_HOST")
     
@@ -25,7 +36,7 @@ def main():
     ssh_key_path = env_first("SSH_PRIVATE_KEY_PATH", "SSH_KEY_PATH")
     
     # 👇👇👇 수정한 부분: PGHOST(장고용)를 읽지 않고, DB_HOST(터널용)만 읽도록 변경! 👇👇👇
-    target_host = env_first("DB_HOST")
+    target_host = env_first("DB_HOST", "PGHOST")
     target_port = int(env_first("DB_PORT") or "5432")
     # 👆👆👆 -------------------------------------------------------- 👆👆👆
 
