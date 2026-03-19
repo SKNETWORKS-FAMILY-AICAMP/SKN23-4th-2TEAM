@@ -160,8 +160,10 @@ services:
     networks:
       - app-network
     depends_on:
-      - backend-hub
-      - backend-worker-api
+      backend-hub:
+        condition: service_healthy
+      backend-worker-api:
+        condition: service_healthy
 
   # ── 5. Worker Frontend (Vite dev-server) ─────────────────────
   frontend-worker:
@@ -182,7 +184,8 @@ services:
     networks:
       - app-network
     depends_on:
-      - backend-worker-api
+      backend-worker-api:
+        condition: service_healthy
 
 # ── 네트워크 ──────────────────────────────────────────────────
 networks:

@@ -1,4 +1,5 @@
-import deviceImg from "../../../data/hyundai_device.png";
+// import deviceImg from "../../../data/hyundai_device.png";
+import deviceImg from "../assets/hyundai_device.png";
 
 export default function DeviceCard({ device }) {
   const {
