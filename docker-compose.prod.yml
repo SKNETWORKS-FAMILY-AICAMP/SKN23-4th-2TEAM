@@ -1,0 +1,185 @@
+# =============================================================
+# docker-compose.prod.yml  ─  SKN23-4th-2TEAM 운영환경 통합 오케스트레이션
+# =============================================================
+# 실행 (기본 docker-compose.yml 대신 이 파일 사용):
+#   docker compose -f docker-compose.prod.yml --env-file .env --env-file .env.docker up -d
+#
+# 주요 차이점:
+#   - 프론트엔드 이미지 빌드 target: prod (Nginx 웹서버 서빙)
+#   - 프론트엔드 HMR(소스 코드 변경 감지) 볼륨 마운트 제거
+#   - 프론트엔드 포트: Admin은 80번, Worker는 8080번 포트 할당
+# =============================================================
+
+version: "3.9"
+
+# ── 공통 환경 변수 앵커 ────────────────────────────────────────
+x-backend-env: &backend-env
+  PYTHONPATH: /app/backend_ai:/app
+  PYTHONUNBUFFERED: "1"
+
+# ── 공통 재시작 정책 ────────────────────────────────────────────
+x-restart: &restart-policy
+  restart: unless-stopped
+
+services:
+
+  # ── 1. SSH Tunnel Sidecar ────────────────────────────────────
+  ssh-tunnel:
+    build:
+      context: .
+      dockerfile: docker/ssh-tunnel/Dockerfile
+    container_name: skn_ssh_tunnel_prod
+    <<: *restart-policy
+    env_file:
+      - .env          # SSH_HOST, SSH_USER, DB_HOST(RDS), DB_PORT 등 원본값 사용
+    environment:
+      SSH_TUNNEL_ENABLED: "true"
+      SSH_LOCAL_BIND_HOST: "0.0.0.0"
+      SSH_LOCAL_BIND_PORT: "5432"
+      SSH_PRIVATE_KEY_PATH: /run/secrets/ssh_key
+    volumes:
+      - ${SSH_PRIVATE_KEY_PATH}:/run/secrets/ssh_key:ro
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "nc", "-z", "0.0.0.0", "5432"]
+      interval: 15s
+      timeout: 5s
+      start_period: 30s
+      retries: 5
+
+  # ── 2. Django Backend Hub ─────────────────────────────────────
+  backend-hub:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: skn_backend_hub_prod
+    <<: *restart-policy
+    env_file:
+      - .env
+      - .env.docker
+    environment:
+      <<: *backend-env
+    command: >
+      sh -c "
+        echo '⏳ Waiting for SSH tunnel...' &&
+        until nc -z ssh-tunnel 5432; do sleep 2; done &&
+        echo '✅ Tunnel ready. Running migrations...' &&
+        python manage.py migrate --noinput &&
+        echo '🚀 Starting Django...' &&
+        gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3
+      "
+    working_dir: /app/backend_hub
+    ports:
+      - "8000:8000"
+    volumes:
+      - models_cache:/app/models
+      - bm25_cache:/app/backend_ai/bm25_data
+      - data_vol:/app/data
+      - logs_vol:/app/logs
+    networks:
+      - app-network
+    depends_on:
+      ssh-tunnel:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "-o", "/dev/null", "-w", "%{http_code}", "http://localhost:8000/admin/"]
+      interval: 20s
+      timeout: 8s
+      start_period: 60s
+      retries: 5
+
+  # ── 3. FastAPI Worker API ─────────────────────────────────────
+  backend-worker-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: skn_worker_api_prod
+    <<: *restart-policy
+    env_file:
+      - .env
+      - .env.docker
+    environment:
+      <<: *backend-env
+    command: >
+      sh -c "
+        echo '⏳ Waiting for SSH tunnel...' &&
+        until nc -z ssh-tunnel 5432; do sleep 2; done &&
+        echo '✅ Tunnel ready. Starting FastAPI...' &&
+        uvicorn app.main:app --host 0.0.0.0 --port 8001
+      "
+    working_dir: /app/backend_worker_api
+    ports:
+      - "8001:8001"
+    volumes:
+      - models_cache:/app/models
+      - bm25_cache:/app/backend_ai/bm25_data
+      - data_vol:/app/data
+      - logs_vol:/app/logs
+      - uploads_vol:/app/backend_worker_api/uploads
+    networks:
+      - app-network
+    depends_on:
+      ssh-tunnel:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/"]
+      interval: 20s
+      timeout: 8s
+      start_period: 90s   # AI 모델 로딩 시간 감안
+      retries: 6
+
+  # ── 4. Admin Frontend (Nginx Prod) ─────────────────────────
+  frontend-admin:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      target: prod                   # <-- dev 대신 prod 이미지 생성 (Nginx 포함)
+      args:
+        APP_DIR: frontend_admin
+    container_name: skn_frontend_admin_prod
+    <<: *restart-policy
+    ports:
+      - "80:80"                      # <-- Admin 서버를 80 포트로 서빙
+    # volumes: 제거 (소스 코드가 아닌 컨테이너에 구워진 파일 서빙)
+    networks:
+      - app-network
+    depends_on:
+      - backend-hub
+      - backend-worker-api
+
+  # ── 5. Worker Frontend (Nginx Prod) ────────────────────────
+  frontend-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      target: prod                   # <-- dev 대신 prod 이미지 생성 (Nginx 포함)
+      args:
+        APP_DIR: frontend_worker
+    container_name: skn_frontend_worker_prod
+    <<: *restart-policy
+    ports:
+      - "8080:80"                    # <-- Worker 서버를 8080 포트로 서빙
+    # volumes: 제거
+    networks:
+      - app-network
+    depends_on:
+      - backend-worker-api
+
+# ── 네트워크 ──────────────────────────────────────────────────
+networks:
+  app-network:
+    driver: bridge
+
+# ── 볼륨 (재빌드 시에도 캐시 유지) ───────────────────────────
+volumes:
+  models_cache:
+    driver: local
+  bm25_cache:
+    driver: local
+  data_vol:
+    driver: local
+  logs_vol:
+    driver: local
+  uploads_vol:
+    driver: local
