@@ -1,6 +1,7 @@
 import HH7 from "../assets/HH7.png";
 import UR3 from "../assets/UR3.webp";
 
+
 export default function DeviceCard({ device, lineOverride }) {
   const {
     deviceId,
