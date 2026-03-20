@@ -38,6 +38,11 @@ services:
       SSH_TUNNEL_ENABLED: "false"
     command: >
       sh -c "
+        DB_HOST_FOR_WAIT=\"${DB_HOST:-${PGHOST:-127.0.0.1}}\"
+        DB_PORT_FOR_WAIT=\"${DB_PORT:-${PGPORT:-5432}}\"
+        echo '✅ Waiting for database...' &&
+        until nc -z \"${DB_HOST_FOR_WAIT}\" \"${DB_PORT_FOR_WAIT}\"; do sleep 2; done &&
+        echo \"✅ DB available: ${DB_HOST_FOR_WAIT}:${DB_PORT_FOR_WAIT}\" &&
         echo '✅ Running migrations...' &&
         python manage.py migrate --noinput &&
         echo '🚀 Starting Django...' &&
@@ -74,6 +79,11 @@ services:
       SSH_TUNNEL_ENABLED: "false"
     command: >
       sh -c "
+        DB_HOST_FOR_WAIT=\"${DB_HOST:-${PGHOST:-127.0.0.1}}\"
+        DB_PORT_FOR_WAIT=\"${DB_PORT:-${PGPORT:-5432}}\"
+        echo '✅ Waiting for database...' &&
+        until nc -z \"${DB_HOST_FOR_WAIT}\" \"${DB_PORT_FOR_WAIT}\"; do sleep 2; done &&
+        echo \"✅ DB available: ${DB_HOST_FOR_WAIT}:${DB_PORT_FOR_WAIT}\" &&
         echo '✅ Starting FastAPI...' &&
         uvicorn app.main:app --host 0.0.0.0 --port 8001
       "
