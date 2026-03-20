@@ -1,9 +1,10 @@
-// import deviceImg from "../../../data/hyundai_device.png";
-import deviceImg from "../assets/hyundai_device.png";
+import HH7 from "../assets/HH7.png";
+import UR3 from "../assets/UR3.webp";
 
-export default function DeviceCard({ device }) {
+
+export default function DeviceCard({ device, lineOverride }) {
   const {
-    device: name,
+    deviceId,
     line,
     lineNum,
     occurredAt,
@@ -12,7 +13,26 @@ export default function DeviceCard({ device }) {
     manufacturer,
   } = device;
 
-  // 🔥 상태 처리
+  // 🔥 override 적용
+  const displayManufacturer = lineOverride || manufacturer;
+
+  // 🔥 manufacturer → model_name
+  const modelNameMap = {
+    "현대로보틱스": "HH7",
+    "Universal Robots": "UR3",
+  };
+
+  const displayModelName = modelNameMap[displayManufacturer] || "-";
+
+  // 🔥 이미지 매핑
+  const imageMap = {
+    "현대로보틱스": HH7,
+    "Universal Robots": UR3,
+  };
+
+  const displayImage = imageMap[displayManufacturer] || HH7;
+
+  // 상태
   const isError = status === "error";
   const isProcessing = status === "processing";
 
@@ -28,27 +48,28 @@ export default function DeviceCard({ device }) {
     return "bg-green-100";
   };
 
-  const getAnimation = () => {
-    if (isError) return "animate-pulse";
-    return "";
-  };
-
   return (
     <div
       className={`flex flex-col p-4 rounded-lg shadow border w-full min-h-[420px]
-      ${getBgColor()} ${getAnimation()}`}
+      ${getBgColor()} ${isError ? "animate-pulse" : ""}`}
     >
-      <span className="text-xl font-bold mb-2">{name}</span>
+      {/* 🔥 모델명 */}
+      <span className="text-xl font-bold mb-2">
+        {displayModelName}
+      </span>
 
       <img
-        src={deviceImg}
+        src={displayImage}
         alt="device"
         className="w-full h-40 object-contain mb-2"
       />
 
       <div className="flex flex-col gap-1 text-sm">
         <div>
-          <strong>브랜드:</strong> {manufacturer || "-"}
+          <strong>장비ID:</strong> {deviceId}
+        </div>
+        <div>
+          <strong>브랜드:</strong> {displayManufacturer}
         </div>
         <div>
           <strong>시간:</strong> {occurredAt || "-"}
