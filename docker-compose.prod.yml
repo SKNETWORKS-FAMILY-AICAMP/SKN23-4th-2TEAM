@@ -8,6 +8,7 @@
 #   - 프론트엔드 이미지 빌드 target: prod (Nginx 웹서버 서빙)
 #   - 프론트엔드 HMR(소스 코드 변경 감지) 볼륨 마운트 제거
 #   - 프론트엔드 포트: Admin은 80번, Worker는 8080번 포트 할당
+#   - SSH Tunnel Sidecar 제거: EC2에서 DB를 직접 접근할 때 사용
 # =============================================================
 
 version: "3.9"
@@ -23,32 +24,7 @@ x-restart: &restart-policy
 
 services:
 
-  # ── 1. SSH Tunnel Sidecar ────────────────────────────────────
-  ssh-tunnel:
-    build:
-      context: .
-      dockerfile: docker/ssh-tunnel/Dockerfile
-    container_name: skn_ssh_tunnel_prod
-    <<: *restart-policy
-    env_file:
-      - .env          # SSH_HOST, SSH_USER, DB_HOST(RDS), DB_PORT 등 원본값 사용
-    environment:
-      SSH_TUNNEL_ENABLED: "true"
-      SSH_LOCAL_BIND_HOST: "0.0.0.0"
-      SSH_LOCAL_BIND_PORT: "5432"
-      SSH_PRIVATE_KEY_PATH: /run/secrets/ssh_key
-    volumes:
-      - ${SSH_PRIVATE_KEY_PATH}:/run/secrets/ssh_key:ro
-    networks:
-      - app-network
-    healthcheck:
-      test: ["CMD", "nc", "-z", "0.0.0.0", "5432"]
-      interval: 15s
-      timeout: 5s
-      start_period: 30s
-      retries: 5
-
-  # ── 2. Django Backend Hub ─────────────────────────────────────
+  # ── 1. Django Backend Hub ─────────────────────────────────────
   backend-hub:
     build:
       context: .
@@ -62,9 +38,7 @@ services:
       <<: *backend-env
     command: >
       sh -c "
-        echo '⏳ Waiting for SSH tunnel...' &&
-        until nc -z ssh-tunnel 5432; do sleep 2; done &&
-        echo '✅ Tunnel ready. Running migrations...' &&
+        echo '✅ Running migrations...' &&
         python manage.py migrate --noinput &&
         echo '🚀 Starting Django...' &&
         gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3
@@ -79,9 +53,6 @@ services:
       - logs_vol:/app/logs
     networks:
       - app-network
-    depends_on:
-      ssh-tunnel:
-        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "-o", "/dev/null", "-w", "%{http_code}", "http://localhost:8000/admin/"]
       interval: 20s
@@ -89,7 +60,7 @@ services:
       start_period: 60s
       retries: 5
 
-  # ── 3. FastAPI Worker API ─────────────────────────────────────
+  # ── 2. FastAPI Worker API ─────────────────────────────────────
   backend-worker-api:
     build:
       context: .
@@ -103,9 +74,7 @@ services:
       <<: *backend-env
     command: >
       sh -c "
-        echo '⏳ Waiting for SSH tunnel...' &&
-        until nc -z ssh-tunnel 5432; do sleep 2; done &&
-        echo '✅ Tunnel ready. Starting FastAPI...' &&
+        echo '✅ Starting FastAPI...' &&
         uvicorn app.main:app --host 0.0.0.0 --port 8001
       "
     working_dir: /app/backend_worker_api
@@ -119,9 +88,6 @@ services:
       - uploads_vol:/app/backend_worker_api/uploads
     networks:
       - app-network
-    depends_on:
-      ssh-tunnel:
-        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8001/"]
       interval: 20s
@@ -129,7 +95,7 @@ services:
       start_period: 90s   # AI 모델 로딩 시간 감안
       retries: 6
 
-  # ── 4. Admin Frontend (Nginx Prod) ─────────────────────────
+  # ── 3. Admin Frontend (Nginx Prod) ─────────────────────────
   frontend-admin:
     build:
       context: .
@@ -141,14 +107,13 @@ services:
     <<: *restart-policy
     ports:
       - "80:80"                      # <-- Admin 서버를 80 포트로 서빙
-    # volumes: 제거 (소스 코드가 아닌 컨테이너에 구워진 파일 서빙)
     networks:
       - app-network
     depends_on:
       - backend-hub
       - backend-worker-api
 
-  # ── 5. Worker Frontend (Nginx Prod) ────────────────────────
+  # ── 4. Worker Frontend (Nginx Prod) ────────────────────────
   frontend-worker:
     build:
       context: .
@@ -160,7 +125,6 @@ services:
     <<: *restart-policy
     ports:
       - "8080:80"                    # <-- Worker 서버를 8080 포트로 서빙
-    # volumes: 제거
     networks:
       - app-network
     depends_on:
