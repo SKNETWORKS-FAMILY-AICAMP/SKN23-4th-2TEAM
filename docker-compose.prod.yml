@@ -38,8 +38,16 @@ services:
       SSH_TUNNEL_ENABLED: "false"
     command: >
       sh -c "
-        DB_HOST_FOR_WAIT=\"${DB_HOST:-${PGHOST:-127.0.0.1}}\"
-        DB_PORT_FOR_WAIT=\"${DB_PORT:-${PGPORT:-5432}}\"
+        DB_HOST_FOR_WAIT=\"$(printf '%s' \"${DB_HOST:-${PGHOST}}\" | tr -d '\\r' | xargs)\"
+        DB_PORT_FOR_WAIT=\"$(printf '%s' \"${DB_PORT:-${PGPORT}}\" | tr -d '\\r' | xargs)\"
+        echo \"[ENV] DB_HOST_FOR_WAIT=${DB_HOST_FOR_WAIT}\"
+        echo \"[ENV] DB_PORT_FOR_WAIT(raw)=\\\"${DB_PORT}\\\" / fallback from PGPORT=\\\"${PGPORT}\\\"\"
+        DB_HOST_FOR_WAIT=\"${DB_HOST_FOR_WAIT:-127.0.0.1}\"
+        DB_PORT_FOR_WAIT=\"${DB_PORT_FOR_WAIT:-5432}\"
+        if ! printf '%s' \"${DB_PORT_FOR_WAIT}\" | grep -Eq '^[0-9]+$'; then
+          echo \"⚠️ Invalid DB port from env: ${DB_PORT_FOR_WAIT}. Falling back to 5432.\"
+          DB_PORT_FOR_WAIT=\"5432\"
+        fi
         echo '✅ Waiting for database...' &&
         until nc -z \"${DB_HOST_FOR_WAIT}\" \"${DB_PORT_FOR_WAIT}\"; do sleep 2; done &&
         echo \"✅ DB available: ${DB_HOST_FOR_WAIT}:${DB_PORT_FOR_WAIT}\" &&
@@ -79,8 +87,16 @@ services:
       SSH_TUNNEL_ENABLED: "false"
     command: >
       sh -c "
-        DB_HOST_FOR_WAIT=\"${DB_HOST:-${PGHOST:-127.0.0.1}}\"
-        DB_PORT_FOR_WAIT=\"${DB_PORT:-${PGPORT:-5432}}\"
+        DB_HOST_FOR_WAIT=\"$(printf '%s' \"${DB_HOST:-${PGHOST}}\" | tr -d '\\r' | xargs)\"
+        DB_PORT_FOR_WAIT=\"$(printf '%s' \"${DB_PORT:-${PGPORT}}\" | tr -d '\\r' | xargs)\"
+        echo \"[ENV] DB_HOST_FOR_WAIT=${DB_HOST_FOR_WAIT}\"
+        echo \"[ENV] DB_PORT_FOR_WAIT(raw)=\\\"${DB_PORT}\\\" / fallback from PGPORT=\\\"${PGPORT}\\\"\"
+        DB_HOST_FOR_WAIT=\"${DB_HOST_FOR_WAIT:-127.0.0.1}\"
+        DB_PORT_FOR_WAIT=\"${DB_PORT_FOR_WAIT:-5432}\"
+        if ! printf '%s' \"${DB_PORT_FOR_WAIT}\" | grep -Eq '^[0-9]+$'; then
+          echo \"⚠️ Invalid DB port from env: ${DB_PORT_FOR_WAIT}. Falling back to 5432.\"
+          DB_PORT_FOR_WAIT=\"5432\"
+        fi
         echo '✅ Waiting for database...' &&
         until nc -z \"${DB_HOST_FOR_WAIT}\" \"${DB_PORT_FOR_WAIT}\"; do sleep 2; done &&
         echo \"✅ DB available: ${DB_HOST_FOR_WAIT}:${DB_PORT_FOR_WAIT}\" &&
