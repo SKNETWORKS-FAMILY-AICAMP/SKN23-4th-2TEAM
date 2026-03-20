@@ -1,5 +1,6 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework import status
 from django.db.models import Count
 from .models import RobotDevice
 from .serializers import RobotModelSerializer, RobotDeviceSerializer, RobotErrorLogSerializer, RobotErrorSessionSerializer, RobotErrorChatHistorySerializer
@@ -118,6 +119,57 @@ class RobotDeviceListView(APIView):
         devices = RobotDevice.objects.select_related('model').all()
         serializer = RobotDeviceSerializer(devices, many=True)
         return Response(serializer.data)
+
+# =========================
+# 라인별 모델 변경
+# =========================
+class UpdateLineModelView(APIView):
+    """
+    라인 전체 로봇 모델 변경 (admin - Lines)
+    path : /api/admin/lines/update-model
+    """
+    def post(self, request):
+        line_name = request.data.get('line_name')
+        model_id = request.data.get('model_id')
+
+        if not line_name or model_id is None:
+            return Response(
+                {"detail": "line_name and model_id are required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            model_id = int(model_id)
+        except (TypeError, ValueError):
+            return Response(
+                {"detail": "model_id must be an integer."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            model = RobotModel.objects.get(model_id=model_id)
+        except RobotModel.DoesNotExist:
+            return Response(
+                {"detail": "model not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        devices_qs = RobotDevice.objects.filter(line_name=line_name)
+        if not devices_qs.exists():
+            return Response(
+                {"detail": "line not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        updated_count = devices_qs.update(model=model)
+
+        return Response({
+            "line_name": line_name,
+            "model_id": model.model_id,
+            "manufacturer": model.manufacturer,
+            "model_name": model.model_name,
+            "updated_count": updated_count
+        })
 
 # =========================
 # 전체 로봇 현황(리스트용) - 브랜드명, 에러 내용 추가해야함
