@@ -9,6 +9,7 @@ urlpatterns = [
     path('admin/dashboard/top-errors/', views.DashboardTopErrorsView.as_view(), name='dashboard-top-errors'),
     # lines
     path('admin/lines/', views.RobotDeviceListView.as_view(), name='robot-device-list'),
+    path('admin/lines/update-model/', views.UpdateLineModelView.as_view(), name='update-line-model'),
     # logs
     path('admin/logs/', views.RobotErrorLogListView.as_view(), name='robot-error-log-list'),
 ]
