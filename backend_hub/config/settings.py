@@ -47,6 +47,7 @@ def _db_config() -> dict:
         "NAME": _env_first("PGDATABASE", "postgres"),
         "USER": _env_first("PGUSER", "postgres"),
         "PASSWORD": _env_first("PGPASSWORD", ""),
+        "OPTIONS": {"sslmode": _env_first("PGSSLMODE", default="prefer")},
     }
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
