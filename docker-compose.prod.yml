@@ -38,19 +38,24 @@ services:
       SSH_TUNNEL_ENABLED: "false"
     command: >
       sh -c "
-        DB_HOST_FOR_WAIT=\"$(printf '%s' \"${DB_HOST:-${PGHOST}}\" | tr -d '\\r' | xargs)\"
-        DB_PORT_FOR_WAIT=\"$(printf '%s' \"${DB_PORT:-${PGPORT}}\" | tr -d '\\r' | xargs)\"
-        echo \"[ENV] DB_HOST_FOR_WAIT=${DB_HOST_FOR_WAIT}\"
-        echo \"[ENV] DB_PORT_FOR_WAIT(raw)=\\\"${DB_PORT}\\\" / fallback from PGPORT=\\\"${PGPORT}\\\"\"
-        DB_HOST_FOR_WAIT=\"${DB_HOST_FOR_WAIT:-127.0.0.1}\"
-        DB_PORT_FOR_WAIT=\"${DB_PORT_FOR_WAIT:-5432}\"
-        if ! printf '%s' \"${DB_PORT_FOR_WAIT}\" | grep -Eq '^[0-9]+$'; then
-          echo \"⚠️ Invalid DB port from env: ${DB_PORT_FOR_WAIT}. Falling back to 5432.\"
+        trim_env() {
+          printf '%s' \"$$1\" | tr -d '\\r' | tr -d '\"' | xargs
+        }
+        DB_HOST_FOR_WAIT=\"$(trim_env \"$$DB_HOST\")\"
+        [ -z \"$$DB_HOST_FOR_WAIT\" ] && DB_HOST_FOR_WAIT=\"$(trim_env \"$$PGHOST\")\"
+        DB_PORT_FOR_WAIT=\"$(trim_env \"$$DB_PORT\")\"
+        [ -z \"$$DB_PORT_FOR_WAIT\" ] && DB_PORT_FOR_WAIT=\"$(trim_env \"$$PGPORT\")\"
+        echo \"[ENV] DB_HOST_FOR_WAIT=$$DB_HOST_FOR_WAIT\"
+        echo \"[ENV] DB_PORT_FOR_WAIT(raw)=$$DB_PORT / trimmed=$$DB_PORT_FOR_WAIT / fallback PGPORT=$$PGPORT\"
+        [ -z \"$$DB_HOST_FOR_WAIT\" ] && DB_HOST_FOR_WAIT=\"127.0.0.1\"
+        [ -z \"$$DB_PORT_FOR_WAIT\" ] && DB_PORT_FOR_WAIT=\"5432\"
+        if ! printf '%s' \"$$DB_PORT_FOR_WAIT\" | grep -Eq '^[0-9]+$'; then
+          echo \"⚠️ Invalid DB port from env: $$DB_PORT_FOR_WAIT. Falling back to 5432.\"
           DB_PORT_FOR_WAIT=\"5432\"
         fi
         echo '✅ Waiting for database...' &&
-        until nc -z \"${DB_HOST_FOR_WAIT}\" \"${DB_PORT_FOR_WAIT}\"; do sleep 2; done &&
-        echo \"✅ DB available: ${DB_HOST_FOR_WAIT}:${DB_PORT_FOR_WAIT}\" &&
+        until nc -z \"$$DB_HOST_FOR_WAIT\" \"$$DB_PORT_FOR_WAIT\"; do sleep 2; done &&
+        echo \"✅ DB available: $$DB_HOST_FOR_WAIT:$$DB_PORT_FOR_WAIT\" &&
         echo '✅ Running migrations...' &&
         python manage.py migrate --noinput &&
         echo '🚀 Starting Django...' &&
@@ -87,19 +92,24 @@ services:
       SSH_TUNNEL_ENABLED: "false"
     command: >
       sh -c "
-        DB_HOST_FOR_WAIT=\"$(printf '%s' \"${DB_HOST:-${PGHOST}}\" | tr -d '\\r' | xargs)\"
-        DB_PORT_FOR_WAIT=\"$(printf '%s' \"${DB_PORT:-${PGPORT}}\" | tr -d '\\r' | xargs)\"
-        echo \"[ENV] DB_HOST_FOR_WAIT=${DB_HOST_FOR_WAIT}\"
-        echo \"[ENV] DB_PORT_FOR_WAIT(raw)=\\\"${DB_PORT}\\\" / fallback from PGPORT=\\\"${PGPORT}\\\"\"
-        DB_HOST_FOR_WAIT=\"${DB_HOST_FOR_WAIT:-127.0.0.1}\"
-        DB_PORT_FOR_WAIT=\"${DB_PORT_FOR_WAIT:-5432}\"
-        if ! printf '%s' \"${DB_PORT_FOR_WAIT}\" | grep -Eq '^[0-9]+$'; then
-          echo \"⚠️ Invalid DB port from env: ${DB_PORT_FOR_WAIT}. Falling back to 5432.\"
+        trim_env() {
+          printf '%s' \"$$1\" | tr -d '\\r' | tr -d '\"' | xargs
+        }
+        DB_HOST_FOR_WAIT=\"$(trim_env \"$$DB_HOST\")\"
+        [ -z \"$$DB_HOST_FOR_WAIT\" ] && DB_HOST_FOR_WAIT=\"$(trim_env \"$$PGHOST\")\"
+        DB_PORT_FOR_WAIT=\"$(trim_env \"$$DB_PORT\")\"
+        [ -z \"$$DB_PORT_FOR_WAIT\" ] && DB_PORT_FOR_WAIT=\"$(trim_env \"$$PGPORT\")\"
+        echo \"[ENV] DB_HOST_FOR_WAIT=$$DB_HOST_FOR_WAIT\"
+        echo \"[ENV] DB_PORT_FOR_WAIT(raw)=$$DB_PORT / trimmed=$$DB_PORT_FOR_WAIT / fallback PGPORT=$$PGPORT\"
+        [ -z \"$$DB_HOST_FOR_WAIT\" ] && DB_HOST_FOR_WAIT=\"127.0.0.1\"
+        [ -z \"$$DB_PORT_FOR_WAIT\" ] && DB_PORT_FOR_WAIT=\"5432\"
+        if ! printf '%s' \"$$DB_PORT_FOR_WAIT\" | grep -Eq '^[0-9]+$'; then
+          echo \"⚠️ Invalid DB port from env: $$DB_PORT_FOR_WAIT. Falling back to 5432.\"
           DB_PORT_FOR_WAIT=\"5432\"
         fi
         echo '✅ Waiting for database...' &&
-        until nc -z \"${DB_HOST_FOR_WAIT}\" \"${DB_PORT_FOR_WAIT}\"; do sleep 2; done &&
-        echo \"✅ DB available: ${DB_HOST_FOR_WAIT}:${DB_PORT_FOR_WAIT}\" &&
+        until nc -z \"$$DB_HOST_FOR_WAIT\" \"$$DB_PORT_FOR_WAIT\"; do sleep 2; done &&
+        echo \"✅ DB available: $$DB_HOST_FOR_WAIT:$$DB_PORT_FOR_WAIT\" &&
         echo '✅ Starting FastAPI...' &&
         uvicorn app.main:app --host 0.0.0.0 --port 8001
       "
