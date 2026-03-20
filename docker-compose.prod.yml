@@ -33,7 +33,6 @@ services:
     <<: *restart-policy
     env_file:
       - .env
-      - .env.docker
     environment:
       <<: *backend-env
       SSH_TUNNEL_ENABLED: "false"
@@ -70,7 +69,6 @@ services:
     <<: *restart-policy
     env_file:
       - .env
-      - .env.docker
     environment:
       <<: *backend-env
       SSH_TUNNEL_ENABLED: "false"
