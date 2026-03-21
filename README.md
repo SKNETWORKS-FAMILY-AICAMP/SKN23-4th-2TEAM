@@ -3,20 +3,24 @@ AI 기반 용접 로봇 관제 및 유지보수 시스템 <br>
 
 # 산업 현장에서 즉시 활용 가능한 AI 기반 용접 로봇 관제 시스템
 
-------------------------------------------------------------------
+---
+
 </div>
 
 # 1. 팀 소개
-| ![송주엽](이미지URL) | ![김도영](이미지URL) | ![김민정]() | ![신승훈](이미지URL) | ![정희영](이미지URL) |
-|----------------------|----------------------|----------------------|----------------------|----------------------|
-| **송주엽(PM / FE 1)** | **김도영 (Infra & DB)** | **김민정(BE & Logic)** | **신승훈(AI & RAG)** | **정희영(FE 2)** |
-| `frontend_worker` 개발, 전체 MSA 아키텍처 및 API 규격 설계, 공통 유틸리티 수립 |  `backend_ai` (FastAPI) 인프라 구축, PostgreSQL & Vector DB 연동, CORS 및 통신 보안 정책 수립 | `backend_hub` (Django) 서버 개발, 비즈니스 데이터 모델링(ORM), 통계 및 어드민용 CRUD API 구현 | `LangGraph` 기반 AI 워크플로우 설계, `bge-reranker` 적용 및 검색 품질 고도화, 전처리 파이프라인 | `frontend_admin` (React) 관리자 관제 센터 구축, 데이터 시각화(Chart.js), 실시간 모니터링 UI 구현 |
+
+| ![송주엽](이미지URL)                                                                                                                   | ![김도영](이미지URL)                                                                                                                             | ![김민정]()                                                                                                                                            | ![신승훈](이미지URL)                                                                                                                              | ![정희영](이미지URL)                                                                                                                                 |
+| -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **송주엽(PM / FE 1)**                                                                                                                  | **김도영 (Infra & DB)**                                                                                                                          | **김민정(BE & Logic)**                                                                                                                                 | **신승훈(AI & RAG)**                                                                                                                              | **정희영(FE 2)**                                                                                                                                     |
+| `frontend_worker` 개발, 전체 MSA 아키텍처 및 API 규격 설계, 공통 유틸리티 수립                                                         | `backend_ai` (FastAPI) 인프라 구축, PostgreSQL & Vector DB 연동, CORS 및 통신 보안 정책 수립                                                     | `backend_hub` (Django) 서버 개발, 비즈니스 데이터 모델링(ORM), 통계 및 어드민용 CRUD API 구현                                                          | `LangGraph` 기반 AI 워크플로우 설계, `bge-reranker` 적용 및 검색 품질 고도화, 전처리 파이프라인                                                   | `frontend_admin` (React) 관리자 관제 센터 구축, 데이터 시각화(Chart.js), 실시간 모니터링 UI 구현                                                     |
 | [![github](https://img.shields.io/badge/JUYEOP024-181717?style=flat-square&logo=github&logoColor=white)](https://github.com/JUYEOP024) | [![github](https://img.shields.io/badge/rubyheartsping-181717?style=flat-square&logo=github&logoColor=white)](https://github.com/rubyheartsping) | [![github](https://img.shields.io/badge/minjeong--kim--dev-181717?style=flat-square&logo=github&logoColor=white)](https://github.com/minjeong-kim-dev) | [![github](https://img.shields.io/badge/seunghun92--lab-181717?style=flat-square&logo=github&logoColor=white)](https://github.com/seunghun92-lab) | [![github](https://img.shields.io/badge/JUNGHEEYOUNG9090-181717?style=flat-square&logo=github&logoColor=white)](https://github.com/JUNGHEEYOUNG9090) |
+
 ---
 
 # 2. 프로젝트 개요 (Project Overview)
+
 <div align="center">
-  <img src="https://dbr.donga.com/upload_dir/kfocus/2026/03/20260316.133535352.2_1773621583_69b7514f3aa52.jpg" width="400" alt="프로젝트 개요 이미지">
+  <img src="img\newsarticle.png" width="700" alt="프로젝트 개요 이미지">
 </div>
 <br>
 
@@ -26,7 +30,7 @@ AI 기반 용접 로봇 관제 및 유지보수 시스템 <br>
 
 최근 제조 산업은 단순 자동화를 넘어 **AI 기반 자율 판단 시스템**으로 빠르게 전환되고 있으며, 작업자의 개입을 최소화하고 공정 전체를 자동화하려는 방향으로 발전하고 있다.
 
-이러한 산업 변화는 기존의 매뉴얼 기반 대응 방식이 더 이상 효율적이지 않음을 의미하며, 
+이러한 산업 변화는 기존의 매뉴얼 기반 대응 방식이 더 이상 효율적이지 않음을 의미하며,
 현장에서는 **즉각적인 판단과 실행을 지원하는 AI 시스템의 필요성이 증가하고 있다.**
 
 ---
@@ -53,9 +57,9 @@ AI 기반 용접 로봇 관제 및 유지보수 시스템 <br>
 
 실제 산업 현장은 사무실과 다르다.
 
-* 높은 소음 → 음성 인식(STT) 사용 어려움  
-* 보호 장비 착용 → 키보드 및 정밀 입력 불가  
-* 언어 다양성 → 한국어 매뉴얼 이해 어려움  
+- 높은 소음 → 음성 인식(STT) 사용 어려움
+- 보호 장비 착용 → 키보드 및 정밀 입력 불가
+- 언어 다양성 → 한국어 매뉴얼 이해 어려움
 
 ---
 
@@ -67,9 +71,9 @@ AI 기반 용접 로봇 관제 및 유지보수 시스템 <br>
 
 이 과정에서 다음 문제가 발생한다.
 
-- 설비 가동 중단(Downtime, 장비가 멈춰 생산이 중단되는 시간)으로 인한 생산 손실  
-- 단순 문제에도 전문가를 호출해야 하는 구조로 유지보수 비용 증가  
-- 작업자가 임의로 조작할 경우 더 큰 고장이나 사고로 이어질 위험  
+- 설비 가동 중단(Downtime, 장비가 멈춰 생산이 중단되는 시간)으로 인한 생산 손실
+- 단순 문제에도 전문가를 호출해야 하는 구조로 유지보수 비용 증가
+- 작업자가 임의로 조작할 경우 더 큰 고장이나 사고로 이어질 위험
 
 ---
 
@@ -82,7 +86,6 @@ AI 기반 용접 로봇 관제 및 유지보수 시스템 <br>
 
 또한 작업자가 임의로 조작할 경우, 단순 고장이 전체 생산 라인 중단이나 산업 재해로 이어질 수 있다.
 
-
 → 문제의 핵심은 “매뉴얼이 없는 것”이 아니라 **“현장에서 바로 실행할 수 있는 가이드가 없다는 것”이다.**
 
 ---
@@ -91,22 +94,22 @@ AI 기반 용접 로봇 관제 및 유지보수 시스템 <br>
 
 WELD-BOT은 **현장 작업자의 실행 가이드 부족 문제**를 해결한다.
 
-* 에러 발생 시 **즉각적인 원인 분석 및 대응 가이드 제공**  
-* **O/X 및 단계별 체크리스트** 기반 직관적 안내  
-* 작업자의 판단 부담 감소 → **휴먼 에러 최소화**  
-* 설비 가동 중지 시간(Downtime) 최소화  
+- 에러 발생 시 **즉각적인 원인 분석 및 대응 가이드 제공**
+- **O/X 및 단계별 체크리스트** 기반 직관적 안내
+- 작업자의 판단 부담 감소 → **휴먼 에러 최소화**
+- 설비 가동 중지 시간(Downtime) 최소화
 
-#  3. 기술 스택 (Tech Stack)
+# 3. 기술 스택 (Tech Stack)
 
-| 분류 | 기술 스택 배지 (Tech Stack Badges) |
-| :--- | :--- |
-| **AI & LLM** | <img src="https://img.shields.io/badge/OpenAI_GPT--4o-412991?style=for-the-badge&logo=openai&logoColor=white"> <img src="https://img.shields.io/badge/LangChain-1C3C3C?style=for-the-badge&logo=langchain&logoColor=white"> <img src="https://img.shields.io/badge/LangGraph-0052FF?style=for-the-badge&logo=langchain&logoColor=white"> <img src="https://img.shields.io/badge/PyTorch-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white"> <img src="https://img.shields.io/badge/Hugging_Face-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black"> |
-| **Backend & API** | <img src="https://img.shields.io/badge/Python_3.12-3776AB?style=for-the-badge&logo=python&logoColor=white"> <img src="https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi&logoColor=white"> <img src="https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=white"> <img src="https://img.shields.io/badge/Uvicorn-4051B5?style=for-the-badge&logo=uvicorn&logoColor=white"> <img src="https://img.shields.io/badge/Pydantic-E92063?style=for-the-badge&logo=pydantic&logoColor=white"> |
+| 분류                 | 기술 스택 배지 (Tech Stack Badges)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| :------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **AI & LLM**         | <img src="https://img.shields.io/badge/OpenAI_GPT--4o-412991?style=for-the-badge&logo=openai&logoColor=white"> <img src="https://img.shields.io/badge/LangChain-1C3C3C?style=for-the-badge&logo=langchain&logoColor=white"> <img src="https://img.shields.io/badge/LangGraph-0052FF?style=for-the-badge&logo=langchain&logoColor=white"> <img src="https://img.shields.io/badge/PyTorch-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white"> <img src="https://img.shields.io/badge/Hugging_Face-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black">                                                                                                          |
+| **Backend & API**    | <img src="https://img.shields.io/badge/Python_3.12-3776AB?style=for-the-badge&logo=python&logoColor=white"> <img src="https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi&logoColor=white"> <img src="https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=white"> <img src="https://img.shields.io/badge/Uvicorn-4051B5?style=for-the-badge&logo=uvicorn&logoColor=white"> <img src="https://img.shields.io/badge/Pydantic-E92063?style=for-the-badge&logo=pydantic&logoColor=white">                                                                                                                              |
 | **Database & Infra** | <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white"> <img src="https://img.shields.io/badge/pgvector-336791?style=for-the-badge&logo=postgresql&logoColor=white"> <img src="https://img.shields.io/badge/ChromaDB-00D1FF?style=for-the-badge&logo=google-cloud&logoColor=white"> <img src="https://img.shields.io/badge/AWS_RDS-527FFF?style=for-the-badge&logo=amazon-rds&logoColor=white"> <img src="https://img.shields.io/badge/AWS_S3-569A31?style=for-the-badge&logo=amazon-s3&logoColor=white"> <img src="https://img.shields.io/badge/AWS_EC2-FF9900?style=for-the-badge&logo=amazon-ec2&logoColor=white"> |
-| **Frontend & Tools** | <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB"> <img src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white"> <img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white"> <img src="https://img.shields.io/badge/Poetry-60A5FA?style=for-the-badge&logo=poetry&logoColor=white"> <img src="https://img.shields.io/badge/NPM-CB3837?style=for-the-badge&logo=npm&logoColor=white"> <img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white"> |
+| **Frontend & Tools** | <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB"> <img src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white"> <img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white"> <img src="https://img.shields.io/badge/Poetry-60A5FA?style=for-the-badge&logo=poetry&logoColor=white"> <img src="https://img.shields.io/badge/NPM-CB3837?style=for-the-badge&logo=npm&logoColor=white"> <img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white">                                   |
 
 <details>
-<summary><b>핵심 라이브러리 및 상세 상세 정보</b></summary>
+<summary><b>핵심 라이브러리 및 상세 정보</b></summary>
 
 - **AI Pipeline**: Multi-Agent (LangGraph), Cross-Encoder Reranking, PDFPlumber Ingestion
 - **Infrastructure**: SSH Tunneling (sshtunnel), AWS RDS & S3 Object Storage
@@ -114,8 +117,11 @@ WELD-BOT은 **현장 작업자의 실행 가이드 부족 문제**를 해결한�
 </details>
 
 ---
-# 4. 아키텍처 
+
+# 4. 아키텍처
+
 ## ERD
+
 <!-- ![ERD](img/erd.png) -->
 <img src="img/erd.png" width="100%" alt="ERD">
 
@@ -123,61 +129,50 @@ WELD-BOT은 **현장 작업자의 실행 가이드 부족 문제**를 해결한�
 <summary><b>도메인 설명</b></summary>
 
 1. Robot Domain
-    - robot_models → robot_devices → robot_error_logs
-    - 로봇 모델, 장비, 에러 발생 이력을 계층적으로 관리
+   - robot_models → robot_devices → robot_error_logs
+   - 로봇 모델, 장비, 에러 발생 이력을 계층적으로 관리
 
 2. Interaction Domain
-    - robot_error_sessions → chat_histories, checklist_items
-    - AI 상담을 세션 단위로 관리
-    - 채팅(O/X 선택) + 체크리스트 기반 단계별 장애 대응
+   - robot_error_sessions → chat_histories, checklist_items
+   - AI 상담을 세션 단위로 관리
+   - 채팅(O/X 선택) + 체크리스트 기반 단계별 장애 대응
 
 3. User Domain
-    - users, engineer_calls
-    - 사용자 계정 및 엔지니어 호출(에스컬레이션) 관리
+   - users, engineer_calls
+   - 사용자 계정 및 엔지니어 호출(에스컬레이션) 관리
 
 4. Admin & AI Domain
-    - chat_logs, admin_settings, pdf_registry, jargon
-    - RAG 품질 평가, 프롬프트 관리, 문서(Vector DB) 관리
+   - chat_logs, admin_settings, pdf_registry, jargon
+   - RAG 품질 평가, 프롬프트 관리, 문서(Vector DB) 관리
 </details>
 
-## 시스템 아키텍처(System Architecture)(!!!!확인!!!!!)
+## 시스템 아키텍처(System Architecture)
+
 WELD-BOT은 **Frontend - Backend - AI Engine - DB**로 구성된  
 멀티 모듈 구조로 설계되었습니다.
 
-```mermaid
-graph TD
-    FE1[Admin UI - React]
-    FE2[Worker UI - React]
+<!-- ![ERD](img\system_architecture.png) -->
+<img src="img\system_architecture.png" width="100%" alt="ERD">
 
-    BE1[Django Hub - Port 8000]
-    BE2[FastAPI Worker - Port 8001]
+> **프록시 라우팅 규칙**
+>
+> - **Admin UI**: 대시보드/통계/로그 요청은 Django Hub로, AI 브리핑/RAG 관리 요청은 FastAPI Worker로 프록시
+> - **Worker UI**: 모든 `/api` 요청이 FastAPI Worker로 프록시
+> - **개발 환경**: Vite dev-server proxy (`vite.config.docker.js`)
+> - **운영 환경**: Nginx reverse proxy (`nginx/frontend_admin.conf`, `nginx/frontend_worker.conf`)
 
-    AI[backend_ai Engine]
-    DB[(PostgreSQL)]
-    VDB[(pgvector)]
-
-    FE1 --> BE1
-    FE2 --> BE2
-    
-    %% Worker API가 AI 엔진 호출 및 DB 직접 참조 명시
-    BE2 --> AI
-    BE2 --> DB
-    BE1 --> DB
-    AI --> VDB
-
-```
-
-| 구성요소 | 역할 | 주요 기술 |
-|----------|------|----------|
-| Frontend (Admin) | 관리자 대시보드 UI | React, Chart.js |
-| Frontend (Worker) | 작업자 인터페이스 | React |
-| Backend Hub | 데이터 관리 및 통계 API | Django, PostgreSQL |
-| Worker API | AI 요청 처리 및 스트리밍 | FastAPI |
-| AI Engine | RAG 기반 분석 및 응답 생성 | LangGraph, Reranker |
-| Data Pipeline | 문서 임베딩 및 적재 | PDFPlumber, pgvector |
-
+| 구성요소          | 역할                              | 주요 기술               | 개발 포트 | 운영 포트 |
+| ----------------- | --------------------------------- | ----------------------- | --------- | --------- |
+| Frontend (Admin)  | 관리자 대시보드 UI                | React, Chart.js, Vite   | 5173      | 80        |
+| Frontend (Worker) | 작업자 인터페이스                 | React, TypeScript, Vite | 5174      | 8080      |
+| Backend Hub       | 데이터 관리 및 통계 API           | Django, DRF, PostgreSQL | 8000      | 8000      |
+| Worker API        | AI 요청 처리 및 스트리밍          | FastAPI, Uvicorn        | 8001      | 8001      |
+| AI Engine         | RAG 기반 분석 및 응답 생성        | LangGraph, Reranker     | -         | -         |
+| Data Pipeline     | 문서 임베딩 및 적재               | PDFPlumber, pgvector    | -         | -         |
+| SSH Tunnel        | 바스티온 EC2 경유 RDS 포트 포워딩 | sshtunnel, Paramiko     | 15432     | 5432      |
 
 ## Branch 구조
+
 ```
 main
  └──develop
@@ -188,73 +183,157 @@ main
       └── jhy            # 정희영 작업 브랜치
 ```
 
-## AWS 배포 설계(!!!!확인!!!!!)
-```
-[사용자 브라우저]
-       │
-       ▼
-[Application Load Balancer]
-       │
-       ▼
-[EC2 / ECS] ── FastAPI (app/main.py)
-       │              │
-       │         [LangGraph 워크플로우]
-       │              │
-       │    ┌─────────┴──────────┐
-       │    ▼                   ▼
-       │ [OpenAI API]    [S3 RAW_DATA]
-       │                        │
-       │                   ingest_all.py
-       │                        │
-       │                        ▼
-       └───────── [RDS PostgreSQL(pgvector) + S3]
-       
-```
+## AWS 배포 설계
+
+### 개요
+
+이 프로젝트는 AWS EC2 위에서 Docker Compose로 운영되며, 프런트엔드(관리자/작업자)와 백엔드(Django, FastAPI)를 동일 네트워크에서 연결합니다.
+
+- 프런트엔드(정적): `frontend_admin`, `frontend_worker` (Nginx 기반 정적 서빙)
+- 백엔드 API:
+  - Django (`backend-hub`) : `/api/v1/...` 일부 경로(관리자/통계/로그 등)
+  - FastAPI (`backend-worker-api`) : `/api/...` 사용자 상담/엔지니어 호출/AI 라우트
+- 데이터베이스: AWS RDS PostgreSQL (`pgvector` 사용)
+- 객체 저장소: AWS S3
+
+### 아키텍처 다이어그램
+
+<!-- ![ERD](img\aws_architecture.png) -->
+<img src="img\aws_architecture.png" width="100%" alt="ERD">
+
+<details>
+<summary>요청 경로 매핑</b></summary>
+
+- 관리자 페이지
+  - `80` 포트: `frontend-admin` 컨테이너가 페이지 제공
+  - API 호출 예시: `/api/admin`, `/api/v1/dashboard`, `/api/v1/logs`, `/api/v1/admin-ai`, `/api/v1/rag`
+  - 프록시 대상: `backend-hub`(Django, 8000) 또는 `backend-worker-api`(FastAPI, 8001)
+- 작업자 페이지
+  - `8080` 포트: `frontend-worker` 컨테이너가 페이지 제공
+  - API 호출 예시: `/api/v1/consultations/*`, `/api/v1/consultations/stats`, `/api/v1/consultations/translate-text`
+  - 프록시 대상: `backend-worker-api`(FastAPI, 8001)
+- DB 연동
+  - 두 백엔드 모두 `.env`의 PostgreSQL 설정으로 RDS 접속
+- AI 처리
+  - FastAPI Worker에서 OpenAI 호출 또는 자체 모델 모듈(`backend_ai`) 사용
+
+</details>
+
+<details>
+<summary>배포 구성 요소</b></summary>
+  
+| 레이어 | 구성 | 역할 |
+|---|---|---|
+| 접속 계층 | EC2 보안그룹 | 포트(80, 8080, 22) 오픈 |
+| 프런트엔드 계층 | `frontend-admin`, `frontend-worker` | 정적 번들 제공 + API 프록시 |
+| API 계층 | `backend-hub`, `backend-worker-api` | Django 관리 API, FastAPI 작업자 API |
+| 데이터 계층 | AWS RDS (PostgreSQL + pgvector) | 사용자/로그/세션/통계/벡터 데이터 |
+| 저장소 계층 | AWS S3 | 첨부 파일/문서/파이프라인 산출물 |
+| 외부 AI 계층 | OpenAI API | 번역/의사결정 모델 호출 |
+
+</details>
+
+<details>
+<summary>운영 포인트</b></summary>
+
+- 운영 기본 진입은 `docker-compose.prod.yml` 기준
+- HTTPS 적용(권장): ALB 또는 Nginx reverse-proxy + 인증서 적용
+- 데이터베이스 접속은 앱 시작 시 헬스체크/대기 로직으로 안정화
+- 초기 기동 시 AI 로딩 지연을 고려해 컨테이너 재시작 정책과 healthcheck 간격 조정
+
+</details>
 
 ## 폴더 및 파일 구조
+
 ```
 SKN23-4th-2TEAM/
-├── backend_ai/                     
-│   ├── core/                    
-│   │   ├── config.py               
-│   │   ├── manager_core.py      
-│   │   ├── worker_core.py       
-│   │   ├── retriever.py            
-│   │   └── reranker.py             # Cross-Encoder 기반 Reranker 구동 Singleton
-│   └── bm25_data/                  # BM25 Sparse Index 캐시 데이터 저장소
-├── backend_hub/                    # Django 데이터 허브 및 API 게이트웨이
-│   ├── api/                        # 에러 통계, 로그 및 로봇 상태 관리 REST API
-│   │   ├── models.py               # PostgreSQL 데이터베이스 모델(ORM) 정의
-│   │   ├── views.py                # 대시보드 통계 계산 및 API 뷰 로직
-│   │   └── urls.py                 # 허브 API 라우팅 엔드포인트
-│   └── manage.py                   # Django 구동 엔트리 포인트
-├── backend_worker_api/             # FastAPI 작업자 인터랙션 고속 서버 (Port 8001)
+├── backend_ai/                         # AI/RAG 코어 엔진 모듈
+│   ├── core/
+│   │   ├── config.py                   # 환경 변수 로드, 모델/경로 설정
+│   │   ├── manager_core.py             # 관리자 AI 브리핑 로직
+│   │   ├── manager_planner.py          # 관리자 AI 플래너 로직
+│   │   ├── manager_repository.py       # 관리자 AI 리포지토리 로직
+│   │   ├── pipeline.py                 # 관리자 AI 파이프라인 로직
+│   │   ├── prompts.py                  # 관리자 AI 프롬프트 정의
+│   │   ├── reranker.py                 # Cross-Encoder 기반 Reranker Singleton
+│   │   ├── retriever.py                # 하이브리드 검색(pgvector + BM25)
+│   │   ├── worker_core.py              # 작업자 상담 Agent 로직
+│   │   └── worker_agent.py             # 작업자 상담 Agent 로직
+│   └── bm25_data/                      # BM25 Sparse Index 캐시 저장소
+├── backend_hub/                        # Django 데이터 허브 및 통계 API (Port 8000)
+│   ├── api/
+│   │   ├── models.py                   # PostgreSQL ORM 모델 정의
+│   │   ├── serializers.py              # Django 직렬화 로직
+│   │   ├── shell_test.py               # Django 쉘 테스트
+│   │   ├── views.py                    # 대시보드 통계 및 API 뷰 로직
+│   │   └── urls.py                     # 허브 API 라우팅 엔드포인트
+│   ├── config/
+│   │   ├── urls.py                     # Django URL 설정
+│   │   └── settings.py                 # Django 설정 (DB, CORS, 로깅)
+│   └── manage.py                       # Django 엔트리 포인트
+├── backend_worker_api/                 # FastAPI 작업자/AI 연동 서버 (Port 8001)
 │   └── app/
-│       ├── main.py                 # FastAPI 가동 진입점 및 컨피그 셋업
-│       ├── routers/                # AI 실시간 채팅 및 관리자 어시스턴트 라우터
-│       │   ├── consultations.py    # 챗봇 상담 세션 관리 및 SSE 스트리밍 라우터
-│       │   ├── admin_ai.py         # 관리자 브리핑 및 Q&A API 라우터
-│       │   └── rag_ingestion.py    # 관리자 PDF 동적 업로드 및 벡터 DB 적재 API
-│       └── services/               # DB 상호작용 및 비즈니스 로직
-├── data_pipeline/                  #  백그라운드 데이터 전처리 및 적재 파이프라인
-│   ├── ingest.py                   # PDF/Markdown 문서 벡터 스토어(pgvector) 적재 스크립트
-│   └── vector_db/                  # pgvector 초기화 및 관리 유틸리티
-├── frontend_admin/                 # 관리자 대시보드 리액트 (React + Vite + TailwindCSS)
+│       ├── aws/
+│       │   └── s3_client.py            # AWS S3 클라이언트
+│       ├── routers/
+│       │   ├── consultations.py        # 챗봇 상담 세션 및 SSE 스트리밍
+│       │   ├── admin_ai.py             # 관리자 브리핑/Q&A API
+│       │   └── rag_ingestion.py        # PDF 업로드 및 벡터 DB 적재
+│       ├── services/                   # DB 상호작용 및 비즈니스 로직
+│       │   ├── consultation_rules.py   # 상담 규칙 로직
+│       │   └── rag_ingestion_service.py # RAG 적재 서비스 로직
+│       ├── main.py                     # FastAPI 진입점, CORS, 라우터 등록
+│       ├── db.py                       # psycopg2 DB 커넥션 관리
+│       └── schemas.py                  # Pydantic 스키마 정의
+├── data_pipeline/                      # 문서 전처리 및 벡터 적재 파이프라인
+│   ├── shared/
+│   │   └── pdf_parser.py               # PDF 파싱 유틸리티
+│   ├── vector_db/
+│   └── ingest.py                       # PDF → 청킹 → pgvector 적재
+├── docker/                             # 인프라 및 컨테이너 설정
+│   └── ssh-tunnel/                     # SSH 터널 사이드카 컨테이너
+│       ├── Dockerfile
+│       └── entrypoint.sh
+├── frontend_admin/                     # 관리자 대시보드 서비스
+│   ├── public/                         
 │   └── src/
-│       ├── components/             # KPI 카드, Chart 랩퍼, 네비게이션 공용 컴포넌트
-│       ├── pages/                  # 메인 대시보드, 개별 에러 로그 및 로봇 상태 모니터링
-│       └── lib/api.ts              # Backend 매칭 Axios HTTP 클라이언트 페치 로직
-├── frontend_worker/                # 작업자 대폭 AI 가이드 리액트 (React + Vite)
-│   └── src/
-│       ├── components/             # 실시간 채팅 버블, 턴 및 응답 O/X 선택 컴포넌트
-│       └── app/                    # 메인 라우팅 및 상태 관리 컨테이너 분리
-├── 명세서/                          # ERD 및 서비스(관리자/사용자) API 규격 마크다운 문서
-├── run_tunnel.py                   # 로컬-DB 간 SSH 터널 연동 백그라운드 프로세스 보조
-├── run_all.sh                      # 통합 서버 구동 쉘 스크립트 (Poetry/NPM/Port Forward)
-└── pyproject.toml                  # Python Poetry 통합 의존성 리스트 및 환경 락 파일
+│       ├── assets/                     # 이미지, 폰트, 스타일 등 정적 리소스
+│       ├── components/                 # KPI 카드, Chart, 네비게이션, 챗봇 UI
+│       ├── layout/                     # 공통 레이아웃 구성
+│       ├── lib/                        # 외부 라이브러리 설정
+│       ├── mock/                       # 테스트용 목업 데이터
+│       ├── pages/                      # 라우트별 페이지 컴포넌트
+│       ├── services/                   # API 통신 로직
+│       └── utils/                      # 공통 유틸리티 함수
+├── frontend_worker/                    # 작업자 AI 가이드 (React + Vite + TypeScript)
+│   ├── public/
+│   ├── src/
+│   │   ├── app/                        # 앱 전역 설정 및 상태 관리
+│   │   ├── assets/                     # 정적 리소스
+│   │   └── lib/                        # 라이브러리 설정
+│   ├── vite.config.js                  # 로컬 Vite 설정
+│   └── vite.config.docker.js           # Docker 환경 Vite 프록시 설정
+├── nginx/                              # 운영 환경 Nginx 리버스 프록시 설정
+│   ├── frontend_admin.conf             # Admin: Django + FastAPI 분기 프록시
+│   └── frontend_worker.conf            # Worker: FastAPI 단일 프록시
+├── docs/
+│   └── DEPLOYMENT.md                   # Docker 배포 및 실행 상세 가이드
+├── tests/                              # 테스트 및 데이터 검증 스크립트
+├── 명세서/                              # ERD 및 API 규격 마크다운 문서
+├── Dockerfile.backend                  # 백엔드 통합 이미지 (Django + FastAPI)
+├── Dockerfile.frontend                 # 프론트엔드 멀티스테이지 (dev/prod)
+├── docker-compose.yml                  # 개발 환경 오케스트레이션
+├── docker-compose.prod.yml             # 운영 환경 오케스트레이션
+├── .env                                # 환경 변수 (API 키, DB, SSH 등)
+├── .env.docker                         # Docker 전용 환경 변수 오버라이드
+├── run_tunnel.py                       # 로컬 SSH 터널 보조 스크립트
+├── poetry.lock 
+├── pyproject.toml                      # Poetry 의존성 관리
+└── run_all.sh / run_all.bat            # 비-Docker 통합 실행 스크립트
 ```
 
-## RAG 파이프라인(!!!!확인!!!!!)
+## RAG 파이프라인
+
 ```
 사용자 입력 (에러 선택 / 질문)
     │
@@ -288,102 +367,229 @@ SKN23-4th-2TEAM/
 [6] SSE 스트리밍 응답
     └─ 프론트엔드 실시간 출력
 ```
+
 ---
 
-# 5. 주요 기능 (Core Features)(!!!!보완필요!!!!!)
+# 5. 주요 기능 (Core Features)
 ## 5.1 현장 작업자용 AI 챗봇
-* **정밀 에러 진단**: 에러 코드 기반의 맞춤형 초기 진단 결과 제공.
-* **상호작용형 가이드**: 조치 완료 시 O/X 버튼을 통해 다음 단계 또는 최종 해결 여부 판단.
-* **다국어 지원**: 한국어 및 영어 등 현장 노동자를 위한 언어 전환 지원.
+### 1. 에러 코드 기반 정밀 진단
+- 단순 FAQ가 아닌 장비 모델 + 에러 코드 기반 컨텍스트 매칭
+- RAG 기반으로 해당 매뉴얼 구간을 추출하여 초기 대응 가이드 제공
+
+### 2. O/X 기반 인터랙티브 문제 해결 흐름
+- 각 단계마다 작업자가 수행 여부를 선택 (O / X)
+- 선택 결과에 따라 다음 조치 or 추가 진단 분기
+
+### 3. 단계별 대응 전략 제공
+- overall → 전체 대응 방향 제시
+- checklist → 실행 가능한 점검 항목 제공
+- diagnosis → 추가 원인 분석 질문 진행
+
+### 4. 다국어 지원
+- 한국어(KO) / 영어(EN) / 우즈베키스탄(UZ)
+- 동일 로직 기반으로 언어만 변환
+
+### 5. 세션 복귀(Abandoned 세션 이어받기)
+- 중단된 상담 세션을 조회하여 이어서 진행 가능  
+- 작업자가 현장을 이탈하거나 중단된 상황에서도 흐름 유지
+
+### 6. 자동 세션 타임아웃 관리
+- `ongoing` 상태의 세션이 30분 이상 비활성 상태일 경우 자동으로 `abandoned` 처리  
+- 불필요한 세션 누적 방지 및 상태 정합성 유지
+
+### 기대 효과
+- 장애 대응 시간 단축
+- 비숙련 작업자도 숙련자 수준의 대응 가능
+- 매뉴얼 검색 시간 단축
 
 ## 5.2 관리자용 분석 대시보드
-* **라인별 장애 현황**: 실시간 에러 발생 패턴 및 라인별 생산성 지표 시각화.
-* **AI 데일리 브리핑**: 금일 주요 이슈와 매뉴얼 매칭 결과 요약 리포트 자동 생성.
-* **매뉴얼 자동 적재**: PDF 업로드 시 청킹, 임베딩 및 벡터 DB 등록 자동화.
+### 1. 라인/장비별 장애 분석
+- 에러 발생 빈도, 시간대별 패턴 시각화
+- 장비별 고장 집중 구간 파악
 
+### 2. AI 데일리 브리핑
+- 하루 동안 발생한 에러 요약
+- 주요 원인 Top-N 제공
+- 매뉴얼 매칭 결과 리포트
+
+### 3.매뉴얼 자동 적재 파이프라인
+- PDF 업로드 → Chunking → Embedding → Vector DB 저장 자동화
+
+### 4. 엔지니어 호출 관리
+- 작업자 해결 실패 시 호출 이력 추적
+
+### 5. 관리자 AI 챗봇 (Admin QA)
+- 화면 하단의 챗봇 버튼을 통해 언제든지 자유롭게 질문 가능
+- "오늘의 주요 에러", "미해결 장애" 등 Quick Menu 지원   
+
+### 6. 로봇 모델 및 라인 관리
+- 라인별 장비 카드 UI 제공  
+- 장비에 연결된 모델 변경 및 관리 기능 지원
+
+### 7. 에러 로그 조회 및 필터링
+- 라인 / 장비 / 에러코드 / 날짜 기준 필터링  
+- 로그를 페이지 단위로 나누어 빠르게 조회 가능
+
+### 8. AI 모델 설정 제어 (Admin Control)
+- 관리자가 LLM 모델을 실시간으로 변경 가능 
+- 응답 품질 / 비용 / 속도 전략적 운영 지원
+
+### 기대 효과
+- 장애 패턴 기반 예방 정비 가능
+- 엔지니어 호출 감소
+- 데이터 기반 유지보수 계획 수립
 ---
 
-# 6. 실행 방법 (Installation & Run)(!!!!확인!!!!!)
-### 1. 요구 사항 (Prerequisites)
-- **Python**: 3.12+ (Poetry 기반 패키지 관리)
-- **Node.js**: LTS 버전 (NPM 기반)
-- **Database**: PostgreSQL (pgvector 확장 설치 필수)
-### 2️. 환경 변수 설정 (.env)
-루트 경로에 [.env](cci:7://file:///c:/Users/user/SKN23-4th-2TEAM/.env:0:0-0:0) 파일을 생성하고 다음 정보를 입력합니다.
-```env
-OPENAI_API_KEY=your_openai_api_key
-PGHOST=127.0.0.1
-PGPORT=15432
-PGDATABASE=postgres
-PGUSER=postgres
-PGPASSWORD=your_password
-SSH_TUNNEL_ENABLED=true
-SSH_HOST=your_bastion_ip
-SSH_PRIVATE_KEY_PATH=path/to/your/pem_file
-PUBLIC_HOST_IP=your-server-ip
-```
-### 3️. 서버 실행 (Run Servers)
-모든 서버를 순차적으로 실행합니다.
-```
-이미지 빌드 및 컨테이너 실행
+# 6. 실행 방법 (Installation & Run)
+
+### 6.1 요구 사항 (Prerequisites)
+
+| 구분                    | Docker 모드                  | 로컬 직접 실행 모드          |
+| ----------------------- | ---------------------------- | ---------------------------- |
+| Docker / Docker Compose | 필수                         | 불필요                       |
+| Python 3.12+            | 불필요 (이미지에 포함)       | 필수 (Poetry 설치 필요)      |
+| Node.js LTS             | 불필요 (이미지에 포함)       | 필수 (NPM)                   |
+| PostgreSQL (pgvector)   | 불필요 (SSH 터널로 RDS 연결) | 불필요 (SSH 터널로 RDS 연결) |
+| SSH Private Key (.pem)  | 필수                         | 필수                         |
+
+### 6.2 환경 변수 설정
+
+루트 경로에 `.env` 파일을 생성합니다. `.env.example`을 참고하세요.
+
+<details>
+<summary><b>필수 환경 변수 목록</b></summary>
+
+| 변수명                  | 설명                         | 필수 여부                |
+| ----------------------- | ---------------------------- | ------------------------ |
+| `OPENAI_API_KEY`        | OpenAI API 키                | 필수                     |
+| `PGDATABASE`            | PostgreSQL 데이터베이스명    | 필수                     |
+| `PGUSER`                | PostgreSQL 사용자명          | 필수                     |
+| `PGPASSWORD`            | PostgreSQL 비밀번호          | 필수                     |
+| `DB_HOST`               | RDS 엔드포인트               | 필수                     |
+| `DB_PORT`               | RDS 포트 (기본 5432)         | 필수                     |
+| `SSH_TUNNEL_ENABLED`    | SSH 터널 사용 여부           | 필수                     |
+| `SSH_HOST`              | 바스티온 EC2 IP              | 필수                     |
+| `SSH_PORT`              | SSH 포트 (기본 22)           | 필수                     |
+| `SSH_USER`              | SSH 접속 사용자 (예: ubuntu) | 필수                     |
+| `SSH_PRIVATE_KEY_PATH`  | .pem 키 파일 절대경로        | 필수                     |
+| `SECRET_KEY`            | Django Secret Key            | 필수                     |
+| `TAVILY_API_KEY`        | Tavily 웹 검색 API 키        | 필수                     |
+| `ADMIN_SECRET_KEY`      | 관리자 API 인증 키           | 선택 (기본값: admin1234) |
+| `AWS_REGION`            | AWS 리전                     | 선택                     |
+| `AWS_S3_BUCKET`         | S3 버킷명                    | 선택                     |
+| `AWS_ACCESS_KEY_ID`     | AWS Access Key               | 선택                     |
+| `AWS_SECRET_ACCESS_KEY` | AWS Secret Key               | 선택                     |
+| `PUBLIC_HOST_IP`        | 서버 공개 IP                 | 선택 (자동 감지)         |
+
+</details>
+
+> `.env.docker`는 Docker 전용 오버라이드 파일로 DB 호스트를 `ssh-tunnel` 컨테이너 서비스명으로 변경합니다. 직접 수정할 필요 없습니다.
+
+### 6.3 실행 방법 A: Docker Compose (권장)
+
+#### 개발 환경 (HMR 지원, Vite dev-server)
+
+```bash
+# 이미지 빌드 및 컨테이너 실행
 docker compose --env-file .env --env-file .env.docker up --build -d
 
-실행 서비스 확인
-- Django Hub: http://localhost:8000
-- FastAPI Worker: http://localhost:8001
-- Admin Frontend: http://localhost:5173
-- Worker Frontend: http://localhost:5174
-
+# 로그 확인
+docker compose logs -f
 ```
+
+| 서비스             | URL                        |
+| ------------------ | -------------------------- |
+| Admin Frontend     | http://localhost:5173      |
+| Worker Frontend    | http://localhost:5174      |
+| Django Hub API     | http://localhost:8000      |
+| FastAPI Worker API | http://localhost:8001/docs |
+
+#### 운영 환경 (Nginx 정적 서빙, gunicorn)
+
+```bash
+# prod compose 파일 사용
+docker compose -f docker-compose.prod.yml --env-file .env --env-file .env.docker up --build -d
+```
+
+| 서비스                    | URL                   |
+| ------------------------- | --------------------- |
+| Admin Frontend (Nginx)    | http://localhost:80   |
+| Worker Frontend (Nginx)   | http://localhost:8080 |
+| Django Hub API (gunicorn) | http://localhost:8000 |
+| FastAPI Worker API        | http://localhost:8001 |
+
+<details>
+<summary><b>개발 vs 운영 주요 차이점</b></summary>
+
+| 항목               | 개발 (`docker-compose.yml`) | 운영 (`docker-compose.prod.yml`) |
+| ------------------ | --------------------------- | -------------------------------- |
+| 프론트엔드 서빙    | Vite dev-server (HMR)       | Nginx 정적 파일                  |
+| 프론트엔드 포트    | 5173 / 5174                 | 80 / 8080                        |
+| 소스 볼륨 마운트   | O (실시간 반영)             | X (이미지에 내장)                |
+| Django 런타임      | `runserver`                 | `gunicorn --workers 3`           |
+| FastAPI `--reload` | O                           | X                                |
+
+</details>
+
+### 6.4 실행 방법 B: 로컬 직접 실행 (비-Docker)
+
+```bash
+# Poetry 의존성 설치
+poetry install --no-root
+
+# 통합 실행 스크립트
+chmod +x run_all.sh
+./run_all.sh        # macOS / Linux
+# 또는
+run_all.bat          # Windows
+```
+
+> `run_all.sh`는 SSH 터널 → AI 모델 워밍업 → Django → FastAPI → Admin UI → Worker UI 순서로 자동 기동합니다.
+
+> 배포 관련 상세 가이드는 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)를 참고하세요.
 
 ---
 
 # 7. 기능 시연
 
+> 시연 영상 및 스크린샷 추가 예정
+
 ---
 
 # 8. WBS (Work Breakdown Structure)
 
-| 작업                             | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 |
-| ------------------------------ | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- |
-| 프로젝트 구조 및 개발 환경 세팅             | ■  |    |    |    |    |    |    |    |    |    |
-| 관리자/Worker UI 구조 설계            | ■  | ■  | ■  |    |    |    |    |    |    |    |
-| 관리자 대시보드 UI 구현                 | ■  | ■  | ■  | ■  | ■  | ■  |    |    |    |    |
-| 반응형 UI 및 레이아웃 개선               | ■  | ■  | ■  | ■  | ■  | ■  | ■  |    |    |    |
-| Django + PostgreSQL DB 연결      | ■  | ■  |    |    |    |    |    |    |    |    |
-| DB 명세서 작성 및 모델 설계              | ■  | ■  | ■  | ■  |    |    |    |    |    |    |
-| Django ORM 기반 API 구현           |    | ■  | ■  | ■  | ■  |    |    |    |    |    |
-| 프론트 ↔ 백엔드 API 연동               |    | ■  | ■  | ■  | ■  | ■  |    |    |    |    |
-| FastAPI Worker API 설계          | ■  | ■  | ■  |    |    |    |    |    |    |    |
-| RAG 파이프라인 설계                   | ■  | ■  | ■  | ■  |    |    |    |    |    |    |
-| 벡터 DB 구축 및 전환                  | ■  | ■  | ■  |    |    |    |    |    |    |    |
-| Retrieval / Reranker / BM25 구현 |    | ■  | ■  | ■  | ■  | ■  | ■  |    |    |    |
-| Worker Agent (진단 로직) 구현        | ■  | ■  | ■  | ■  | ■  | ■  | ■  | ■  |    |    |
-| 체크리스트 및 종합 판단 로직               |    |    | ■  | ■  | ■  | ■  | ■  | ■  |    |    |
-| 관리자 챗봇(Admin QA) 구현            |    |    |    |    |    | ■  | ■  | ■  |    |    |
-| 데이터 적재 및 매뉴얼 파싱                | ■  | ■  | ■  | ■  | ■  |    |    |    |    |    |
-| 성능 최적화 (속도/정확도 개선)             |    |    |    |    | ■  | ■  | ■  | ■  | ■  |    |
-| Docker 및 실행 환경 구성              |    |    |    |    |    |    | ■  | ■  | ■  |    |
-| 통합 실행 스크립트(run_all) 구축         |    | ■  | ■  | ■  | ■  | ■  | ■  |    |    |    |
-| 시스템 통합 테스트 (E2E)               |    |    |    |    |    |    |    | ■  | ■  |    |
-| README 작성 및 문서화                |    |    |    |    |    |    |    |    | ■  | ■  |
-
+| 작업                             | 11  | 12  | 13  | 14  | 15  | 16  | 17  | 18  | 19  | 20  |
+| -------------------------------- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 프로젝트 구조 및 개발 환경 세팅  | ■   |     |     |     |     |     |     |     |     |     |
+| 관리자/Worker UI 구조 설계       | ■   | ■   | ■   |     |     |     |     |     |     |     |
+| 관리자 대시보드 UI 구현          | ■   | ■   | ■   | ■   | ■   | ■   |     |     |     |     |
+| 반응형 UI 및 레이아웃 개선       | ■   | ■   | ■   | ■   | ■   | ■   | ■   |     |     |     |
+| Django + PostgreSQL DB 연결      | ■   | ■   |     |     |     |     |     |     |     |     |
+| DB 명세서 작성 및 모델 설계      | ■   | ■   | ■   | ■   |     |     |     |     |     |     |
+| Django ORM 기반 API 구현         |     | ■   | ■   | ■   | ■   |     |     |     |     |     |
+| 프론트 ↔ 백엔드 API 연동         |     | ■   | ■   | ■   | ■   | ■   |     |     |     |     |
+| FastAPI Worker API 설계          | ■   | ■   | ■   |     |     |     |     |     |     |     |
+| RAG 파이프라인 설계              | ■   | ■   | ■   | ■   |     |     |     |     |     |     |
+| 벡터 DB 구축 및 전환             | ■   | ■   | ■   |     |     |     |     |     |     |     |
+| Retrieval / Reranker / BM25 구현 |     | ■   | ■   | ■   | ■   | ■   | ■   |     |     |     |
+| Worker Agent (진단 로직) 구현    | ■   | ■   | ■   | ■   | ■   | ■   | ■   | ■   |     |     |
+| 체크리스트 및 종합 판단 로직     |     |     | ■   | ■   | ■   | ■   | ■   | ■   |     |     |
+| 관리자 챗봇(Admin QA) 구현       |     |     |     |     |     | ■   | ■   | ■   |     |     |
+| 데이터 적재 및 매뉴얼 파싱       | ■   | ■   | ■   | ■   | ■   |     |     |     |     |     |
+| 성능 최적화 (속도/정확도 개선)   |     |     |     |     | ■   | ■   | ■   | ■   | ■   |     |
+| Docker 및 실행 환경 구성         |     |     |     |     |     |     | ■   | ■   | ■   |     |
+| 통합 실행 스크립트(run_all) 구축 |     | ■   | ■   | ■   | ■   | ■   | ■   |     |     |     |
+| 시스템 통합 테스트 (E2E)         |     |     |     |     |     |     |     | ■   | ■   |     |
+| README 작성 및 문서화            |     |     |     |     |     |     |     |     | ■   | ■   |
 
 ---
+
 ## 9. 회고
 
-|이름|회고|
-|---|---|
-|송주엽|아아아아아|
-|김도영|아아아아아|
-|김민정|아아아아아|
-|신승훈|아아아아아|
-|정희영|아아아아아|
-
-## 참고 
-- [조선소에 AI용접 로봇 뜨니, 결함 10분의 1로 줄고 효율 20% 올라](https://dbr.donga.com/kfocus/view/article_no/2184#:~:text=%EC%9D%B4%EA%B0%99%EC%9D%B4%20%EC%9E%91%EC%97%85%EC%9E%90%EC%9D%98%20%EA%B0%9C%EC%9E%85%EC%9D%84%20%EC%B5%9C%EC%86%8C%ED%99%94%ED%95%A0%20%EC%88%98%20%EC%9E%88%EB%8A%94%20%EA%B1%B4,%EA%B8%B0%EB%B0%98%EC%9C%BC%EB%A1%9C%20%EC%9A%A9%EC%A0%91%EC%9D%98%20%EC%A0%84%20%EA%B3%BC%EC%A0%95%EC%9D%84%20'%EC%8A%A4%EC%8A%A4%EB%A1%9C%20%ED%8C%90%EB%8B%A8%ED%95%B4'%20%EC%88%98%ED%96%89)
-- [숙련공 구인 ‘빨간불’…‘스마트화’ 해결책 될까?](https://www.sisaon.co.kr/news/articleView.html?idxno=159223)
-- []()
-- []()
-- []()
-- []()
+| 이름   | 회고       |
+| ------ | ---------- |
+| 송주엽 | 아아아아아 |
+| 김도영 | 아아아아아 |
+| 김민정 | 아아아아아 |
+| 신승훈 | 아아아아아 |
+| 정희영 | 아아아아아 |
