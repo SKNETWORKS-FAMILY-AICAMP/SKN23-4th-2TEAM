@@ -10,6 +10,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         curl \
         netcat-openbsd \
         zlib1g-dev \
+        poppler-utils \
+        tesseract-ocr \
+        libgl1 \
+        libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 # Poetry 설치 (공식 인스톨러 사용)
