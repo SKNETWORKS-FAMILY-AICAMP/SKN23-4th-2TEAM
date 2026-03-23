@@ -3,8 +3,6 @@ AI 기반 용접 로봇 관제 및 유지보수 시스템 <br>
 
 # 산업 현장에서 즉시 활용 가능한 AI 기반 용접 로봇 관제 시스템
 
----
-
 </div>
 
 # 1. 팀 소개
@@ -12,7 +10,7 @@ AI 기반 용접 로봇 관제 및 유지보수 시스템 <br>
 | ![송주엽](이미지URL)                                                                                                                   | ![김도영](이미지URL)                                                                                                                             | ![김민정]()                                                                                                                                            | ![신승훈](이미지URL)                                                                                                                              | ![정희영](이미지URL)                                                                                                                                 |
 | -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **송주엽(PM / FE 1)**                                                                                                                  | **김도영 (Infra & DB)**                                                                                                                          | **김민정(BE & Logic)**                                                                                                                                 | **신승훈(AI & RAG)**                                                                                                                              | **정희영(FE 2)**                                                                                                                                     |
-| `frontend_worker` 개발, 전체 MSA 아키텍처 및 API 규격 설계, 공통 유틸리티 수립                                                         | `backend_ai` (FastAPI) 인프라 구축, PostgreSQL & Vector DB 연동, CORS 및 통신 보안 정책 수립                                                     | `backend_hub` (Django) 서버 개발, 비즈니스 데이터 모델링(ORM), 통계 및 어드민용 CRUD API 구현                                                          | `LangGraph` 기반 AI 워크플로우 설계, `bge-reranker` 적용 및 검색 품질 고도화, 전처리 파이프라인                                                   | `frontend_admin` (React) 관리자 관제 센터 구축, 데이터 시각화(Chart.js), 실시간 모니터링 UI 구현                                                     |
+| `worker UI` 개발, 전체 MSA 아키텍처 및 API 규격 설계, 공통 유틸리티 수립                                                               | Worker UI(FastAPI) 인프라 구축, PostgreSQL & Vector DB 연동, CORS 및 통신 보안 정책 수립                                                         | `backend_hub` (Django) 서버 개발, 비즈니스 데이터 모델링(ORM), 통계 및 Admin용 CRUD API 구현                                                           | `LangGraph` 기반 AI 워크플로우 설계, `bge-reranker` 적용 및 검색 품질 고도화, 전처리 파이프라인                                                   | `admin UI` 관리자 관제 센터 구축, 데이터 시각화, 실시간 모니터링 UI 구현                                                                             |
 | [![github](https://img.shields.io/badge/JUYEOP024-181717?style=flat-square&logo=github&logoColor=white)](https://github.com/JUYEOP024) | [![github](https://img.shields.io/badge/rubyheartsping-181717?style=flat-square&logo=github&logoColor=white)](https://github.com/rubyheartsping) | [![github](https://img.shields.io/badge/minjeong--kim--dev-181717?style=flat-square&logo=github&logoColor=white)](https://github.com/minjeong-kim-dev) | [![github](https://img.shields.io/badge/seunghun92--lab-181717?style=flat-square&logo=github&logoColor=white)](https://github.com/seunghun92-lab) | [![github](https://img.shields.io/badge/JUNGHEEYOUNG9090-181717?style=flat-square&logo=github&logoColor=white)](https://github.com/JUNGHEEYOUNG9090) |
 
 ---
@@ -20,7 +18,7 @@ AI 기반 용접 로봇 관제 및 유지보수 시스템 <br>
 # 2. 프로젝트 개요 (Project Overview)
 
 <div align="center">
-  <img src="img\newsarticle.png" width="700" alt="프로젝트 개요 이미지">
+  <img src="img/newsarticle.png" width="700" alt="프로젝트 개요 이미지">
 </div>
 <br>
 
@@ -103,18 +101,10 @@ WELD-BOT은 **현장 작업자의 실행 가이드 부족 문제**를 해결한�
 
 | 분류                 | 기술 스택 배지 (Tech Stack Badges)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | :------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **AI & LLM**         | <img src="https://img.shields.io/badge/OpenAI_GPT--4o-412991?style=for-the-badge&logo=openai&logoColor=white"> <img src="https://img.shields.io/badge/LangChain-1C3C3C?style=for-the-badge&logo=langchain&logoColor=white"> <img src="https://img.shields.io/badge/LangGraph-0052FF?style=for-the-badge&logo=langchain&logoColor=white"> <img src="https://img.shields.io/badge/PyTorch-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white"> <img src="https://img.shields.io/badge/Hugging_Face-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black">                                                                                                          |
-| **Backend & API**    | <img src="https://img.shields.io/badge/Python_3.12-3776AB?style=for-the-badge&logo=python&logoColor=white"> <img src="https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi&logoColor=white"> <img src="https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=white"> <img src="https://img.shields.io/badge/Uvicorn-4051B5?style=for-the-badge&logo=uvicorn&logoColor=white"> <img src="https://img.shields.io/badge/Pydantic-E92063?style=for-the-badge&logo=pydantic&logoColor=white">                                                                                                                              |
-| **Database & Infra** | <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white"> <img src="https://img.shields.io/badge/pgvector-336791?style=for-the-badge&logo=postgresql&logoColor=white"> <img src="https://img.shields.io/badge/ChromaDB-00D1FF?style=for-the-badge&logo=google-cloud&logoColor=white"> <img src="https://img.shields.io/badge/AWS_RDS-527FFF?style=for-the-badge&logo=amazon-rds&logoColor=white"> <img src="https://img.shields.io/badge/AWS_S3-569A31?style=for-the-badge&logo=amazon-s3&logoColor=white"> <img src="https://img.shields.io/badge/AWS_EC2-FF9900?style=for-the-badge&logo=amazon-ec2&logoColor=white"> |
+| **AI & LLM**         | <img src="https://img.shields.io/badge/OpenAI_GPT--시리즈-412991?style=for-the-badge&logo=openai&logoColor=white"> <img src="https://img.shields.io/badge/LangChain-1C3C3C?style=for-the-badge&logo=langchain&logoColor=white"> <img src="https://img.shields.io/badge/PyTorch-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white"> <img src="https://img.shields.io/badge/Hugging_Face-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black">                                                                                                                                                                                                                   |
+| **Backend & API**    | <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white"> <img src="https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi&logoColor=white"> <img src="https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=white"> <img src="https://img.shields.io/badge/Uvicorn-4051B5?style=for-the-badge&logo=uvicorn&logoColor=white"> <img src="https://img.shields.io/badge/Pydantic-E92063?style=for-the-badge&logo=pydantic&logoColor=white">                                                                                                                                   |
+| **Database & Infra** | <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white"> <img src="https://img.shields.io/badge/pgvector-336791?style=for-the-badge&logo=postgresql&logoColor=white"> <img src="https://img.shields.io/badge/AWS_RDS-527FFF?style=for-the-badge&logo=amazon-rds&logoColor=white"> <img src="https://img.shields.io/badge/AWS_S3-569A31?style=for-the-badge&logo=amazon-s3&logoColor=white"> <img src="https://img.shields.io/badge/AWS_EC2-FF9900?style=for-the-badge&logo=amazon-ec2&logoColor=white"> |
 | **Frontend & Tools** | <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB"> <img src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white"> <img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white"> <img src="https://img.shields.io/badge/Poetry-60A5FA?style=for-the-badge&logo=poetry&logoColor=white"> <img src="https://img.shields.io/badge/NPM-CB3837?style=for-the-badge&logo=npm&logoColor=white"> <img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white">                                   |
-
-<details>
-<summary><b>핵심 라이브러리 및 상세 정보</b></summary>
-
-- **AI Pipeline**: Multi-Agent (LangGraph), Cross-Encoder Reranking, PDFPlumber Ingestion
-- **Infrastructure**: SSH Tunneling (sshtunnel), AWS RDS & S3 Object Storage
-- **Visualization**: Chart.js, Recharts, Lucide-React
-</details>
 
 ---
 
@@ -138,21 +128,20 @@ WELD-BOT은 **현장 작업자의 실행 가이드 부족 문제**를 해결한�
    - 채팅(O/X 선택) + 체크리스트 기반 단계별 장애 대응
 
 3. User Domain
-   - users, engineer_calls
-   - 사용자 계정 및 엔지니어 호출(에스컬레이션) 관리
+   - engineer_calls
+   - 엔지니어 호출(에스컬레이션) 이력 관리
 
 4. Admin & AI Domain
-   - chat_logs, admin_settings, pdf_registry, jargon
    - RAG 품질 평가, 프롬프트 관리, 문서(Vector DB) 관리
-</details>
+   </details>
 
 ## 시스템 아키텍처(System Architecture)
 
 WELD-BOT은 **Frontend - Backend - AI Engine - DB**로 구성된  
 멀티 모듈 구조로 설계되었습니다.
 
-<!-- ![ERD](img\system_architecture.png) -->
-<img src="img\system_architecture.png" width="100%" alt="ERD">
+<!-- ![ERD](img/system_architecture.png) -->
+<img src="img/system_architecture.png" width="100%" alt="ERD">
 
 > **프록시 라우팅 규칙**
 >
@@ -163,13 +152,13 @@ WELD-BOT은 **Frontend - Backend - AI Engine - DB**로 구성된
 
 | 구성요소          | 역할                              | 주요 기술               | 개발 포트 | 운영 포트 |
 | ----------------- | --------------------------------- | ----------------------- | --------- | --------- |
-| Frontend (Admin)  | 관리자 대시보드 UI                | React, Chart.js, Vite   | 5173      | 80        |
+| Frontend (Admin)  | 관리자 대시보드 UI                | React, Recharts/Chart.js, Vite | 5173      | 80        |
 | Frontend (Worker) | 작업자 인터페이스                 | React, TypeScript, Vite | 5174      | 8080      |
 | Backend Hub       | 데이터 관리 및 통계 API           | Django, DRF, PostgreSQL | 8000      | 8000      |
 | Worker API        | AI 요청 처리 및 스트리밍          | FastAPI, Uvicorn        | 8001      | 8001      |
 | AI Engine         | RAG 기반 분석 및 응답 생성        | LangGraph, Reranker     | -         | -         |
 | Data Pipeline     | 문서 임베딩 및 적재               | PDFPlumber, pgvector    | -         | -         |
-| SSH Tunnel        | 바스티온 EC2 경유 RDS 포트 포워딩 | sshtunnel, Paramiko     | 15432     | 5432      |
+| SSH Tunnel(선택)  | 바스티온 EC2 경유 RDS 포트 포워딩(개발/특수환경) | sshtunnel, Paramiko     | 15432     | -         |
 
 ## Branch 구조
 
@@ -191,15 +180,15 @@ main
 
 - 프런트엔드(정적): `frontend_admin`, `frontend_worker` (Nginx 기반 정적 서빙)
 - 백엔드 API:
-  - Django (`backend-hub`) : `/api/v1/...` 일부 경로(관리자/통계/로그 등)
-  - FastAPI (`backend-worker-api`) : `/api/...` 사용자 상담/엔지니어 호출/AI 라우트
+  - Django (`backend-hub`) : `/api/admin/...` 관리/통계/로그 API (프록시 별칭 `/api/v1/dashboard`, `/api/v1/logs` 포함)
+  - FastAPI (`backend-worker-api`) : `/api/...` 작업자 상담/엔지니어 호출/AI 라우트
 - 데이터베이스: AWS RDS PostgreSQL (`pgvector` 사용)
 - 객체 저장소: AWS S3
 
 ### 아키텍처 다이어그램
 
-<!-- ![ERD](img\aws_architecture.png) -->
-<img src="img\aws_architecture.png" width="100%" alt="ERD">
+<!-- ![ERD](img/aws_architecture.png) -->
+<img src="img/aws_architecture.png" width="100%" alt="ERD">
 
 <details>
 <summary>요청 경로 매핑</b></summary>
@@ -227,7 +216,7 @@ main
 | 접속 계층 | EC2 보안그룹 | 포트(80, 8080, 22) 오픈 |
 | 프런트엔드 계층 | `frontend-admin`, `frontend-worker` | 정적 번들 제공 + API 프록시 |
 | API 계층 | `backend-hub`, `backend-worker-api` | Django 관리 API, FastAPI 작업자 API |
-| 데이터 계층 | AWS RDS (PostgreSQL + pgvector) | 사용자/로그/세션/통계/벡터 데이터 |
+| 데이터 계층 | AWS RDS (PostgreSQL + pgvector) | 작업자/로그/세션/통계/벡터 데이터 |
 | 저장소 계층 | AWS S3 | 첨부 파일/문서/파이프라인 산출물 |
 | 외부 AI 계층 | OpenAI API | 번역/의사결정 모델 호출 |
 
@@ -253,12 +242,12 @@ SKN23-4th-2TEAM/
 │   │   ├── manager_core.py             # 관리자 AI 브리핑 로직
 │   │   ├── manager_planner.py          # 관리자 AI 플래너 로직
 │   │   ├── manager_repository.py       # 관리자 AI 리포지토리 로직
-│   │   ├── pipeline.py                 # 관리자 AI 파이프라인 로직
-│   │   ├── prompts.py                  # 관리자 AI 프롬프트 정의
+│   │   ├── pipeline.py                 # 하이브리드 검색 파이프라인
+│   │   ├── prompts.py                  # 프롬프트 정의
 │   │   ├── reranker.py                 # Cross-Encoder 기반 Reranker Singleton
 │   │   ├── retriever.py                # 하이브리드 검색(pgvector + BM25)
-│   │   ├── worker_core.py              # 작업자 상담 Agent 로직
-│   │   └── worker_agent.py             # 작업자 상담 Agent 로직
+│   │   ├── worker_core.py              # 핵심 LLM 호출 로직
+│   │   └── worker_agent.py             # LangGraph 상태 머신 에이전트 워크플로우
 │   └── bm25_data/                      # BM25 Sparse Index 캐시 저장소
 ├── backend_hub/                        # Django 데이터 허브 및 통계 API (Port 8000)
 │   ├── api/
@@ -295,7 +284,7 @@ SKN23-4th-2TEAM/
 │       ├── Dockerfile
 │       └── entrypoint.sh
 ├── frontend_admin/                     # 관리자 대시보드 서비스
-│   ├── public/                         
+│   ├── public/
 │   └── src/
 │       ├── assets/                     # 이미지, 폰트, 스타일 등 정적 리소스
 │       ├── components/                 # KPI 카드, Chart, 네비게이션, 챗봇 UI
@@ -327,7 +316,7 @@ SKN23-4th-2TEAM/
 ├── .env                                # 환경 변수 (API 키, DB, SSH 등)
 ├── .env.docker                         # Docker 전용 환경 변수 오버라이드
 ├── run_tunnel.py                       # 로컬 SSH 터널 보조 스크립트
-├── poetry.lock 
+├── poetry.lock
 ├── pyproject.toml                      # Poetry 의존성 관리
 └── run_all.sh / run_all.bat            # 비-Docker 통합 실행 스크립트
 ```
@@ -335,11 +324,11 @@ SKN23-4th-2TEAM/
 ## RAG 파이프라인
 
 ```
-사용자 입력 (에러 선택 / 질문)
+작업자 입력 (에러 선택 / 질문)
     │
     ▼
 [1] 입력 전처리 (Preprocessing)
-    ├─ 사용자 입력 정규화
+    ├─ 작업자 입력 정규화
     └─ 불필요 토큰 및 노이즈 제거
     │
     ▼
@@ -364,227 +353,148 @@ SKN23-4th-2TEAM/
     └─ OpenAI GPT-4o 기반 응답 생성
     │
     ▼
-[6] SSE 스트리밍 응답
-    └─ 프론트엔드 실시간 출력
+[6] 프론트엔드 JSON 출력
 ```
 
 ---
 
 # 5. 주요 기능 (Core Features)
+
 ## 5.1 현장 작업자용 AI 챗봇
+
 ### 1. 에러 코드 기반 정밀 진단
+
 - 단순 FAQ가 아닌 장비 모델 + 에러 코드 기반 컨텍스트 매칭
 - RAG 기반으로 해당 매뉴얼 구간을 추출하여 초기 대응 가이드 제공
 
 ### 2. O/X 기반 인터랙티브 문제 해결 흐름
+
 - 각 단계마다 작업자가 수행 여부를 선택 (O / X)
 - 선택 결과에 따라 다음 조치 or 추가 진단 분기
 
 ### 3. 단계별 대응 전략 제공
+
 - overall → 전체 대응 방향 제시
 - checklist → 실행 가능한 점검 항목 제공
 - diagnosis → 추가 원인 분석 질문 진행
 
 ### 4. 다국어 지원
+
 - 한국어(KO) / 영어(EN) / 우즈베키스탄(UZ)
 - 동일 로직 기반으로 언어만 변환
 
 ### 5. 세션 복귀(Abandoned 세션 이어받기)
-- 중단된 상담 세션을 조회하여 이어서 진행 가능  
+
+- 중단된 상담 세션을 조회하여 이어서 진행 가능
 - 작업자가 현장을 이탈하거나 중단된 상황에서도 흐름 유지
 
 ### 6. 자동 세션 타임아웃 관리
-- `ongoing` 상태의 세션이 30분 이상 비활성 상태일 경우 자동으로 `abandoned` 처리  
+
+- `ongoing` 상태의 세션이 30분 이상 비활성 상태일 경우 자동으로 `abandoned` 처리
 - 불필요한 세션 누적 방지 및 상태 정합성 유지
 
 ### 기대 효과
+
 - 장애 대응 시간 단축
 - 비숙련 작업자도 숙련자 수준의 대응 가능
 - 매뉴얼 검색 시간 단축
 
 ## 5.2 관리자용 분석 대시보드
+
 ### 1. 라인/장비별 장애 분석
+
 - 에러 발생 빈도, 시간대별 패턴 시각화
 - 장비별 고장 집중 구간 파악
 
 ### 2. AI 데일리 브리핑
+
 - 하루 동안 발생한 에러 요약
 - 주요 원인 Top-N 제공
 - 매뉴얼 매칭 결과 리포트
 
-### 3.매뉴얼 자동 적재 파이프라인
+### 3. 매뉴얼 자동 적재 파이프라인
+
 - PDF 업로드 → Chunking → Embedding → Vector DB 저장 자동화
 
 ### 4. 엔지니어 호출 관리
+
 - 작업자 해결 실패 시 호출 이력 추적
 
 ### 5. 관리자 AI 챗봇 (Admin QA)
+
 - 화면 하단의 챗봇 버튼을 통해 언제든지 자유롭게 질문 가능
-- "오늘의 주요 에러", "미해결 장애" 등 Quick Menu 지원   
+- "오늘의 주요 에러", "미해결 장애" 등 Quick Menu 지원
 
 ### 6. 로봇 모델 및 라인 관리
-- 라인별 장비 카드 UI 제공  
+
+- 라인별 장비 카드 UI 제공
 - 장비에 연결된 모델 변경 및 관리 기능 지원
 
 ### 7. 에러 로그 조회 및 필터링
-- 라인 / 장비 / 에러코드 / 날짜 기준 필터링  
+
+- 라인 / 장비 / 에러코드 / 날짜 기준 필터링
 - 로그를 페이지 단위로 나누어 빠르게 조회 가능
 
-### 8. AI 모델 설정 제어 (Admin Control)
-- 관리자가 LLM 모델을 실시간으로 변경 가능 
-- 응답 품질 / 비용 / 속도 전략적 운영 지원
+### 8. 관리자 AI 질의/브리핑 제어 (Admin Control)
+
+- 관리자 챗봇에서 자연어 질의(`/admin-ai/ask`) 수행
+- 브리핑 새로고침(`/admin-ai/briefing`)으로 최신 현황 반영
 
 ### 기대 효과
+
 - 장애 패턴 기반 예방 정비 가능
 - 엔지니어 호출 감소
 - 데이터 기반 유지보수 계획 수립
----
-
-# 6. 실행 방법 (Installation & Run)
-
-### 6.1 요구 사항 (Prerequisites)
-
-| 구분                    | Docker 모드                  | 로컬 직접 실행 모드          |
-| ----------------------- | ---------------------------- | ---------------------------- |
-| Docker / Docker Compose | 필수                         | 불필요                       |
-| Python 3.12+            | 불필요 (이미지에 포함)       | 필수 (Poetry 설치 필요)      |
-| Node.js LTS             | 불필요 (이미지에 포함)       | 필수 (NPM)                   |
-| PostgreSQL (pgvector)   | 불필요 (SSH 터널로 RDS 연결) | 불필요 (SSH 터널로 RDS 연결) |
-| SSH Private Key (.pem)  | 필수                         | 필수                         |
-
-### 6.2 환경 변수 설정
-
-루트 경로에 `.env` 파일을 생성합니다. `.env.example`을 참고하세요.
-
-<details>
-<summary><b>필수 환경 변수 목록</b></summary>
-
-| 변수명                  | 설명                         | 필수 여부                |
-| ----------------------- | ---------------------------- | ------------------------ |
-| `OPENAI_API_KEY`        | OpenAI API 키                | 필수                     |
-| `PGDATABASE`            | PostgreSQL 데이터베이스명    | 필수                     |
-| `PGUSER`                | PostgreSQL 사용자명          | 필수                     |
-| `PGPASSWORD`            | PostgreSQL 비밀번호          | 필수                     |
-| `DB_HOST`               | RDS 엔드포인트               | 필수                     |
-| `DB_PORT`               | RDS 포트 (기본 5432)         | 필수                     |
-| `SSH_TUNNEL_ENABLED`    | SSH 터널 사용 여부           | 필수                     |
-| `SSH_HOST`              | 바스티온 EC2 IP              | 필수                     |
-| `SSH_PORT`              | SSH 포트 (기본 22)           | 필수                     |
-| `SSH_USER`              | SSH 접속 사용자 (예: ubuntu) | 필수                     |
-| `SSH_PRIVATE_KEY_PATH`  | .pem 키 파일 절대경로        | 필수                     |
-| `SECRET_KEY`            | Django Secret Key            | 필수                     |
-| `TAVILY_API_KEY`        | Tavily 웹 검색 API 키        | 필수                     |
-| `ADMIN_SECRET_KEY`      | 관리자 API 인증 키           | 선택 (기본값: admin1234) |
-| `AWS_REGION`            | AWS 리전                     | 선택                     |
-| `AWS_S3_BUCKET`         | S3 버킷명                    | 선택                     |
-| `AWS_ACCESS_KEY_ID`     | AWS Access Key               | 선택                     |
-| `AWS_SECRET_ACCESS_KEY` | AWS Secret Key               | 선택                     |
-| `PUBLIC_HOST_IP`        | 서버 공개 IP                 | 선택 (자동 감지)         |
-
-</details>
-
-> `.env.docker`는 Docker 전용 오버라이드 파일로 DB 호스트를 `ssh-tunnel` 컨테이너 서비스명으로 변경합니다. 직접 수정할 필요 없습니다.
-
-### 6.3 실행 방법 A: Docker Compose (권장)
-
-#### 개발 환경 (HMR 지원, Vite dev-server)
-
-```bash
-# 이미지 빌드 및 컨테이너 실행
-docker compose --env-file .env --env-file .env.docker up --build -d
-
-# 로그 확인
-docker compose logs -f
-```
-
-| 서비스             | URL                        |
-| ------------------ | -------------------------- |
-| Admin Frontend     | http://localhost:5173      |
-| Worker Frontend    | http://localhost:5174      |
-| Django Hub API     | http://localhost:8000      |
-| FastAPI Worker API | http://localhost:8001/docs |
-
-#### 운영 환경 (Nginx 정적 서빙, gunicorn)
-
-```bash
-# prod compose 파일 사용
-docker compose -f docker-compose.prod.yml --env-file .env --env-file .env.docker up --build -d
-```
-
-| 서비스                    | URL                   |
-| ------------------------- | --------------------- |
-| Admin Frontend (Nginx)    | http://localhost:80   |
-| Worker Frontend (Nginx)   | http://localhost:8080 |
-| Django Hub API (gunicorn) | http://localhost:8000 |
-| FastAPI Worker API        | http://localhost:8001 |
-
-<details>
-<summary><b>개발 vs 운영 주요 차이점</b></summary>
-
-| 항목               | 개발 (`docker-compose.yml`) | 운영 (`docker-compose.prod.yml`) |
-| ------------------ | --------------------------- | -------------------------------- |
-| 프론트엔드 서빙    | Vite dev-server (HMR)       | Nginx 정적 파일                  |
-| 프론트엔드 포트    | 5173 / 5174                 | 80 / 8080                        |
-| 소스 볼륨 마운트   | O (실시간 반영)             | X (이미지에 내장)                |
-| Django 런타임      | `runserver`                 | `gunicorn --workers 3`           |
-| FastAPI `--reload` | O                           | X                                |
-
-</details>
-
-### 6.4 실행 방법 B: 로컬 직접 실행 (비-Docker)
-
-```bash
-# Poetry 의존성 설치
-poetry install --no-root
-
-# 통합 실행 스크립트
-chmod +x run_all.sh
-./run_all.sh        # macOS / Linux
-# 또는
-run_all.bat          # Windows
-```
-
-> `run_all.sh`는 SSH 터널 → AI 모델 워밍업 → Django → FastAPI → Admin UI → Worker UI 순서로 자동 기동합니다.
-
-> 배포 관련 상세 가이드는 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)를 참고하세요.
 
 ---
 
-# 7. 기능 시연
+# 6. 기능 시연
 
-> 시연 영상 및 스크린샷 추가 예정
+## 6.1 Worker UI 메인 화면 (다국어)
+
+<div align="center">
+  <table>
+    <tr>
+      <td><img src="img/worker_KO.gif" width="480" alt="Worker UI KO 시연"></td>
+      <td><img src="img/worker_EN.gif" width="480" alt="Worker UI EN 시연"></td>
+    </tr>
+    <tr>
+      <td align="center"><b>KO 화면</b></td>
+      <td align="center"><b>EN 화면</b></td>
+    </tr>
+  </table>
+</div>
+
+## 6.2 작업자 진단 플로우 핵심 기능
+
+<div align="center">
+  <table>
+    <tr>
+      <td><img src="img/에러코드.png" width="320" alt="관련 에러코드 조회"></td>
+      <td><img src="img/장비 이력.png" width="320" alt="장비 이력 조회"></td>
+      <td><img src="img/엔지니어 호출.png" width="320" alt="엔지니어 호출"></td>
+    </tr>
+    <tr>
+      <td align="center"><b>관련 에러코드 조회</b></td>
+      <td align="center"><b>장비 이력 조회</b></td>
+      <td align="center"><b>엔지니어 호출</b></td>
+    </tr>
+  </table>
+</div>
+
+## 6.3 Worker 내장 관리자 패널
+
+<div align="center">
+  <img src="img/worker_admin_대시보드.gif" width="960" alt="Worker 내장 관리자 패널 대시보드 시연">
+</div>
 
 ---
 
-# 8. WBS (Work Breakdown Structure)
+# 7. WBS (Work Breakdown Structure)
 
-| 작업                             | 11  | 12  | 13  | 14  | 15  | 16  | 17  | 18  | 19  | 20  |
-| -------------------------------- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 프로젝트 구조 및 개발 환경 세팅  | ■   |     |     |     |     |     |     |     |     |     |
-| 관리자/Worker UI 구조 설계       | ■   | ■   | ■   |     |     |     |     |     |     |     |
-| 관리자 대시보드 UI 구현          | ■   | ■   | ■   | ■   | ■   | ■   |     |     |     |     |
-| 반응형 UI 및 레이아웃 개선       | ■   | ■   | ■   | ■   | ■   | ■   | ■   |     |     |     |
-| Django + PostgreSQL DB 연결      | ■   | ■   |     |     |     |     |     |     |     |     |
-| DB 명세서 작성 및 모델 설계      | ■   | ■   | ■   | ■   |     |     |     |     |     |     |
-| Django ORM 기반 API 구현         |     | ■   | ■   | ■   | ■   |     |     |     |     |     |
-| 프론트 ↔ 백엔드 API 연동         |     | ■   | ■   | ■   | ■   | ■   |     |     |     |     |
-| FastAPI Worker API 설계          | ■   | ■   | ■   |     |     |     |     |     |     |     |
-| RAG 파이프라인 설계              | ■   | ■   | ■   | ■   |     |     |     |     |     |     |
-| 벡터 DB 구축 및 전환             | ■   | ■   | ■   |     |     |     |     |     |     |     |
-| Retrieval / Reranker / BM25 구현 |     | ■   | ■   | ■   | ■   | ■   | ■   |     |     |     |
-| Worker Agent (진단 로직) 구현    | ■   | ■   | ■   | ■   | ■   | ■   | ■   | ■   |     |     |
-| 체크리스트 및 종합 판단 로직     |     |     | ■   | ■   | ■   | ■   | ■   | ■   |     |     |
-| 관리자 챗봇(Admin QA) 구현       |     |     |     |     |     | ■   | ■   | ■   |     |     |
-| 데이터 적재 및 매뉴얼 파싱       | ■   | ■   | ■   | ■   | ■   |     |     |     |     |     |
-| 성능 최적화 (속도/정확도 개선)   |     |     |     |     | ■   | ■   | ■   | ■   | ■   |     |
-| Docker 및 실행 환경 구성         |     |     |     |     |     |     | ■   | ■   | ■   |     |
-| 통합 실행 스크립트(run_all) 구축 |     | ■   | ■   | ■   | ■   | ■   | ■   |     |     |     |
-| 시스템 통합 테스트 (E2E)         |     |     |     |     |     |     |     | ■   | ■   |     |
-| README 작성 및 문서화            |     |     |     |     |     |     |     |     | ■   | ■   |
+<img src="img/WBS.png" width="100%" alt="WBS">
 
----
-
-## 9. 회고
+# 8. 회고
 
 | 이름   | 회고       |
 | ------ | ---------- |
