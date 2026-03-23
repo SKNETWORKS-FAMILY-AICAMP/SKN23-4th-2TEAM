@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, HTTPException, Request, UploadFile
 
 from app.services import rag_ingestion_service as service
 
@@ -16,6 +17,34 @@ except Exception:
     from app.infrastructure.aws.s3_client import S3Client
 
 router = APIRouter(prefix="/rag", tags=["rag-ingestion"])
+
+
+def _multipart_max_part_bytes() -> int:
+    raw = str(os.getenv("RAG_MULTIPART_MAX_PART_MB", "50")).strip()
+    try:
+        mb = int(raw)
+    except ValueError:
+        mb = 50
+    mb = max(1, min(mb, 200))
+    return mb * 1024 * 1024
+
+
+async def _read_form_with_limit(request: Request):
+    limit = _multipart_max_part_bytes()
+    try:
+        try:
+            return await request.form(max_part_size=limit)
+        except TypeError:
+            # Backward compatibility for old Starlette versions
+            return await request.form()
+    except Exception as exc:
+        text = str(exc).lower()
+        if "maximum size" in text or "too large" in text:
+            raise HTTPException(
+                status_code=413,
+                detail=f"uploaded part exceeds server limit ({limit // (1024 * 1024)}MB)",
+            )
+        raise HTTPException(status_code=400, detail=f"invalid multipart form: {exc}")
 
 
 def _safe_slug(value: str) -> str:
@@ -52,10 +81,15 @@ def _coerce_metadata(metadata: str | dict[str, Any]) -> dict[str, Any]:
 
 @router.post("/preview")
 async def preview_rag(
-    admin_name: str = Form(""),
-    parser: str = Form("marker"),
-    file: UploadFile = File(...),
+    request: Request,
 ):
+    form = await _read_form_with_limit(request)
+    admin_name = str(form.get("admin_name") or "")
+    parser = str(form.get("parser") or "marker")
+    file = form.get("file")
+
+    if not isinstance(file, UploadFile):
+        raise HTTPException(status_code=400, detail="file is required")
     if not file.filename:
         raise HTTPException(status_code=400, detail="file name is required")
 
@@ -85,10 +119,15 @@ async def preview_rag(
 
 @router.post("/commit")
 async def commit_rag(
-    markdown: str = Form(...),
-    metadata: str = Form(...),
-    file: UploadFile = File(...),
+    request: Request,
 ):
+    form = await _read_form_with_limit(request)
+    markdown = str(form.get("markdown") or "")
+    metadata = str(form.get("metadata") or "")
+    file = form.get("file")
+
+    if not isinstance(file, UploadFile):
+        raise HTTPException(status_code=400, detail="file is required")
     if not file.filename:
         raise HTTPException(status_code=400, detail="file name is required")
 
