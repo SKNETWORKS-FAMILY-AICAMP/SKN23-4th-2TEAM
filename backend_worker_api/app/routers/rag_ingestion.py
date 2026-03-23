@@ -8,6 +8,8 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request, UploadFile
+from starlette.datastructures import UploadFile as StarletteUploadFile
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.services import rag_ingestion_service as service
 
@@ -37,6 +39,13 @@ async def _read_form_with_limit(request: Request):
         except TypeError:
             # Backward compatibility for old Starlette versions
             return await request.form()
+    except StarletteHTTPException as exc:
+        if exc.status_code == 413:
+            raise HTTPException(
+                status_code=413,
+                detail=f"uploaded part exceeds server limit ({limit // (1024 * 1024)}MB)",
+            )
+        raise HTTPException(status_code=exc.status_code, detail=str(exc.detail))
     except Exception as exc:
         text = str(exc).lower()
         if "maximum size" in text or "too large" in text:
@@ -45,6 +54,15 @@ async def _read_form_with_limit(request: Request):
                 detail=f"uploaded part exceeds server limit ({limit // (1024 * 1024)}MB)",
             )
         raise HTTPException(status_code=400, detail=f"invalid multipart form: {exc}")
+
+
+def _extract_upload(form_data, field_name: str = "file") -> UploadFile | StarletteUploadFile:
+    uploaded = form_data.get(field_name)
+    if uploaded is None:
+        raise HTTPException(status_code=400, detail=f"{field_name} is required")
+    if not getattr(uploaded, "filename", None) or not callable(getattr(uploaded, "read", None)):
+        raise HTTPException(status_code=400, detail=f"{field_name} is invalid")
+    return uploaded
 
 
 def _safe_slug(value: str) -> str:
@@ -86,10 +104,7 @@ async def preview_rag(
     form = await _read_form_with_limit(request)
     admin_name = str(form.get("admin_name") or "")
     parser = str(form.get("parser") or "marker")
-    file = form.get("file")
-
-    if not isinstance(file, UploadFile):
-        raise HTTPException(status_code=400, detail="file is required")
+    file = _extract_upload(form, "file")
     if not file.filename:
         raise HTTPException(status_code=400, detail="file name is required")
 
@@ -124,10 +139,7 @@ async def commit_rag(
     form = await _read_form_with_limit(request)
     markdown = str(form.get("markdown") or "")
     metadata = str(form.get("metadata") or "")
-    file = form.get("file")
-
-    if not isinstance(file, UploadFile):
-        raise HTTPException(status_code=400, detail="file is required")
+    file = _extract_upload(form, "file")
     if not file.filename:
         raise HTTPException(status_code=400, detail="file name is required")
 
