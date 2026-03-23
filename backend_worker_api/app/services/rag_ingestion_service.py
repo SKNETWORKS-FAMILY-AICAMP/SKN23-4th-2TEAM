@@ -155,14 +155,28 @@ def parse_pdf_to_markdown(
     file_path = _write_temp_pdf(file_bytes, filename)
     file_hash = _sha256_bytes(file_bytes)
     parser_errors: list[str] = []
+    # Default behavior: keep marker as the baseline parser.
+    # Set RAG_PARSER_FALLBACK=true if you want automatic fallback chain.
+    fallback_enabled = str(os.getenv("RAG_PARSER_FALLBACK", "false")).strip().lower() in {"1", "true", "yes", "on"}
 
     try:
-        if parser_choice == "pymupdf4llm":
-            attempts = [_parse_with_pymupdf4llm, _parse_with_marker, _parse_with_pdfplumber]
-        elif parser_choice == "marker":
-            attempts = [_parse_with_marker, _parse_with_pymupdf4llm, _parse_with_pdfplumber]
+        if parser_choice == "marker":
+            attempts = [_parse_with_marker]
+            if fallback_enabled:
+                attempts.extend([_parse_with_pymupdf4llm, _parse_with_pdfplumber])
+        elif parser_choice == "pymupdf4llm":
+            attempts = [_parse_with_pymupdf4llm]
+            if fallback_enabled:
+                attempts.extend([_parse_with_marker, _parse_with_pdfplumber])
+        elif parser_choice == "pdfplumber":
+            attempts = [_parse_with_pdfplumber]
+            if fallback_enabled:
+                attempts.extend([_parse_with_marker, _parse_with_pymupdf4llm])
         else:
-            attempts = [_parse_with_pdfplumber, _parse_with_marker, _parse_with_pymupdf4llm]
+            # Unknown parser input: treat as marker-first policy.
+            attempts = [_parse_with_marker]
+            if fallback_enabled:
+                attempts.extend([_parse_with_pymupdf4llm, _parse_with_pdfplumber])
 
         for parser in attempts:
             try:
