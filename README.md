@@ -99,12 +99,12 @@ WELD-BOT은 **현장 작업자의 실행 가이드 부족 문제**를 해결한�
 
 # 3. 기술 스택 (Tech Stack)
 
-| 분류                 | 기술 스택 배지 (Tech Stack Badges)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| :------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **AI & LLM**         | <img src="https://img.shields.io/badge/OpenAI_GPT--시리즈-412991?style=for-the-badge&logo=openai&logoColor=white"> <img src="https://img.shields.io/badge/LangChain-1C3C3C?style=for-the-badge&logo=langchain&logoColor=white"> <img src="https://img.shields.io/badge/PyTorch-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white"> <img src="https://img.shields.io/badge/Hugging_Face-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black">                                                                                                                                                                                                                   |
-| **Backend & API**    | <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white"> <img src="https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi&logoColor=white"> <img src="https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=white"> <img src="https://img.shields.io/badge/Uvicorn-4051B5?style=for-the-badge&logo=uvicorn&logoColor=white"> <img src="https://img.shields.io/badge/Pydantic-E92063?style=for-the-badge&logo=pydantic&logoColor=white">                                                                                                                                   |
-| **Database & Infra** | <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white"> <img src="https://img.shields.io/badge/pgvector-336791?style=for-the-badge&logo=postgresql&logoColor=white"> <img src="https://img.shields.io/badge/AWS_RDS-527FFF?style=for-the-badge&logo=amazon-rds&logoColor=white"> <img src="https://img.shields.io/badge/AWS_S3-569A31?style=for-the-badge&logo=amazon-s3&logoColor=white"> <img src="https://img.shields.io/badge/AWS_EC2-FF9900?style=for-the-badge&logo=amazon-ec2&logoColor=white"> |
-| **Frontend & Tools** | <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB"> <img src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white"> <img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white"> <img src="https://img.shields.io/badge/Poetry-60A5FA?style=for-the-badge&logo=poetry&logoColor=white"> <img src="https://img.shields.io/badge/NPM-CB3837?style=for-the-badge&logo=npm&logoColor=white"> <img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white">                                   |
+| 분류                 | 기술 스택 배지 (Tech Stack Badges)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| :------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **AI & LLM**         | <img src="https://img.shields.io/badge/OpenAI_GPT--시리즈-412991?style=for-the-badge&logo=openai&logoColor=white"> <img src="https://img.shields.io/badge/LangChain-1C3C3C?style=for-the-badge&logo=langchain&logoColor=white"> <img src="https://img.shields.io/badge/PyTorch-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white"> <img src="https://img.shields.io/badge/Hugging_Face-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black">                                                                                                                                                                                 |
+| **Backend & API**    | <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white"> <img src="https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi&logoColor=white"> <img src="https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=white"> <img src="https://img.shields.io/badge/Uvicorn-4051B5?style=for-the-badge&logo=uvicorn&logoColor=white"> <img src="https://img.shields.io/badge/Pydantic-E92063?style=for-the-badge&logo=pydantic&logoColor=white">                                                                                                 |
+| **Database & Infra** | <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white"> <img src="https://img.shields.io/badge/pgvector-336791?style=for-the-badge&logo=postgresql&logoColor=white"> <img src="https://img.shields.io/badge/AWS_RDS-527FFF?style=for-the-badge&logo=amazon-rds&logoColor=white"> <img src="https://img.shields.io/badge/AWS_S3-569A31?style=for-the-badge&logo=amazon-s3&logoColor=white"> <img src="https://img.shields.io/badge/AWS_EC2-FF9900?style=for-the-badge&logo=amazon-ec2&logoColor=white">                                                                              |
+| **Frontend & Tools** | <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB"> <img src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white"> <img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white"> <img src="https://img.shields.io/badge/Poetry-60A5FA?style=for-the-badge&logo=poetry&logoColor=white"> <img src="https://img.shields.io/badge/NPM-CB3837?style=for-the-badge&logo=npm&logoColor=white"> <img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white"> |
 
 ---
 
@@ -150,15 +150,15 @@ WELD-BOT은 **Frontend - Backend - AI Engine - DB**로 구성된
 > - **개발 환경**: Vite dev-server proxy (`vite.config.docker.js`)
 > - **운영 환경**: Nginx reverse proxy (`nginx/frontend_admin.conf`, `nginx/frontend_worker.conf`)
 
-| 구성요소          | 역할                              | 주요 기술               | 개발 포트 | 운영 포트 |
-| ----------------- | --------------------------------- | ----------------------- | --------- | --------- |
-| Frontend (Admin)  | 관리자 대시보드 UI                | React, Recharts/Chart.js, Vite | 5173      | 80        |
-| Frontend (Worker) | 작업자 인터페이스                 | React, TypeScript, Vite | 5174      | 8080      |
-| Backend Hub       | 데이터 관리 및 통계 API           | Django, DRF, PostgreSQL | 8000      | 8000      |
-| Worker API        | AI 요청 처리 및 스트리밍          | FastAPI, Uvicorn        | 8001      | 8001      |
-| AI Engine         | RAG 기반 분석 및 응답 생성        | LangGraph, Reranker     | -         | -         |
-| Data Pipeline     | 문서 임베딩 및 적재               | PDFPlumber, pgvector    | -         | -         |
-| SSH Tunnel(선택)  | 바스티온 EC2 경유 RDS 포트 포워딩(개발/특수환경) | sshtunnel, Paramiko     | 15432     | -         |
+| 구성요소          | 역할                                             | 주요 기술                      | 개발 포트 | 운영 포트 |
+| ----------------- | ------------------------------------------------ | ------------------------------ | --------- | --------- |
+| Frontend (Admin)  | 관리자 대시보드 UI                               | React, Recharts/Chart.js, Vite | 5173      | 80        |
+| Frontend (Worker) | 작업자 인터페이스                                | React, TypeScript, Vite        | 5174      | 8080      |
+| Backend Hub       | 데이터 관리 및 통계 API                          | Django, DRF, PostgreSQL        | 8000      | 8000      |
+| Worker API        | AI 요청 처리 및 스트리밍                         | FastAPI, Uvicorn               | 8001      | 8001      |
+| AI Engine         | RAG 기반 분석 및 응답 생성                       | LangGraph, Reranker            | -         | -         |
+| Data Pipeline     | 문서 임베딩 및 적재                              | PDFPlumber, pgvector           | -         | -         |
+| SSH Tunnel(선택)  | 바스티온 EC2 경유 RDS 포트 포워딩(개발/특수환경) | sshtunnel, Paramiko            | 15432     | -         |
 
 ## Branch 구조
 
@@ -185,13 +185,36 @@ main
 - 데이터베이스: AWS RDS PostgreSQL (`pgvector` 사용)
 - 객체 저장소: AWS S3
 
+---
+
 ### 아키텍처 다이어그램
 
-<!-- ![ERD](img/aws_architecture.png) -->
-<img src="img/aws_architecture.png" width="100%" alt="ERD">
+```mermaid
+flowchart TD
+    U["사용자 브라우저"]
+    FEA["Frontend Admin (포트 80)"]
+    FEW["Frontend Worker (포트 8080)"]
+    EC2["EC2 Docker Compose"]
+    DJ["backend-hub (Django) :8000"]
+    FA["backend-worker-api (FastAPI) :8001"]
+    RDS["AWS RDS PostgreSQL + pgvector"]
+    S3["AWS S3"]
+    OAI["OpenAI API"]
+
+    U -->|"HTTP/80"| FEA
+    U -->|"HTTP/8080"| FEW
+    FEA -->|"Nginx Proxy /admin API"| DJ
+    FEW -->|"Nginx Proxy /api"| FA
+    EC2 --> FEA
+    EC2 --> FEW
+    DJ --> RDS
+    FA --> RDS
+    FA --> OAI
+    FA --> S3
+```
 
 <details>
-<summary>요청 경로 매핑</b></summary>
+<summary><b>요청 경로 매핑</b></summary>
 
 - 관리자 페이지
   - `80` 포트: `frontend-admin` 컨테이너가 페이지 제공
@@ -209,7 +232,7 @@ main
 </details>
 
 <details>
-<summary>배포 구성 요소</b></summary>
+<summary><b>배포 구성 요소</b></summary>
   
 | 레이어 | 구성 | 역할 |
 |---|---|---|
@@ -223,7 +246,7 @@ main
 </details>
 
 <details>
-<summary>운영 포인트</b></summary>
+<summary><b>운영 포인트</b></summary>
 
 - 운영 기본 진입은 `docker-compose.prod.yml` 기준
 - HTTPS 적용(권장): ALB 또는 Nginx reverse-proxy + 인증서 적용
@@ -231,6 +254,8 @@ main
 - 초기 기동 시 AI 로딩 지연을 고려해 컨테이너 재시작 정책과 healthcheck 간격 조정
 
 </details>
+
+---
 
 ## 폴더 및 파일 구조
 
@@ -308,7 +333,7 @@ SKN23-4th-2TEAM/
 ├── docs/
 │   └── DEPLOYMENT.md                   # Docker 배포 및 실행 상세 가이드
 ├── tests/                              # 테스트 및 데이터 검증 스크립트
-├── 명세서/                              # ERD 및 API 규격 마크다운 문서
+├── 명세서/                               # ERD 및 API 규격 마크다운 문서
 ├── Dockerfile.backend                  # 백엔드 통합 이미지 (Django + FastAPI)
 ├── Dockerfile.frontend                 # 프론트엔드 멀티스테이지 (dev/prod)
 ├── docker-compose.yml                  # 개발 환경 오케스트레이션
@@ -450,7 +475,7 @@ SKN23-4th-2TEAM/
 
 # 6. 기능 시연
 
-## 6.1 Worker UI 메인 화면 (다국어)
+## 6.1 작업자 UI 메인 화면 (다국어)
 
 <div align="center">
   <table>
@@ -482,24 +507,63 @@ SKN23-4th-2TEAM/
   </table>
 </div>
 
-## 6.3 Worker 내장 관리자 패널
+## 6.3 작업자 내장 관리자 패널
 
 <div align="center">
   <img src="img/worker_admin_대시보드.gif" width="960" alt="Worker 내장 관리자 패널 대시보드 시연">
 </div>
 
+## 6.4 RAG Ingestion 시연
+
+<div align="center">
+  <img src="img/rag-ingestion.png" width="960" alt="RAG Document Ingestion 시연">
+</div>
+
+## 6.5 관리자 로그 조회 시연
+
+<div align="center">
+  <img src="img/관리자logs.gif" width="1300" alt="관리자 로그 조회 시연">
+</div>
+
+## 6.6 관리자 AI 챗봇 시연
+
+<div align="center">
+  <img src="img/관리자페이지 챗봇(퀵 메뉴).gif" width="1300">
+  <br>
+  <b>챗봇 퀵 메뉴 시연</b>
+  <br><br>
+  <img src="img/관리자페이지 챗봇(대화).gif" width="1300">
+  <br>
+  <b>챗봇 실제 대화 시연</b>
+</div>
 ---
 
 # 7. WBS (Work Breakdown Structure)
 
 <img src="img/WBS.png" width="100%" alt="WBS">
 
-# 8. 회고
+# 8.트러블 슈팅
 
-| 이름   | 회고       |
-| ------ | ---------- |
-| 송주엽 | 아아아아아 |
-| 김도영 | 아아아아아 |
-| 김민정 | 아아아아아 |
-| 신승훈 | 아아아아아 |
-| 정희영 | 아아아아아 |
+- 화면 레이아웃 문제  
+  Lines, RAG_Ingestion 페이지가 모든 페이지를 채우지 않고 오른쪽 빈 화면 발생  
+  원인 : index.css -> 해결: index css 수정
+
+```css
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  overflow-x: hidden;  /* ← 오른쪽 빈 공간을 막는 핵심 코드
+}
+```
+
+# 9. 회고
+
+| 이름   | 회고                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 송주엽 | 아아아아아                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| 김도영 | 아아아아아                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| 김민정 | 아아아아아                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| 신승훈 | 아아아아아                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| 정희영 | 이번 프로젝트에서는 앞선 프로젝트와 달리 React를 이용한 관리자 페이지 프런트를 담당했습니다. 평소에는 주로 백엔드 작업을 수행해왔기에 프런트엔드는 익숙하지 않았지만, 이전에 React를 학습한 경험 덕분에 기본적인 구조와 컴포넌트 작성은 비교적 수월하게 진행할 수 있었습니다. API 연동 같은 부분에서 어려움을 느꼈지만, API 명세를 맞추고 컴포넌트 구조를 설계하는 과정에서 프런트엔드와 Django백엔드의 연결 방식을 체감하며 전체적인 개발 흐름을 이해할 수 있었습니다. AI 개발 경험은 직접 쌓지 못해 아쉽지만, 이번 경험을 통해 익숙하지 않은 분야에도 충분히 도전할 수 있다는 자신감을 얻었고, 앞으로 프런트와 백엔드를 모두 아우르며 AI 개발자로 성장할 수 있는 기반을 조금씩 넓혀갈 수 있겠다는 느낌을 받았습니다. |
+|        |
