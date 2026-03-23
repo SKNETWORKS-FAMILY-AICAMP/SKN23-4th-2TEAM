@@ -97,18 +97,69 @@ def _write_temp_pdf(file_bytes: bytes, filename: str) -> str:
 
 
 def _parse_with_marker(pdf_path: str, source_name: str) -> tuple[str, str, dict[str, Any]]:
-    from marker.convert import convert_single_pdf
-    from marker.models import load_all_models
+    text: str = ""
+    extracted_meta: dict[str, Any] = {}
 
-    models = load_all_models()
-    text, _meta = convert_single_pdf(pdf_path, models)
+    try:
+        # Legacy API (marker-pdf 0.x)
+        from marker.convert import convert_single_pdf
+        from marker.models import load_all_models
+
+        models = load_all_models()
+        result = convert_single_pdf(pdf_path, models)
+        if isinstance(result, tuple):
+            if len(result) >= 3:
+                text = result[0] or ""
+                if isinstance(result[2], dict):
+                    extracted_meta = result[2]
+            elif len(result) == 2:
+                text = result[0] or ""
+                if isinstance(result[1], dict):
+                    extracted_meta = result[1]
+            elif len(result) == 1:
+                text = result[0] or ""
+        elif isinstance(result, str):
+            text = result
+    except ImportError as legacy_import_error:
+        try:
+            # Modern API (marker-pdf 1.x)
+            from marker.converters.pdf import PdfConverter
+            from marker.output import text_from_rendered
+            from marker import models as marker_models
+
+            if hasattr(marker_models, "create_model_dict"):
+                artifact_dict = marker_models.create_model_dict()
+            elif hasattr(marker_models, "load_all_models"):
+                artifact_dict = marker_models.load_all_models()
+            else:
+                raise RuntimeError("Marker models API not found.")
+
+            converter = PdfConverter(artifact_dict=artifact_dict)
+            rendered = converter(pdf_path)
+            rendered_text, _, _ = text_from_rendered(rendered)
+            text = rendered_text or ""
+
+            rendered_meta = getattr(rendered, "metadata", None)
+            if hasattr(rendered_meta, "model_dump"):
+                extracted_meta = rendered_meta.model_dump()
+            elif isinstance(rendered_meta, dict):
+                extracted_meta = rendered_meta
+        except ImportError as modern_import_error:
+            raise ImportError(
+                f"marker api import failed (legacy={legacy_import_error}, modern={modern_import_error})"
+            ) from modern_import_error
+
     if not isinstance(text, str) or not text.strip():
         raise RuntimeError("Marker parser returned empty text.")
-    return text.strip(), "marker", {
+
+    metadata: dict[str, Any] = {
         "title": Path(source_name).stem,
         "filetype": "pdf",
         "parser": "marker",
     }
+    if isinstance(extracted_meta, dict):
+        metadata.update(extracted_meta)
+    return text.strip(), "marker", metadata
 
 
 def _parse_with_pymupdf4llm(pdf_path: str, source_name: str) -> tuple[str, str, dict[str, Any]]:
