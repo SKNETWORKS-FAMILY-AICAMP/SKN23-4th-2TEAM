@@ -3,7 +3,7 @@ import { useState } from "react";
 
 export default function RagIngestion() {
   const [adminName, setAdminName] = useState("");
-  const [parser, setParser] = useState("marker");
+  const [parser, setParser] = useState("pdfplumber");
   const [file, setFile] = useState(null);
   const [markdown, setMarkdown] = useState("");
   const [metadata, setMetadata] = useState(null);
@@ -167,9 +167,9 @@ export default function RagIngestion() {
               value={parser}
               onChange={(e) => setParser(e.target.value)}
             >
+              <option>pdfplumber</option>
               <option>marker</option>
               <option>pymupdf4llm</option>
-              <option>pdfplumber</option>
             </select>
             <input
               type="file"

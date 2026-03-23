@@ -103,7 +103,7 @@ async def preview_rag(
 ):
     form = await _read_form_with_limit(request)
     admin_name = str(form.get("admin_name") or "")
-    parser = str(form.get("parser") or "marker")
+    parser = str(form.get("parser") or "pdfplumber")
     file = _extract_upload(form, "file")
     if not file.filename:
         raise HTTPException(status_code=400, detail="file name is required")
