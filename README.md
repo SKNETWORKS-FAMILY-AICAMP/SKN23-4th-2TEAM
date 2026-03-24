@@ -17,11 +17,11 @@ AI 기반 용접 로봇 관제 및 유지보수 시스템 <br>
   </colgroup>
   <tbody>
     <tr>
-      <td align="center"><img src="./img/profile-juyeop.png" alt="송주엽" width="100%" /></td>
-      <td align="center"><img src="./img/profile-doyoung.png" alt="김도영" width="100%" /></td>
-      <td align="center"><img src="./img/profile-minjeong.png" alt="김민정" width="100%" /></td>
-      <td align="center"><img src="./img/profile-seunghun.png" alt="신승훈" width="100%" /></td>
-      <td align="center"><img src="./img/profile-heeyoung.png" alt="정희영" width="100%" /></td>
+      <td align="center"><img src="./img/profile-juyeop.png" alt="송주엽" width="170" height="170" /></td>
+      <td align="center"><img src="./img/profile-doyoung.png" alt="김도영" width="170" height="170" /></td>
+      <td align="center"><img src="./img/profile-minjeong.png" alt="김민정" width="170" height="170" /></td>
+      <td align="center"><img src="./img/profile-seunghun.png" alt="신승훈" width="170" height="170" /></td>
+      <td align="center"><img src="./img/profile-heeyoung.png" alt="정희영" width="170" height="170" /></td>
     </tr>
     <tr>
       <td><strong>송주엽(PM / FE 1)</strong></td>
