@@ -20,7 +20,9 @@ var/
 *.pkl
 **/.cache/
 *.csv
-
+log/
+*.log
+backend_hub/server_out.log
 # Virtual environments
 .env
 .venv
