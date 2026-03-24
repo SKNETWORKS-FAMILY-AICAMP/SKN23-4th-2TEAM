@@ -512,16 +512,10 @@ SKN23-4th-2TEAM/
 ## 6.1 작업자 UI 메인 화면 (다국어)
 
 <div align="center">
-  <table>
-    <tr>
-      <td><img src="img/worker_KO.gif" width="480" alt="Worker UI KO 시연"></td>
-      <td><img src="img/worker_EN.gif" width="480" alt="Worker UI EN 시연"></td>
-    </tr>
-    <tr>
-      <td align="center"><b>KO 화면</b></td>
-      <td align="center"><b>EN 화면</b></td>
-    </tr>
-  </table>
+  <img src="img/worker_KO.gif" width="100%" alt="Worker UI KO 시연">
+  <p><b>KO 화면</b></p>
+  <img src="img/worker_EN.gif" width="100%" alt="Worker UI EN 시연">
+  <p><b>EN 화면</b></p>
 </div>
 
 ## 6.2 작업자 진단 플로우 핵심 기능
