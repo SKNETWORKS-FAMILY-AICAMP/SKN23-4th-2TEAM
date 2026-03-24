@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <clipPath id="clip-rp"><circle cx="200" cy="200" r="195"/></clipPath>
+    <linearGradient id="bg-rp" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFF3E0"/><stop offset="100%" stop-color="#FFE0B2"/>
+    </linearGradient>
+    <linearGradient id="sparks1" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FFEB3B"/><stop offset="100%" stop-color="#FF9800"/>
+    </linearGradient>
+  </defs>
+  <circle cx="200" cy="200" r="195" fill="url(#bg-rp)" stroke="#E65100" stroke-width="5"/>
+  <g clip-path="url(#clip-rp)">
+    <!-- Welding leather apron -->
+    <rect x="110" y="265" width="180" height="170" rx="12" fill="#5D4037"/>
+    <rect x="120" y="265" width="160" height="170" rx="8" fill="#6D4C41"/>
+    <!-- Apron stitching -->
+    <line x1="140" y1="275" x2="140" y2="435" stroke="#4E342E" stroke-width="1.5" stroke-dasharray="6,4"/>
+    <line x1="260" y1="275" x2="260" y2="435" stroke="#4E342E" stroke-width="1.5" stroke-dasharray="6,4"/>
+    <!-- Apron straps -->
+    <line x1="155" y1="265" x2="170" y2="240" stroke="#4E342E" stroke-width="6" stroke-linecap="round"/>
+    <line x1="245" y1="265" x2="230" y2="240" stroke="#4E342E" stroke-width="6" stroke-linecap="round"/>
+    <!-- Under shirt (long sleeve) -->
+    <rect x="85" y="250" width="230" height="30" rx="10" fill="#37474F"/>
+    <!-- Apron pocket -->
+    <rect x="160" y="320" width="80" height="45" rx="5" fill="#4E342E"/>
+    <line x1="160" y1="320" x2="240" y2="320" stroke="#3E2723" stroke-width="2"/>
+
+    <!-- Head shape -->
+    <ellipse cx="200" cy="175" rx="82" ry="78" fill="#C62828"/>
+    <!-- Face -->
+    <ellipse cx="200" cy="193" rx="60" ry="55" fill="#FFCCBC"/>
+    <!-- Ears -->
+    <ellipse cx="132" cy="115" rx="26" ry="33" fill="#C62828" transform="rotate(-15 132 115)"/>
+    <ellipse cx="132" cy="115" rx="16" ry="20" fill="#D32F2F" transform="rotate(-15 132 115)"/>
+    <ellipse cx="268" cy="115" rx="26" ry="33" fill="#C62828" transform="rotate(15 268 115)"/>
+    <ellipse cx="268" cy="115" rx="16" ry="20" fill="#D32F2F" transform="rotate(15 268 115)"/>
+    <!-- Eye patches -->
+    <ellipse cx="170" cy="185" rx="20" ry="16" fill="#4E342E"/>
+    <ellipse cx="230" cy="185" rx="20" ry="16" fill="#4E342E"/>
+    <!-- Eyes (feminine, larger with lashes) -->
+    <ellipse cx="170" cy="185" rx="12" ry="13" fill="white"/>
+    <circle cx="173" cy="183" r="7" fill="#1B1B1B"/>
+    <circle cx="176" cy="180" r="3" fill="white"/>
+    <ellipse cx="230" cy="185" rx="12" ry="13" fill="white"/>
+    <circle cx="227" cy="183" r="7" fill="#1B1B1B"/>
+    <circle cx="230" cy="180" r="3" fill="white"/>
+    <!-- Eyelashes (feminine detail) -->
+    <line x1="160" y1="174" x2="155" y2="168" stroke="#1B1B1B" stroke-width="2" stroke-linecap="round"/>
+    <line x1="165" y1="172" x2="162" y2="165" stroke="#1B1B1B" stroke-width="2" stroke-linecap="round"/>
+    <line x1="170" y1="171" x2="169" y2="164" stroke="#1B1B1B" stroke-width="2" stroke-linecap="round"/>
+    <line x1="240" y1="174" x2="245" y2="168" stroke="#1B1B1B" stroke-width="2" stroke-linecap="round"/>
+    <line x1="235" y1="172" x2="238" y2="165" stroke="#1B1B1B" stroke-width="2" stroke-linecap="round"/>
+    <line x1="230" y1="171" x2="231" y2="164" stroke="#1B1B1B" stroke-width="2" stroke-linecap="round"/>
+    <!-- Nose -->
+    <ellipse cx="200" cy="208" rx="9" ry="6" fill="#1B1B1B"/>
+    <!-- Mouth (slight smile) -->
+    <path d="M193 218 Q200 226 207 218" fill="none" stroke="#4E342E" stroke-width="2" stroke-linecap="round"/>
+    <!-- Blush -->
+    <ellipse cx="152" cy="200" rx="10" ry="6" fill="#FF8A80" opacity="0.5"/>
+    <ellipse cx="248" cy="200" rx="10" ry="6" fill="#FF8A80" opacity="0.5"/>
+
+    <!-- Welding helmet (pushed up on head) -->
+    <rect x="125" y="88" width="150" height="55" rx="15" fill="#263238"/>
+    <rect x="130" y="90" width="140" height="48" rx="12" fill="#37474F"/>
+    <!-- Helmet visor (dark green, flipped up) -->
+    <rect x="148" y="78" width="104" height="40" rx="8" fill="#1B5E20" opacity="0.85"/>
+    <rect x="155" y="83" width="90" height="30" rx="5" fill="#2E7D32" opacity="0.6"/>
+    <!-- Helmet hinge -->
+    <circle cx="148" cy="98" r="5" fill="#455A64"/>
+    <circle cx="252" cy="98" r="5" fill="#455A64"/>
+    <!-- Helmet headband -->
+    <path d="M125 120 Q200 135 275 120" fill="none" stroke="#FFC107" stroke-width="3"/>
+
+    <!-- Welding sparks (decorative) -->
+    <circle cx="320" cy="310" r="3" fill="#FFEB3B" opacity="0.8"/>
+    <circle cx="330" cy="295" r="2" fill="#FF9800" opacity="0.7"/>
+    <circle cx="310" cy="325" r="2.5" fill="#FFC107" opacity="0.9"/>
+    <circle cx="340" cy="315" r="1.5" fill="#FFEB3B" opacity="0.6"/>
+  </g>
+</svg>
