@@ -17,11 +17,11 @@ AI 기반 용접 로봇 관제 및 유지보수 시스템 <br>
   </colgroup>
   <tbody>
     <tr>
-      <td align="center"><img src="./img/시바견.png" alt="송주엽" width="100%" /></td>
-      <td align="center"><img src="./img/까마귀.png" alt="김도영" width="100%" /></td>
-      <td align="center"><img src="./img/레서판다.png" alt="김민정" width="100%" /></td>
-      <td align="center"><img src="./img/알파카.png" alt="신승훈" width="100%" /></td>
-      <td align="center"><img src="./img/나무늘보.png" alt="정희영" width="100%" /></td>
+      <td align="center"><img src="./img/profile-juyeop.png" alt="송주엽" width="100%" /></td>
+      <td align="center"><img src="./img/profile-doyoung.png" alt="김도영" width="100%" /></td>
+      <td align="center"><img src="./img/profile-minjeong.png" alt="김민정" width="100%" /></td>
+      <td align="center"><img src="./img/profile-seunghun.png" alt="신승훈" width="100%" /></td>
+      <td align="center"><img src="./img/profile-heeyoung.png" alt="정희영" width="100%" /></td>
     </tr>
     <tr>
       <td><strong>송주엽(PM / FE 1)</strong></td>
