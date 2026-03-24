@@ -32,7 +32,7 @@ AI 기반 용접 로봇 관제 및 유지보수 시스템 <br>
     </tr>
     <tr>
       <td width="20%">PM, <code>Worker UI</code> 핵심 화면 구현, 공통 유틸리티 수립</td>
-      <td width="20%"><code>Worker UI</code>(FastAPI) 인프라 구축, PostgreSQL & Vector DB 연동, CORS 및 통신 보안 정책 수립</td>
+      <td width="20%"><code>Worker UI</code>DB 구축, Fastapi 기반 Rest API 설계, 구축. AWS 클라우드 인프라 구축 및 운영</td>
       <td width="20%"><code>Django</code> 서버 개발, 비즈니스 데이터 모델링(ORM), Admin용 CRUD API 구현</td>
       <td width="20%"><code>LangChain</code> 기반 AI 워크플로우 설계, <code>bge-reranker</code> 적용 및 검색 품질 고도화, 전처리 파이프라인</td>
       <td width="20%"><code>Admin UI</code> 관리자 관제 센터 구축, 데이터 시각화, 실시간 모니터링 UI 구현</td>
