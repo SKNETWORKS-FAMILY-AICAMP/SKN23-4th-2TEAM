@@ -7,7 +7,7 @@ AI 기반 용접 로봇 관제 및 유지보수 시스템 <br>
 
 # 1. 팀 소개
 
-<table>
+<table width="100%">
   <colgroup>
     <col width="20%" />
     <col width="20%" />
@@ -17,32 +17,32 @@ AI 기반 용접 로봇 관제 및 유지보수 시스템 <br>
   </colgroup>
   <tbody>
     <tr>
-      <td align="center"><img src="./img/시바견.png" alt="송주엽" width="100%" /></td>
-      <td align="center"><img src="./img/까마귀.png" alt="김도영" width="100%" /></td>
-      <td align="center"><img src="./img/레서판다.png" alt="김민정" width="100%" /></td>
-      <td align="center"><img src="./img/알파카.png" alt="신승훈" width="100%" /></td>
-      <td align="center"><img src="./img/나무늘보.png" alt="정희영" width="100%" /></td>
+      <td width="20%" align="center"><img src="./img/profile-juyeop.png" alt="송주엽" width="170" height="170" /></td>
+      <td width="20%" align="center"><img src="./img/profile-doyoung.png" alt="김도영" width="170" height="170" /></td>
+      <td width="20%" align="center"><img src="./img/profile-minjeong.png" alt="김민정" width="170" height="170" /></td>
+      <td width="20%" align="center"><img src="./img/profile-seunghun.png" alt="신승훈" width="170" height="170" /></td>
+      <td width="20%" align="center"><img src="./img/profile-heeyoung.png" alt="정희영" width="170" height="170" /></td>
     </tr>
     <tr>
-      <td><strong>송주엽(PM / FE 1)</strong></td>
-      <td><strong>김도영 (Infra & DB)</strong></td>
-      <td><strong>김민정(BE & Logic)</strong></td>
-      <td><strong>신승훈(AI & RAG)</strong></td>
-      <td><strong>정희영(FE 2)</strong></td>
+      <td width="20%"><strong>송주엽(PM / FE 1)</strong></td>
+      <td width="20%"><strong>김도영 (Infra & DB)</strong></td>
+      <td width="20%"><strong>김민정(BE & Logic)</strong></td>
+      <td width="20%"><strong>신승훈(AI & RAG)</strong></td>
+      <td width="20%"><strong>정희영(FE 2)</strong></td>
     </tr>
     <tr>
-      <td>PM, <code>Worker UI</code> 핵심 화면 구현, 공통 유틸리티 수립</td>
-      <td><code>Worker UI</code>(FastAPI) 인프라 구축, PostgreSQL & Vector DB 연동, CORS 및 통신 보안 정책 수립</td>
-      <td><code>Django</code> 서버 개발, 비즈니스 데이터 모델링(ORM), Admin용 CRUD API 구현</td>
-      <td><code>LangChain</code> 기반 AI 워크플로우 설계, <code>bge-reranker</code> 적용 및 검색 품질 고도화, 전처리 파이프라인</td>
-      <td><code>Admin UI</code> 관리자 관제 센터 구축, 데이터 시각화, 실시간 모니터링 UI 구현</td>
+      <td width="20%">PM, <code>Worker UI</code> 핵심 화면 구현, 공통 유틸리티 수립</td>
+      <td width="20%"><code>Worker UI</code>Fastapi 기반 Rest API 설계, DB 구축, AWS 클라우드 인프라 구축 및 운영</td>
+      <td width="20%"><code>Django</code> 서버 개발, 비즈니스 데이터 모델링(ORM), Admin용 CRUD API 구현</td>
+      <td width="20%"><code>LangChain</code> 기반 AI 워크플로우 설계, <code>bge-reranker</code> 적용 및 검색 품질 고도화, 전처리 파이프라인</td>
+      <td width="20%"><code>Admin UI</code> 관리자 관제 센터 구축, 데이터 시각화, 실시간 모니터링 UI 구현</td>
     </tr>
     <tr>
-      <td align="center"><a href="https://github.com/JUYEOP024"><img src="https://img.shields.io/badge/JUYEOP024-181717?style=flat-square&logo=github&logoColor=white" alt="github" /></a></td>
-      <td align="center"><a href="https://github.com/rubyheartsping"><img src="https://img.shields.io/badge/rubyheartsping-181717?style=flat-square&logo=github&logoColor=white" alt="github" /></a></td>
-      <td align="center"><a href="https://github.com/minjeong-kim-dev"><img src="https://img.shields.io/badge/minjeong--kim--dev-181717?style=flat-square&logo=github&logoColor=white" alt="github" /></a></td>
-      <td align="center"><a href="https://github.com/seunghun92-lab"><img src="https://img.shields.io/badge/seunghun92--lab-181717?style=flat-square&logo=github&logoColor=white" alt="github" /></a></td>
-      <td align="center"><a href="https://github.com/JUNGHEEYOUNG9090"><img src="https://img.shields.io/badge/JUNGHEEYOUNG9090-181717?style=flat-square&logo=github&logoColor=white" alt="github" /></a></td>
+      <td width="20%" align="center"><a href="https://github.com/JUYEOP024"><img src="https://img.shields.io/badge/JUYEOP024-181717?style=flat-square&logo=github&logoColor=white" alt="github" /></a></td>
+      <td width="20%" align="center"><a href="https://github.com/rubyheartsping"><img src="https://img.shields.io/badge/rubyheartsping-181717?style=flat-square&logo=github&logoColor=white" alt="github" /></a></td>
+      <td width="20%" align="center"><a href="https://github.com/minjeong-kim-dev"><img src="https://img.shields.io/badge/minjeong--kim--dev-181717?style=flat-square&logo=github&logoColor=white" alt="github" /></a></td>
+      <td width="20%" align="center"><a href="https://github.com/seunghun92-lab"><img src="https://img.shields.io/badge/seunghun92--lab-181717?style=flat-square&logo=github&logoColor=white" alt="github" /></a></td>
+      <td width="20%" align="center"><a href="https://github.com/JUNGHEEYOUNG9090"><img src="https://img.shields.io/badge/JUNGHEEYOUNG9090-181717?style=flat-square&logo=github&logoColor=white" alt="github" /></a></td>
     </tr>
   </tbody>
 </table>
