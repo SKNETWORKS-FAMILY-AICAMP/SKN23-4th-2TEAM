@@ -44,7 +44,7 @@ export function DeviceSelection({ lang, onSelect }: DeviceSelectionProps) {
         return `${char} Line`;
     };
 
-    const lines = Array.from(new Set(devices.map(d => d.line_name)));
+    const lines = Array.from(new Set(devices.map(d => d.line_name))).sort();
     const filteredRobots = devices.filter(d => d.line_name === selectedLine);
 
     const handleLineSelect = (line: string) => {
