@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+*.pkl
+**/.cache/
+*.csv
+log/
+*.log
+backend_hub/server_out.log
+# Virtual environments
+.env
+.venv
+venv/
+ENV/
+node_modules/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+
+# Vector DB
+/data_pipeline/vector_db/chroma/
+node_modules/
+
+# Docker secrets & env overrides
+.env.docker
+*.pem

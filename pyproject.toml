@@ -1,0 +1,45 @@
+[project]
+name = "skn23-4th-2team"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "JUYEOP024",email = "juyeobsong63@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.12,<4.0"
+dependencies = [
+    "requests (>=2.32.5,<3.0.0)",
+    "python-dotenv (>=1.2.2,<2.0.0)",            
+    "fastapi (>=0.115.0,<0.116.0)",
+    "uvicorn[standard] (>=0.41.0,<0.42.0)",
+    "pydantic (>=2.12.5,<3.0.0)",
+    "langchain (>=1.2.10,<2.0.0)",
+    "langchain-openai (>=1.1.10,<2.0.0)",
+    "langchain-community (>=0.4.1,<0.5.0)",
+    "rank-bm25 (>=0.2.2,<0.3.0)",
+    "tiktoken (>=0.12.0,<0.13.0)",
+    "langgraph (>=1.0.10,<2.0.0)",
+    "chromadb (>=1.5.2,<2.0.0)",
+    "sentence-transformers (>=5.2.3,<6.0.0)",
+    "flagembedding (>=1.3.5,<2.0.0)",
+    "pdfplumber (>=0.11.9,<0.12.0)",
+    "python-multipart (>=0.0.22,<0.0.23)",
+    "django (>=5.1.0,<6.0.0)",
+    "djangorestframework (>=3.16.1,<4.0.0)",
+    "django-cors-headers (>=4.9.0,<5.0.0)",
+    "psycopg2-binary (>=2.9.11,<3.0.0)",
+    "httpx (>=0.28.1,<0.29.0)",
+    "sshtunnel (>=0.4.0,<0.5.0)",
+    "paramiko (<3.4.0)",
+    "psycopg[binary] (>=3.3.3,<4.0.0)",
+    "pytz (>=2026.1.post1,<2027.0)",
+    "pgvector (>=0.4.2,<0.5.0)",
+    "boto3 (>=1.37.21,<2.0.0)"
+]
+
+[tool.poetry]
+package-mode = false
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+

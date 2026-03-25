@@ -1,0 +1,206 @@
+# =============================================================
+# docker-compose.yml  ─  SKN23-4th-2TEAM 통합 오케스트레이션
+# =============================================================
+# 실행:
+#   docker compose --env-file .env --env-file .env.docker up -d
+#
+# 빌드:
+#   docker compose --env-file .env --env-file .env.docker build
+#
+# 로그:
+#   docker compose logs -f [서비스명]
+# =============================================================
+
+
+
+# ── 공통 환경 변수 앵커 ────────────────────────────────────────
+x-backend-env: &backend-env
+  PYTHONPATH: /app/backend_ai:/app
+  PYTHONUNBUFFERED: "1"
+
+# ── 공통 재시작 정책 ────────────────────────────────────────────
+x-restart: &restart-policy
+  restart: unless-stopped
+
+services:
+
+  # ── 1. SSH Tunnel Sidecar ────────────────────────────────────
+  # 역할: 바스티온 EC2 경유 AWS RDS 포트 포워딩 유지
+  # 다른 서비스는 host=ssh-tunnel, port=5432 로 DB 접근
+  ssh-tunnel:
+    build:
+      context: .
+      dockerfile: docker/ssh-tunnel/Dockerfile
+    container_name: skn_ssh_tunnel
+    <<: *restart-policy
+    env_file:
+      - .env          # SSH_HOST, SSH_USER, DB_HOST(RDS), DB_PORT 등 원본값 사용
+      # ⚠️  .env.docker 는 로드하지 않는다.
+      #     .env.docker 의 DB_HOST=ssh-tunnel 이 여기서도 적용되면
+      #     ssh-tunnel 이 자기 자신을 remote target 으로 삼는 루프가 발생한다.
+    environment:
+      SSH_TUNNEL_ENABLED: "true"     # 사이드카에서만 true
+      SSH_LOCAL_BIND_HOST: "0.0.0.0" # 컨테이너 내 모든 인터페이스에 바인드
+      SSH_LOCAL_BIND_PORT: "5432"
+      SSH_PRIVATE_KEY_PATH: /run/secrets/ssh_key
+    volumes:
+      # 호스트 SSH 키를 읽기 전용으로 마운트
+      # SSH_KEY_HOST_PATH 는 .env 파일에 SSH_PRIVATE_KEY_PATH 로 정의된 값을 사용
+      - ${SSH_PRIVATE_KEY_PATH}:/run/secrets/ssh_key:ro
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "nc", "-z", "0.0.0.0", "5432"]
+      interval: 15s
+      timeout: 5s
+      start_period: 30s
+      retries: 5
+
+  # ── 2. Django Backend Hub ─────────────────────────────────────
+  backend-hub:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: skn_backend_hub
+    <<: *restart-policy
+    env_file:
+      - .env
+      - .env.docker
+    environment:
+      <<: *backend-env
+    command: >
+      sh -c "
+        echo '⏳ Waiting for SSH tunnel...' &&
+        until nc -z ssh-tunnel 5432; do sleep 2; done &&
+        echo '✅ Tunnel ready. Running migrations...' &&
+        python manage.py migrate --noinput &&
+        echo '🚀 Starting Django...' &&
+        python manage.py runserver 0.0.0.0:8000
+      "
+    working_dir: /app/backend_hub
+    ports:
+      - "8000:8000"
+    volumes:
+      - models_cache:/app/models
+      - bm25_cache:/app/backend_ai/bm25_data
+      - data_vol:/app/data
+      - logs_vol:/app/logs
+    networks:
+      - app-network
+    depends_on:
+      ssh-tunnel:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "-o", "/dev/null", "-w", "%{http_code}", "http://localhost:8000/admin/"]
+      interval: 20s
+      timeout: 8s
+      start_period: 60s
+      retries: 5
+
+  # ── 3. FastAPI Worker API ─────────────────────────────────────
+  backend-worker-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: skn_worker_api
+    <<: *restart-policy
+    env_file:
+      - .env
+      - .env.docker
+    environment:
+      <<: *backend-env
+    command: >
+      sh -c "
+        echo '⏳ Waiting for SSH tunnel...' &&
+        until nc -z ssh-tunnel 5432; do sleep 2; done &&
+        echo '✅ Tunnel ready. Starting FastAPI...' &&
+        uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
+      "
+    working_dir: /app/backend_worker_api
+    ports:
+      - "8001:8001"
+    volumes:
+      - models_cache:/app/models
+      - bm25_cache:/app/backend_ai/bm25_data
+      - data_vol:/app/data
+      - logs_vol:/app/logs
+      - uploads_vol:/app/backend_worker_api/uploads
+    networks:
+      - app-network
+    depends_on:
+      ssh-tunnel:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/"]
+      interval: 20s
+      timeout: 8s
+      start_period: 90s   # AI 모델 로딩 시간 감안
+      retries: 6
+
+  # ── 4. Admin Frontend (Vite dev-server) ───────────────────────
+  # prod 이미지로 전환하려면 target: prod 으로 변경
+  frontend-admin:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      target: dev                    # dev | prod
+      args:
+        APP_DIR: frontend_admin
+        VITE_PORT: "5173"
+    container_name: skn_frontend_admin
+    <<: *restart-policy
+    ports:
+      - "5173:5173"
+    volumes:
+      # dev 모드: 소스를 마운트해 HMR 동작
+      - ./frontend_admin/src:/app/src:ro
+      - ./frontend_admin/public:/app/public:ro
+      # DeviceCard.jsx 등이 ../../../data/ 상대경로로 이미지 참조
+      - ./data:/data:ro
+    networks:
+      - app-network
+    depends_on:
+      backend-hub:
+        condition: service_healthy
+      backend-worker-api:
+        condition: service_healthy
+
+  # ── 5. Worker Frontend (Vite dev-server) ─────────────────────
+  frontend-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      target: dev                    # dev | prod
+      args:
+        APP_DIR: frontend_worker
+        VITE_PORT: "5174"
+    container_name: skn_frontend_worker
+    <<: *restart-policy
+    ports:
+      - "5174:5174"
+    volumes:
+      - ./frontend_worker/src:/app/src:ro
+      - ./frontend_worker/public:/app/public:ro
+    networks:
+      - app-network
+    depends_on:
+      backend-worker-api:
+        condition: service_healthy
+
+# ── 네트워크 ──────────────────────────────────────────────────
+networks:
+  app-network:
+    driver: bridge
+
+# ── 볼륨 (재빌드 시에도 캐시 유지) ───────────────────────────
+volumes:
+  models_cache:
+    driver: local
+  bm25_cache:
+    driver: local
+  data_vol:
+    driver: local
+  logs_vol:
+    driver: local
+  uploads_vol:
+    driver: local
