@@ -1,6 +1,3 @@
-<div align="center"> 
-AI 기반 용접 로봇 관제 및 유지보수 시스템 <br>
-
 # 산업 현장에서 활용 가능한 AI 기반 용접 로봇 관제 시스템
 
 </div>
@@ -124,7 +121,7 @@ AI 기반 용접 로봇 관제 및 유지보수 시스템 <br>
 
 ## 2.2 주요 개선 사항
 
-### Django 프레임워크 도입
+### 1.Django 프레임워크 도입
 
 이전 프로젝트가 FastAPI 중심의 단일 백엔드 구조였다면, 최신 프로젝트는 관리자 영역에 Django를 도입하여 데이터 중심 기능을 보다 안정적으로 분리했다.
 
@@ -132,7 +129,7 @@ AI 기반 용접 로봇 관제 및 유지보수 시스템 <br>
 
 ---
 
-### Fastapi 기반 REST API 구축 고도화
+### 2.Fastapi 기반 REST API 구축 고도화
 
 이전 프로젝트의 FastAPI가 주로 챗봇 질의응답과 관리자 보조 기능을 제공하는 통합형 API였다면, 최신 프로젝트의 FastAPI는 작업자 상담 흐름 자체를 하나의 도메인 API로 재설계했다.
 
@@ -140,7 +137,7 @@ AI 기반 용접 로봇 관제 및 유지보수 시스템 <br>
 
 ---
 
-### 관리자 페이지 챗봇 도입 및 사용자 / 관리자 페이지의 API 이원화
+### 3.관리자 페이지 챗봇 도입 및 사용자 / 관리자 페이지의 API 이원화
 
 최신 프로젝트는 사용자와 관리자의 요구사항이 서로 다르다는 점을 반영해 API를 명확히 이원화했다.
 
@@ -148,7 +145,7 @@ AI 기반 용접 로봇 관제 및 유지보수 시스템 <br>
 
 ---
 
-### React 기반 프론트엔드 도입
+### 4.React 기반 프론트엔드 도입
 
 이전 프로젝트가 Streamlit 기반으로 빠른 프로토타이핑과 기능 검증에 강점이 있었다면, 최신 프로젝트는 배포를 가정한 서비스형 구조에 맞추어 React를 도입했다.
 
@@ -156,7 +153,7 @@ AI 기반 용접 로봇 관제 및 유지보수 시스템 <br>
 
 ---
 
-### 공장 환경을 고려한 터치형 작업자 UI 개선
+### 5.공장 환경을 고려한 터치형 작업자 UI 개선
 
 이전 프로젝트의 사용자 페이지는 일반적인 채팅 UI에 가까워 작업자가 직접 문장을 타이핑해야 하는 구조였다면, 최신 프로젝트는 실제 공장 현장을 주요 사용 환경으로 가정해 입력 방식 자체를 단순화했다.
 
@@ -164,7 +161,7 @@ AI 기반 용접 로봇 관제 및 유지보수 시스템 <br>
 
 ---
 
-### Docker 도입을 통한 안정적인 배포
+### 6.Docker 도입을 통한 안정적인 배포
 
 이전 프로젝트가 단일 애플리케이션 실행 중심이었다면, 최신 프로젝트는 Docker Compose 기반으로 프론트엔드, Django, FastAPI, Nginx를 각각 분리 배포할 수 있도록 구성했다.
 
@@ -185,11 +182,11 @@ WELD-BOT은 **현장 작업자의 실행 가이드 부족 문제**를 해결한�
 
 # 3. 기술 스택 (Tech Stack)
 
-| 분류                       | 기술 스택 배지 (Tech Stack Badges)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| :------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **AI & LLM**         | [![OpenAI](https://img.shields.io/badge/OpenAI_GPT--시리즈-412991?style=for-the-badge&logo=openai&logoColor=white)](https://platform.openai.com/docs/) [![LangChain](https://img.shields.io/badge/LangChain-1C3C3C?style=for-the-badge&logo=langchain&logoColor=white)](https://python.langchain.com/docs/introduction/) [![Hugging Face](https://img.shields.io/badge/Hugging_Face-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black)](https://huggingface.co/)                                                                                                                                                                                                                                                                                                  |
-| **Backend & API**    | [![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/) [![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/) [![Django](https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=white)](https://www.djangoproject.com/) [![Uvicorn](https://img.shields.io/badge/Uvicorn-4051B5?style=for-the-badge&logo=uvicorn&logoColor=white)](https://www.uvicorn.org/) [![Pydantic](https://img.shields.io/badge/Pydantic-E92063?style=for-the-badge&logo=pydantic&logoColor=white)](https://docs.pydantic.dev/latest/)                                                                              |
-| **Database & Infra** | [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/) [![pgvector](https://img.shields.io/badge/pgvector-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://github.com/pgvector/pgvector) [![AWS RDS](https://img.shields.io/badge/AWS_RDS-527FFF?style=for-the-badge&logo=amazon-rds&logoColor=white)](https://aws.amazon.com/rds/) [![AWS S3](https://img.shields.io/badge/AWS_S3-569A31?style=for-the-badge&logo=amazon-s3&logoColor=white)](https://aws.amazon.com/s3/) [![AWS EC2](https://img.shields.io/badge/AWS_EC2-FF9900?style=for-the-badge&logo=amazon-ec2&logoColor=white)](https://aws.amazon.com/ec2/)                                                   |
+| 분류                 | 기술 스택 배지 (Tech Stack Badges)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| :------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **AI & LLM**         | [![OpenAI](https://img.shields.io/badge/OpenAI_GPT--시리즈-412991?style=for-the-badge&logo=openai&logoColor=white)](https://platform.openai.com/docs/) [![LangChain](https://img.shields.io/badge/LangChain-1C3C3C?style=for-the-badge&logo=langchain&logoColor=white)](https://python.langchain.com/docs/introduction/) [![Hugging Face](https://img.shields.io/badge/Hugging_Face-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black)](https://huggingface.co/)                                                                                                                                                                                                                                                                                                                 |
+| **Backend & API**    | [![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/) [![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/) [![Django](https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=white)](https://www.djangoproject.com/) [![Uvicorn](https://img.shields.io/badge/Uvicorn-4051B5?style=for-the-badge&logo=uvicorn&logoColor=white)](https://www.uvicorn.org/) [![Pydantic](https://img.shields.io/badge/Pydantic-E92063?style=for-the-badge&logo=pydantic&logoColor=white)](https://docs.pydantic.dev/latest/)                                                                                   |
+| **Database & Infra** | [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/) [![pgvector](https://img.shields.io/badge/pgvector-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://github.com/pgvector/pgvector) [![AWS RDS](https://img.shields.io/badge/AWS_RDS-527FFF?style=for-the-badge&logo=amazon-rds&logoColor=white)](https://aws.amazon.com/rds/) [![AWS S3](https://img.shields.io/badge/AWS_S3-569A31?style=for-the-badge&logo=amazon-s3&logoColor=white)](https://aws.amazon.com/s3/) [![AWS EC2](https://img.shields.io/badge/AWS_EC2-FF9900?style=for-the-badge&logo=amazon-ec2&logoColor=white)](https://aws.amazon.com/ec2/)                                                        |
 | **Frontend & Tools** | [![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://react.dev/) [![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vite.dev/) [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/) [![Poetry](https://img.shields.io/badge/Poetry-60A5FA?style=for-the-badge&logo=poetry&logoColor=white)](https://python-poetry.org/) [![NPM](https://img.shields.io/badge/NPM-CB3837?style=for-the-badge&logo=npm&logoColor=white)](https://www.npmjs.com/) [![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/) |
 
 ---
@@ -206,20 +203,19 @@ WELD-BOT은 **현장 작업자의 실행 가이드 부족 문제**를 해결한�
 <summary><b>도메인 설명</b></summary>
 
 1. Robot Domain
-
    - robot_models → robot_devices → robot_error_logs
    - 로봇 모델, 장비, 에러 발생 이력을 계층적으로 관리
-2. Interaction Domain
 
+2. Interaction Domain
    - robot_error_sessions → chat_histories, checklist_items
    - AI 상담을 세션 단위로 관리
    - 채팅(O/X 선택) + 체크리스트 기반 단계별 장애 대응
-3. User Domain
 
+3. User Domain
    - engineer_calls
    - 엔지니어 호출(에스컬레이션) 이력 관리
-4. Admin & AI Domain
 
+4. Admin & AI Domain
    - RAG 품질 평가, 프롬프트 관리, 문서(Vector DB) 관리
 
    </details>
@@ -324,14 +320,14 @@ flowchart TD
 <details>
 <summary><b>배포 구성 요소</b></summary>
 
-| 레이어          | 구성                                    | 역할                                |
-| --------------- | --------------------------------------- | ----------------------------------- |
-| 접속 계층       | EC2 보안그룹                            | 포트(80, 8080, 22) 오픈             |
+| 레이어          | 구성                                | 역할                                |
+| --------------- | ----------------------------------- | ----------------------------------- |
+| 접속 계층       | EC2 보안그룹                        | 포트(80, 8080, 22) 오픈             |
 | 프런트엔드 계층 | `frontend-admin`, `frontend-worker` | 정적 번들 제공 + API 프록시         |
 | API 계층        | `backend-hub`, `backend-worker-api` | Django 관리 API, FastAPI 작업자 API |
-| 데이터 계층     | AWS RDS (PostgreSQL + pgvector)         | 작업자/로그/세션/통계/벡터 데이터   |
-| 저장소 계층     | AWS S3                                  | 첨부 파일/문서/파이프라인 산출물    |
-| 외부 AI 계층    | OpenAI API                              | 번역/의사결정 모델 호출             |
+| 데이터 계층     | AWS RDS (PostgreSQL + pgvector)     | 작업자/로그/세션/통계/벡터 데이터   |
+| 저장소 계층     | AWS S3                              | 첨부 파일/문서/파이프라인 산출물    |
+| 외부 AI 계층    | OpenAI API                          | 번역/의사결정 모델 호출             |
 
 </details>
 
@@ -676,8 +672,8 @@ LangSmith 기반으로 사용자 페이지와 관리자 페이지에 대한 시�
 
 #### 7.2.2 관리자 페이지 데이터셋 상세 (50건)
 
-| 태스크 유형             | 건수 |
-| ----------------------- | ---: |
+| 태스크 유형           | 건수 |
+| --------------------- | ---: |
 | `error_code_analysis` | 12건 |
 | `error_count`         |  9건 |
 | `error_list`          |  6건 |
@@ -732,13 +728,13 @@ LangSmith 기반으로 사용자 페이지와 관리자 페이지에 대한 시�
 
 #### 7.3.3 대표 실패 사례
 
-| 페이지        | 케이스      | 관찰 내용                                                                           |
-| ------------- | ----------- | ----------------------------------------------------------------------------------- |
-| 사용자 페이지 | `0X05`    | 매뉴얼 정보가 없는 에러코드로 판단되어 체크리스트가 생성되지 않음                   |
+| 페이지        | 케이스    | 관찰 내용                                                                         |
+| ------------- | --------- | --------------------------------------------------------------------------------- |
+| 사용자 페이지 | `0X05`    | 매뉴얼 정보가 없는 에러코드로 판단되어 체크리스트가 생성되지 않음                 |
 | 관리자 페이지 | `mgr_001` | "오늘 가장 많이 발생한 에러" 질문을 `error_list` 성격으로 처리하여 핵심 답변 누락 |
-| 관리자 페이지 | `mgr_012` | "오늘 발생한 에러 목록" 요청에서 에러 코드 및 라인명 정보가 충분히 제시되지 않음    |
+| 관리자 페이지 | `mgr_012` | "오늘 발생한 에러 목록" 요청에서 에러 코드 및 라인명 정보가 충분히 제시되지 않음  |
 | 관리자 페이지 | `mgr_021` | `E0502` 조치 방법 질문에서 원인 및 구체 조치 절차 안내 부족                       |
-| 관리자 페이지 | `mgr_028` | 상위 5개 에러 요청을 목록 조회 수준으로 처리하여 Top-N 요약 실패                    |
+| 관리자 페이지 | `mgr_028` | 상위 5개 에러 요청을 목록 조회 수준으로 처리하여 Top-N 요약 실패                  |
 
 ---
 
