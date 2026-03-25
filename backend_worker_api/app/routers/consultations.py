@@ -121,7 +121,7 @@ def list_engineer_calls():
                 JOIN robot_error_sessions s ON c.session_id = s.session_id
                 JOIN robot_devices d ON s.device_id = d.device_id
                 ORDER BY c.created_at DESC
-                LIMIT 50
+                LIMIT 500
                 """
             )
             rows = cursor.fetchall()
